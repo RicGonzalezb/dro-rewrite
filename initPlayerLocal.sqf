@@ -406,16 +406,17 @@ player createDiaryRecord ["dro", ["Dynamic Recon Ops", "
 	Thank you for playing!	
 "]];
 
-// Start saving player loadout periodically
-[] spawn {
-	loadoutSavingStarted = true;
-	playerRespawning = false;
-	diag_log format ["DRO: Initial respawn loadout = %1", (getUnitLoadout player)];
-	while {true} do {
-		sleep 5;
+// Start saving player loadout periodically.
+// Migrated from `[] spawn { while {true} do { sleep 5; ... } }` to a
+// non-scheduled CBA per-frame handler with 5s delta. Same behavior.
+loadoutSavingStarted = true;
+playerRespawning = false;
+diag_log format ["DRO: Initial respawn loadout = %1", (getUnitLoadout player)];
+if (isNil "DRO_loadoutSaverPFH") then {
+	DRO_loadoutSaverPFH = [{
 		if (alive player && !playerRespawning) then {
-			player setVariable ["respawnLoadout", getUnitLoadout player, true]; 
+			player setVariable ["respawnLoadout", getUnitLoadout player, true];
 		};
-	};
+	}, 5, []] call CBA_fnc_addPerFrameHandler;
 };
 

@@ -86,34 +86,31 @@ _aiUnits = [];
 	if (!isPlayer _x) then {_aiUnits pushBack _x};
 } forEach reviveUnits;
 if (count _aiUnits > 0) then {
-	[] spawn {
-		while {true} do {
-			sleep 5;
-			
-			_aiUnits = [];
+	// AI revive checker: every 5s, ask the AI group leader to scan reviveUnits
+	// for downed friendlies and dispatch heal orders.
+	// Migrated from `[] spawn { while {true} do { sleep 5; ... } }` to CBA PFH.
+	if (isNil "DRO_aiReviveListenPFH") then {
+		DRO_aiReviveListenPFH = [{
+			private _aiUnits = [];
 			{
-				if (!isPlayer _x) then {
-					_aiUnits pushBack _x;					
-				};
-			} forEach reviveUnits;	
+				if (!isPlayer _x) then { _aiUnits pushBack _x; };
+			} forEach reviveUnits;
 			if (count _aiUnits > 0) then {
-				_leader = (leader (_aiUnits select 0));			
+				private _leader = leader (_aiUnits select 0);
 				[_aiUnits] remoteExec ["rev_AIListen", _leader];
 			};
-		};
+		}, 5, []] call CBA_fnc_addPerFrameHandler;
 	};
-	[] spawn {
-		sleep 200;
-		_aiUnits = [];
+
+	// One-shot timeout-counter reset after 200s.
+	// Migrated from `[] spawn { sleep 200; ... }` to CBA_fnc_waitAndExecute.
+	[{
+		private _aiUnits = [];
 		{
-			if (!isPlayer _x) then {
-				_aiUnits pushBack _x;					
-			};
+			if (!isPlayer _x) then { _aiUnits pushBack _x; };
 		} forEach reviveUnits;
-		{
-			_x setVariable ["rev_timeoutCounter", 0, true];
-		} forEach _aiUnits;
-	};
+		{ _x setVariable ["rev_timeoutCounter", 0, true]; } forEach _aiUnits;
+	}, [], 200] call CBA_fnc_waitAndExecute;
 };
 
 

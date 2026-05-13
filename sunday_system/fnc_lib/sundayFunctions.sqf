@@ -601,20 +601,20 @@ sun_newUnits = {
 	newUnitsReady = true;
 	publicVariable "newUnitsReady";	
 	
-	// Keep grpNetId variable assigned to player group if C2 is present
+	// Keep grpNetId variable assigned to player group if C2 is present.
+	// Migrated from `[] spawn { while {true} do { ... } }` (no sleep — ran every
+	// scheduled tick) to a CBA PFH with 1s delta. Guarded against double-init.
 	if (isClass (configFile >> "CfgPatches" >> "C2_Core")) then {
-		[] spawn {	
-			while {true} do {
-				if (isNil "grpNetId") then {
+		if (isNil "DRO_c2GrpNetIdGuardPFH") then {
+			DRO_c2GrpNetIdGuardPFH = [{
+				private _refreshNeeded = if (isNil "grpNetId") then { true } else {
+					isNull (grpNetId call BIS_fnc_groupFromNetId)
+				};
+				if (_refreshNeeded) then {
 					grpNetId = (group(([] call BIS_fnc_listPlayers) select 0)) call BIS_fnc_netId;
 					publicVariable "grpNetId";
-				} else {			
-					if (isNull (grpNetId call BIS_fnc_groupFromNetId)) then {
-						grpNetId = (group(([] call BIS_fnc_listPlayers) select 0)) call BIS_fnc_netId;
-						publicVariable "grpNetId";
-					};			
 				};
-			};
+			}, 1, []] call CBA_fnc_addPerFrameHandler;
 		};
 	};
 };
