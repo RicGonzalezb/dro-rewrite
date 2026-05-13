@@ -375,15 +375,27 @@ _trgExtract setVariable ["powChar", _powChar];
 _trgExtract setVariable ["thisSubtask", _extractSubTaskName];
 _trgExtract setVariable ["markerName", _markerName];
 
-// Listener for extraction task completion
-[_taskName, _extractSubTaskName] spawn {
-	waitUntil {playersReady == 1};
-	waitUntil {sleep 2; [(_this select 1)] call BIS_fnc_taskCompleted};
-	if (((_this select 1) call BIS_fnc_taskState) == "SUCCEEDED") then {
-		[(_this select 0), "SUCCEEDED", true] spawn BIS_fnc_taskSetState;	
-		missionNamespace setVariable [format ["%1Completed", (_this select 0)], 1, true];	
-	};
-};
+// Listener for extraction task completion.
+// Migrated from `[args] spawn { waitUntil; waitUntil {sleep 2; taskComplete}; cleanup }`
+// to: CBA_fnc_waitUntilAndExecute (playersReady) → CBA PFH delta=2 (subtask
+// complete) → callback runs cleanup. No scheduled thread.
+[
+	{ playersReady == 1 },
+	{
+		params ["_taskName", "_extractSubTaskName"];
+		[{
+			params ["_args", "_pfhId"];
+			_args params ["_taskName", "_extractSubTaskName"];
+			if (!([_extractSubTaskName] call BIS_fnc_taskCompleted)) exitWith {};
+			[_pfhId] call CBA_fnc_removePerFrameHandler;
+			if (([_extractSubTaskName] call BIS_fnc_taskState) == "SUCCEEDED") then {
+				[_taskName, "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
+				missionNamespace setVariable [format ["%1Completed", _taskName], 1, true];
+			};
+		}, 2, [_taskName, _extractSubTaskName]] call CBA_fnc_addPerFrameHandler;
+	},
+	[_taskName, _extractSubTaskName]
+] call CBA_fnc_waitUntilAndExecute;
 
 /*
 _trgExecute = createTrigger ["EmptyDetector", _powPos, true];

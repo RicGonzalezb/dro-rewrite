@@ -368,22 +368,33 @@ if (_evidenceChance > 0.6) then {
 		false
 	] remoteExec ["bis_fnc_holdActionAdd", 0, true];
 	
-	// Listener for elimination task completion and evidence gathering completion
-	[_taskName, _elimSubtaskName, _subTaskName] spawn {
-		waitUntil {playersReady == 1};
-		waitUntil {sleep 3; [(_this select 1)] call BIS_fnc_taskCompleted && [(_this select 2)] call BIS_fnc_taskCompleted};
-		if (([(_this select 1)] call BIS_fnc_taskState) == "Succeeded") then {
-			[(_this select 0), "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
-			
-		} else {
-			[(_this select 0), "CANCELED", true] spawn BIS_fnc_taskSetState;
-		};
-		for "_i" from ((count taskIntel)-1) to 0 step -1 do {
-			if (((taskIntel select _i) select 0) == (_this select 0)) then {taskIntel deleteAt _i};
-		};
-		publicVariable "taskIntel";
-		missionNamespace setVariable [format ["%1Completed", (_this select 0)], 1, true];
-	};	
+	// Listener for elimination task completion and evidence gathering completion.
+	// Migrated from `[args] spawn { waitUntil; waitUntil {sleep 3; tasksComplete}; cleanup }`
+	// to: CBA_fnc_waitUntilAndExecute (playersReady) → CBA PFH delta=3 (both
+	// subtasks complete) → callback runs cleanup. No scheduled thread.
+	[
+		{ playersReady == 1 },
+		{
+			params ["_taskName", "_elimSubtaskName", "_subTaskName"];
+			[{
+				params ["_args", "_pfhId"];
+				_args params ["_taskName", "_elimSubtaskName", "_subTaskName"];
+				if !( ([_elimSubtaskName] call BIS_fnc_taskCompleted) && {[_subTaskName] call BIS_fnc_taskCompleted} ) exitWith {};
+				[_pfhId] call CBA_fnc_removePerFrameHandler;
+				if (([_elimSubtaskName] call BIS_fnc_taskState) == "Succeeded") then {
+					[_taskName, "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
+				} else {
+					[_taskName, "CANCELED", true] spawn BIS_fnc_taskSetState;
+				};
+				for "_i" from ((count taskIntel) - 1) to 0 step -1 do {
+					if (((taskIntel select _i) select 0) == _taskName) then { taskIntel deleteAt _i };
+				};
+				publicVariable "taskIntel";
+				missionNamespace setVariable [format ["%1Completed", _taskName], 1, true];
+			}, 3, [_taskName, _elimSubtaskName, _subTaskName]] call CBA_fnc_addPerFrameHandler;
+		},
+		[_taskName, _elimSubtaskName, _subTaskName]
+	] call CBA_fnc_waitUntilAndExecute;
 } else {
 	// Listener for elimination task completion
 	[_taskName, _elimSubtaskName] spawn {

@@ -49,18 +49,23 @@ _intelTaskIndexes = [];
 // POW
 if (count powJoinTasks > 0) then {
 	if (count pHeliClasses > 0) then {
-		// Allow helicopter extraction
-		[] spawn {
-			waitUntil {playersReady == 1};			
-			// Check for join subtask completion
-			waitUntil { 
-				sleep 10;				
-				({[_x] call BIS_fnc_taskCompleted} count powJoinTasks == count powJoinTasks)								
-			};			
-			// Give extraction support
-			[(leader (grpNetId call BIS_fnc_groupFromNetId)), "heliExtract"] remoteExec ["BIS_fnc_addCommMenuItem", (leader (grpNetId call BIS_fnc_groupFromNetId)), true];
-			extractHeliUsed = true;
-		};	
+		// Allow helicopter extraction once all POW-join subtasks are complete.
+		// Migrated from `[] spawn { waitUntil; waitUntil {sleep 10; allJoined}; addMenuItem }`
+		// to: CBA_fnc_waitUntilAndExecute (playersReady) → CBA PFH delta=10
+		// (all powJoinTasks complete) → callback adds the heliExtract menu item.
+		[
+			{ playersReady == 1 },
+			{
+				[{
+					params ["_args", "_pfhId"];
+					if (({[_x] call BIS_fnc_taskCompleted} count powJoinTasks) != count powJoinTasks) exitWith {};
+					[_pfhId] call CBA_fnc_removePerFrameHandler;
+					private _leader = leader (grpNetId call BIS_fnc_groupFromNetId);
+					[_leader, "heliExtract"] remoteExec ["BIS_fnc_addCommMenuItem", _leader, true];
+					extractHeliUsed = true;
+				}, 10, []] call CBA_fnc_addPerFrameHandler;
+			}
+		] call CBA_fnc_waitUntilAndExecute;
 	} else {	
 		// Spawn ground based extraction group
 		_extractPos = {
@@ -105,27 +110,35 @@ if (count powJoinTasks > 0) then {
 			} forEach _powTaskIndexes;
 						
 			{
-				[_x, _extractGroup] spawn {
-					waitUntil {
-						sleep 5;
-						((_this select 0) distance (leader (_this select 1)) < 20)
+				// Per-unit watcher: when the POW gets within 20m of the extract group
+				// leader, fold them into the group. Migrated from per-unit
+				// `[unit, group] spawn { waitUntil {sleep 5; near}; join }` to a
+				// self-removing CBA PFH delta=5 per unit.
+				[{
+					params ["_args", "_pfhId"];
+					_args params ["_unit", "_extractGroup"];
+					if (isNull _unit) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+					if ((_unit distance (leader _extractGroup)) < 20) then {
+						[_pfhId] call CBA_fnc_removePerFrameHandler;
+						[_unit] join _extractGroup;
 					};
-					[(_this select 0)] join (_this select 1);						
-				};
+				}, 5, [_x, _extractGroup]] call CBA_fnc_addPerFrameHandler;
 			} forEach _powUnits;
 			
-			[_powUnits, _extractGroup, _extractPos] spawn {
-				waitUntil {
-					sleep 5;					
-					({group _x == (_this select 1)} count (_this select 0)) == (count (_this select 0))					
-				};
-				{
-					_x setUnitPos "UP";
-				} forEach units (_this select 1);
-				_leaveDir = [((AOLocations select 0) select 0), (_this select 2)] call BIS_fnc_dirTo;
-				_leavePos = [(_this select 2), 3000, _leaveDir] call BIS_fnc_relPos;						
-				_wp = (_this select 1) addWaypoint [_leavePos, 0];
-			};		
+			// Once all POWs have joined the extract group, stand them up and
+			// move out. Migrated from
+			// `[powUnits, extractGroup, extractPos] spawn { waitUntil {sleep 5; allJoined}; ... }`
+			// to a self-removing CBA PFH delta=5.
+			[{
+				params ["_args", "_pfhId"];
+				_args params ["_powUnits", "_extractGroup", "_extractPos"];
+				if (({group _x == _extractGroup} count _powUnits) != count _powUnits) exitWith {};
+				[_pfhId] call CBA_fnc_removePerFrameHandler;
+				{ _x setUnitPos "UP" } forEach units _extractGroup;
+				private _leaveDir = [((AOLocations select 0) select 0), _extractPos] call BIS_fnc_dirTo;
+				private _leavePos = [_extractPos, 3000, _leaveDir] call BIS_fnc_relPos;
+				_extractGroup addWaypoint [_leavePos, 0];
+			}, 5, [_powUnits, _extractGroup, _extractPos]] call CBA_fnc_addPerFrameHandler;
 		};
 	};	
 };
