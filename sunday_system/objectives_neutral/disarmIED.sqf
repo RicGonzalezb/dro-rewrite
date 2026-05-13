@@ -30,18 +30,23 @@ if (random 1 > 0.75) then {
 _markerName = format["disarmMkr%1", floor(random 10000)];
 [_IED, _taskName, _markerName, _intelTaskName, "ColorRed", 150, "Cross"] execVM "sunday_system\objectives\staticMarker.sqf";
 
-// Random ambush
-[_thisPos] spawn {
-	params ["_thisPos"];
-	waitUntil {sleep 10; (missionNameSpace getVariable ["playersReady", 0] == 1)};
-	if (random 1 > 0.3) then {
-		//_trgArea = [objNull, _markerName] call BIS_fnc_triggerToMarker;
-		_trgArea = createTrigger ["EmptyDetector", _thisPos, true];
-		_trgArea setTriggerArea [100, 100, 0, false];
-		_trgArea setTriggerActivation ["ANY", "PRESENT", false];
-		_trgArea setTriggerStatements ["(({(group _x) == (grpNetId call BIS_fnc_groupFromNetId)} count thisList) > 0)", "[thisTrigger] spawn {sleep (random[30, 45, 60]); [getPos (_this select 0)] call dro_triggerAmbushSpawn}", ""];		
-	};
-};
+// Random ambush gate: once players are ready, ~70% chance of arming a
+// trigger that spawns an ambush when the player group enters the IED area.
+// Migrated from `[_thisPos] spawn { waitUntil {sleep 10; playersReady}; conditional createTrigger }`
+// to CBA_fnc_waitUntilAndExecute (playersReady is a cheap flag check).
+[
+	{ (missionNameSpace getVariable ["playersReady", 0]) == 1 },
+	{
+		params ["_thisPos"];
+		if (random 1 > 0.3) then {
+			private _trgArea = createTrigger ["EmptyDetector", _thisPos, true];
+			_trgArea setTriggerArea [100, 100, 0, false];
+			_trgArea setTriggerActivation ["ANY", "PRESENT", false];
+			_trgArea setTriggerStatements ["(({(group _x) == (grpNetId call BIS_fnc_groupFromNetId)} count thisList) > 0)", "[thisTrigger] spawn {sleep (random[30, 45, 60]); [getPos (_this select 0)] call dro_triggerAmbushSpawn}", ""];
+		};
+	},
+	[_thisPos]
+] call CBA_fnc_waitUntilAndExecute;
 
 // Create task
 _taskTitle = "Locate and Disarm";
@@ -103,21 +108,20 @@ if (hostileCivsEnabled) then {
 	};
 };
 
-// Completion trigger
-[_IED, _taskName, _markerName, _trgIED, _triggerMan, _subTaskName] spawn {
-	params ["_IED", "_taskName", "_markerName", "_trgIED", "_triggerMan", "_subTaskName"];
-	/*
-	if (!isNull _trgIED) then {
-		while {sleep 1; mineActive _IED} do {		
-			if (fleeing _triggerMan || !alive _triggerMan) exitWith {deleteVehicle _trgIED; [_subTaskName, 'SUCCEEDED', true] spawn BIS_fnc_taskSetState; true};			
-		};
-	};
-	*/
-	waitUntil {sleep 5; !mineActive _IED};
-	[_taskName, 'SUCCEEDED', true] spawn BIS_fnc_taskSetState;
-	missionNamespace setVariable [format ['%1Completed', _taskName], 1, true];
-	_markerName setMarkerAlpha 0;	
-};
+// Completion trigger: task is succeeded once the IED has been disarmed
+// (mineActive flips false).
+// Migrated from `[args] spawn { waitUntil {sleep 5; !mineActive}; cleanup }`
+// to self-removing CBA PFH delta=5.
+[{
+	params ["_args", "_pfhId"];
+	_args params ["_IED", "_taskName", "_markerName"];
+	if (isNull _IED) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+	if (mineActive _IED) exitWith {};
+	[_pfhId] call CBA_fnc_removePerFrameHandler;
+	[_taskName, "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
+	missionNamespace setVariable [format ["%1Completed", _taskName], 1, true];
+	_markerName setMarkerAlpha 0;
+}, 5, [_IED, _taskName, _markerName]] call CBA_fnc_addPerFrameHandler;
 
 allObjectives pushBack _taskName;
 objData pushBack [

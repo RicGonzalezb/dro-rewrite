@@ -272,12 +272,19 @@ if (isMultiplayer) then {
 		
 	}];
 };
-//#LordShadeAceVeh
-_thisVeh spawn {
-	waitUntil {sleep 5;(!(aliveVeh(_this)))};
-	_this setDamage 1;
-};
-//######	
+//#LordShadeAceVeh — ACE-compatible vehicle integrity watcher.
+// Migrated from `_thisVeh spawn { waitUntil {sleep 5; ...}; setDamage 1 }`
+// to a self-removing CBA PFH with 5s delta. Cleanup if vehicle becomes null.
+[{
+	params ["_args", "_pfhId"];
+	_args params ["_veh"];
+	if (isNull _veh) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+	if (!(aliveVeh(_veh))) then {
+		[_pfhId] call CBA_fnc_removePerFrameHandler;
+		_veh setDamage 1;
+	};
+}, 5, [_thisVeh]] call CBA_fnc_addPerFrameHandler;
+//######
 
 // Marker
 _markerName = format["vehMkr%1", floor(random 10000)];

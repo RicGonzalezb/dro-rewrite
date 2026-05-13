@@ -51,20 +51,16 @@ if (["powerTask"] call BIS_fnc_taskExists) then {
 	_taskTitle = format ["Sabotage %1", _powerName];
 	_taskDesc = format ["Destroy or sabotage the %1 to disrupt power in the immediate area.", _powerName];
 	_task = [[_taskName, "powerTask"], true, [_taskDesc, _taskTitle, _markerName], _powerUnit, "CREATED", 0, false, true, "danger", true] call BIS_fnc_setTask;
-	// Listen for all subtasks to be completed
-	[] spawn {
-		waitUntil {
-			sleep 3;
-			_completed = 0;
-			{
-				if ([_x] call BIS_fnc_taskCompleted) then {
-					_completed = _completed + 1;
-				};
-			} forEach (["powerTask"] call BIS_fnc_taskChildren);
-			(_completed == count (["powerTask"] call BIS_fnc_taskChildren))
-		};		
-		["powerTask", "SUCCEEDED", true] spawn BIS_fnc_taskSetState;		
-	};
+	// Listen for all powerTask subtasks to be completed.
+	// Migrated from `[] spawn { waitUntil {sleep 3; allChildrenComplete}; setSucceeded }`
+	// to self-removing CBA PFH delta=3.
+	[{
+		params ["_args", "_pfhId"];
+		private _children = ["powerTask"] call BIS_fnc_taskChildren;
+		if (({[_x] call BIS_fnc_taskCompleted} count _children) != count _children) exitWith {};
+		[_pfhId] call CBA_fnc_removePerFrameHandler;
+		["powerTask", "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
+	}, 3, []] call CBA_fnc_addPerFrameHandler;
 };
 
 _powerUnit setVariable ["thisTask", _taskName, true];
@@ -95,31 +91,24 @@ _powerUnit addEventHandler ["Killed", {
 	(_this select 0) removeAllEventHandlers "Killed";
 }];				
 
-[_powerUnit] spawn {
-	waitUntil {
-		sleep 3;
-		_taskState = [((_this select 0) getVariable 'thisTask')] call BIS_fnc_taskState;	
-		(_taskState == "SUCCEEDED")
-	};
+// Listen for the powerUnit task to be marked SUCCEEDED, then dim nearby lamps
+// and power lines to simulate power loss.
+// Migrated from `[_powerUnit] spawn { waitUntil {sleep 3; succeeded}; forEach }`
+// to self-removing CBA PFH delta=3.
+[{
+	params ["_args", "_pfhId"];
+	_args params ["_powerUnit"];
+	if (isNull _powerUnit) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+	private _taskState = [(_powerUnit getVariable "thisTask")] call BIS_fnc_taskState;
+	if (_taskState != "SUCCEEDED") exitWith {};
+	[_pfhId] call CBA_fnc_removePerFrameHandler;
 	{
-		//_x switchLight "OFF";
-		for "_i" from 0 to count getAllHitPointsDamage _x - 1 do {
+		for "_i" from 0 to (count getAllHitPointsDamage _x) - 1 do {
 			[_x, [_i, 0.97]] remoteExec ["setHitIndex", 2];
-			//_x setHitIndex [_i, 0.97];
 		};
-		/*
-		_x setHit ["light_1_hitpoint", 0.97];
-		_x setHit ["light_2_hitpoint", 0.97];
-		_x setHit ["light_3_hitpoint", 0.97];
-		_x setHit ["light_4_hitpoint", 0.97];
-		*/
 	} forEach nearestObjects [
-		(_this select 0), 
-		[		
-			"Lamps_base_F",
-			"PowerLines_base_F",
-			"PowerLines_Small_base_F"
-		],
+		_powerUnit,
+		["Lamps_base_F", "PowerLines_base_F", "PowerLines_Small_base_F"],
 		300
 	];
-};
+}, 3, [_powerUnit]] call CBA_fnc_addPerFrameHandler;

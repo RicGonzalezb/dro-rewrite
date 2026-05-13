@@ -307,24 +307,33 @@ if (dynamicSim == 0) then {
 	_hvtChar enableDynamicSimulation true;
 };
 
-// Listen for surrender conditions
-[_hvtChar] spawn {
-	_hvtChar = (_this select 0);
-	waitUntil {playersReady == 1};
-	waitUntil {
-		sleep 3;
-		_return = false;
-		{
-			if ((_x distance _hvtChar) < 10) exitWith {_return = true};
-		} forEach (units (grpNetId call BIS_fnc_groupFromNetId));
-		if ({alive _x} count (_hvtChar getVariable "guards") == 0) then {
-			_return = true
-		};
-		_return
-	};	
-	removeAllWeapons _hvtChar;
-	(leader (grpNetId call BIS_fnc_groupFromNetId)) action ["Surrender", _hvtChar];
-};
+// Listen for surrender conditions: HVT surrenders when any player is within
+// 10m OR all guards are dead.
+// Migrated from `[_hvtChar] spawn { waitUntil; waitUntil {sleep 3; cond}; surrender }`
+// to: CBA_fnc_waitUntilAndExecute (playersReady) → CBA PFH delta=3 → surrender.
+[
+	{ playersReady == 1 },
+	{
+		params ["_hvtChar"];
+		[{
+			params ["_args", "_pfhId"];
+			_args params ["_hvtChar"];
+			if (isNull _hvtChar) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+			private _trigger = false;
+			{
+				if ((_x distance _hvtChar) < 10) exitWith { _trigger = true };
+			} forEach (units (grpNetId call BIS_fnc_groupFromNetId));
+			if (!_trigger && {({alive _x} count (_hvtChar getVariable "guards")) == 0}) then {
+				_trigger = true;
+			};
+			if (!_trigger) exitWith {};
+			[_pfhId] call CBA_fnc_removePerFrameHandler;
+			removeAllWeapons _hvtChar;
+			(leader (grpNetId call BIS_fnc_groupFromNetId)) action ["Surrender", _hvtChar];
+		}, 3, [_hvtChar]] call CBA_fnc_addPerFrameHandler;
+	},
+	[_hvtChar]
+] call CBA_fnc_waitUntilAndExecute;
 
 [
 	_hvtChar,

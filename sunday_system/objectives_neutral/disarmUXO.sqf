@@ -65,18 +65,22 @@ _markerDisarm setMarkerSize [_boundX, _boundY];
 _markerDisarm setMarkerColor "ColorRed";
 _markerDisarm setMarkerAlpha 0.5;
 
-// Random ambush
-[_thisPos, _boundX, _boundY] spawn {
-	params ["_thisPos", "_boundX", "_boundY"];
-	waitUntil {sleep 10; (missionNameSpace getVariable ["playersReady", 0] == 1)};
-	if (random 1 > 0.3) then {
-		//_trgArea = [objNull, _markerName] call BIS_fnc_triggerToMarker;
-		_trgArea = createTrigger ["EmptyDetector", _thisPos, true];
-		_trgArea setTriggerArea [_boundX, _boundY, 0, false];
-		_trgArea setTriggerActivation ["ANY", "PRESENT", false];
-		_trgArea setTriggerStatements ["(({(group _x) == (grpNetId call BIS_fnc_groupFromNetId)} count thisList) > 0)", "[thisTrigger] spawn {sleep (random[30, 45, 60]); [getPos (_this select 0)] call dro_triggerAmbushSpawn}", ""];
-	};
-};
+// Random ambush gate (UXO variant — area sized by _boundX/_boundY).
+// Migrated from `[args] spawn { waitUntil {sleep 10; playersReady}; conditional createTrigger }`
+// to CBA_fnc_waitUntilAndExecute.
+[
+	{ (missionNameSpace getVariable ["playersReady", 0]) == 1 },
+	{
+		params ["_thisPos", "_boundX", "_boundY"];
+		if (random 1 > 0.3) then {
+			private _trgArea = createTrigger ["EmptyDetector", _thisPos, true];
+			_trgArea setTriggerArea [_boundX, _boundY, 0, false];
+			_trgArea setTriggerActivation ["ANY", "PRESENT", false];
+			_trgArea setTriggerStatements ["(({(group _x) == (grpNetId call BIS_fnc_groupFromNetId)} count thisList) > 0)", "[thisTrigger] spawn {sleep (random[30, 45, 60]); [getPos (_this select 0)] call dro_triggerAmbushSpawn}", ""];
+		};
+	},
+	[_thisPos, _boundX, _boundY]
+] call CBA_fnc_waitUntilAndExecute;
 
 // Create task
 _taskTitle = "Locate and Disarm";

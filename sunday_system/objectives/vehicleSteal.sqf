@@ -215,11 +215,18 @@ if (isMultiplayer) then {
 		missionNamespace setVariable [format ["%1Completed", ((_this select 0) getVariable ("thisTask"))], 1, true];
 	}];
 };	
-//#LordShadeAceVeh
-_thisVeh spawn {
-	waitUntil {sleep 5;(!(aliveVeh(_this)))};
-	_this setDamage 1;
-};
+//#LordShadeAceVeh — ACE-compatible vehicle integrity watcher.
+// Migrated from `_thisVeh spawn { waitUntil {sleep 5; ...}; setDamage 1 }`
+// to a self-removing CBA PFH with 5s delta. Cleanup if vehicle becomes null.
+[{
+	params ["_args", "_pfhId"];
+	_args params ["_veh"];
+	if (isNull _veh) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+	if (!(aliveVeh(_veh))) then {
+		[_pfhId] call CBA_fnc_removePerFrameHandler;
+		_veh setDamage 1;
+	};
+}, 5, [_thisVeh]] call CBA_fnc_addPerFrameHandler;
 //######
 
 // Create locate subtask
@@ -228,15 +235,19 @@ _subTaskTitle = "Locate vehicle";
 _subTasks pushBack [_locateSubTaskName, _subTaskDesc, _subTaskTitle, "truck"];
 missionNamespace setVariable [(format ["%1_taskType", _locateSubTaskName]), "truck", true];
 
-[_thisVeh, _locateSubTaskName] spawn {
-	params ["_thisVeh", "_locateSubTaskName"];
-	waitUntil {
-		sleep 3;
-		({objectParent _x == _thisVeh} count (units (grpNetId call BIS_fnc_groupFromNetId))) > 0						
-	};
+// "Locate vehicle" subtask listener: succeeds once any player squad member is
+// inside the target vehicle. Migrated from
+// `[args] spawn { waitUntil {sleep 3; player inside _thisVeh}; cleanup }`
+// to a self-removing CBA PFH delta=3.
+[{
+	params ["_args", "_pfhId"];
+	_args params ["_thisVeh", "_locateSubTaskName"];
+	if (isNull _thisVeh) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+	if (({objectParent _x == _thisVeh} count (units (grpNetId call BIS_fnc_groupFromNetId))) == 0) exitWith {};
+	[_pfhId] call CBA_fnc_removePerFrameHandler;
 	[_locateSubTaskName, "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
-	'mkrAOC' setMarkerAlpha 1;			
-};		
+	"mkrAOC" setMarkerAlpha 1;
+}, 3, [_thisVeh, _locateSubTaskName]] call CBA_fnc_addPerFrameHandler;
 	
 // Marker
 _markerName = format["vehMkr%1", floor(random 10000)];
