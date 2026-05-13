@@ -1310,31 +1310,43 @@ if (((AOLocations select 0) select 4) == 0) then {
 	", "diag_log 'DRO: Reinforcing due to player incursion'; [getPos thisTrigger, [1,2]] execVM 'sunday_system\reinforce.sqf';", ""];	
 };
 
-// Wait until all basic tasks are complete
+// Wait until all assigned tasks are confirmed complete (stable for 6s),
+// then bump reinforceChance and dispatch the extract task.
+//
+// Migrated from a scheduled `waituntil { sleep 10; check; if (ok) then { sleep 6; recheck }; ok }`
+// to a CBA per-frame watcher (10s polling) + non-scheduled 6s stability
+// recheck via CBA_fnc_waitAndExecute. Same flow, no scheduled thread.
+
 diag_log format ["DRO: taskIDs = %1", taskIDs];
-waituntil { 
-	sleep 10;	
-	_completeReturn = true;
-	if (taskCreationInProgress) then {_completeReturn = false};
-	{		
-		_complete = [_x] call BIS_fnc_taskCompleted;
-		if (!_complete) then {
-			_completeReturn = false;
-		};
+
+DRO_fnc_allTasksComplete = {
+	if (taskCreationInProgress) exitWith { false };
+	private _ok = true;
+	{
+		if (!([_x] call BIS_fnc_taskCompleted)) exitWith { _ok = false; };
 	} forEach taskIDs;
-	if (_completeReturn) then {
-		sleep 6;
-		{		
-			_complete = [_x] call BIS_fnc_taskCompleted;
-			if (!_complete) then {
-				_completeReturn = false;
-			};
-		} forEach taskIDs;
-	};
-	_completeReturn;
+	_ok
 };
 
-reinforceChance = reinforceChance + 0.1;
+DRO_fnc_onAllTasksComplete = {
+	diag_log "DRO: All assigned tasks confirmed complete (stable 6s)";
+	reinforceChance = reinforceChance + 0.1;
+	[] execVM "sunday_system\createExtractTask.sqf";
+};
 
-// Create extract task
-[] execVM "sunday_system\createExtractTask.sqf";
+DRO_fnc_taskWatcherTick = {
+	params ["_args", "_pfhId"];
+	if (!(call DRO_fnc_allTasksComplete)) exitWith {};
+	// Tasks look complete — pause polling and schedule a 6s stability recheck.
+	[_pfhId] call CBA_fnc_removePerFrameHandler;
+	[{
+		if (call DRO_fnc_allTasksComplete) then {
+			call DRO_fnc_onAllTasksComplete;
+		} else {
+			// Stability recheck failed — resume 10s polling.
+			DRO_taskWatcherPFH = [DRO_fnc_taskWatcherTick, 10, []] call CBA_fnc_addPerFrameHandler;
+		};
+	}, [], 6] call CBA_fnc_waitAndExecute;
+};
+
+DRO_taskWatcherPFH = [DRO_fnc_taskWatcherTick, 10, []] call CBA_fnc_addPerFrameHandler;

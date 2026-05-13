@@ -1,4 +1,13 @@
-
+// ============================================================================
+// DEPRECATED — preserved for archival reference only.
+//
+// The logic in this file was inlined into sunday_revive/initRevive.sqf as a
+// CBA per-frame handler (DRO_aiReviveListenPFH). The only execVM reference
+// (initRevive.sqf:120) is commented out, so this file is never executed by
+// the live mission and is NOT part of the CBA migration.
+//
+// Do not re-enable without first disabling the equivalent PFH in initRevive.
+// ============================================================================
 
 while {true} do {
 	sleep 5;
