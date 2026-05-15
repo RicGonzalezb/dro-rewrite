@@ -42,7 +42,8 @@ _markerName = format["disarmMkr%1", floor(random 10000)];
 			private _trgArea = createTrigger ["EmptyDetector", _thisPos, true];
 			_trgArea setTriggerArea [100, 100, 0, false];
 			_trgArea setTriggerActivation ["ANY", "PRESENT", false];
-			_trgArea setTriggerStatements ["(({(group _x) == (grpNetId call BIS_fnc_groupFromNetId)} count thisList) > 0)", "[thisTrigger] spawn {sleep (random[30, 45, 60]); [getPos (_this select 0)] call dro_triggerAmbushSpawn}", ""];
+			// Trigger statement migrated: spawn+sleep → CBA_fnc_waitAndExecute (random 30–60s delay).
+			_trgArea setTriggerStatements ["(({(group _x) == (grpNetId call BIS_fnc_groupFromNetId)} count thisList) > 0)", "[{[getPos (_this select 0)] call dro_triggerAmbushSpawn}, [thisTrigger], (random [30, 45, 60])] call CBA_fnc_waitAndExecute", ""];
 		};
 	},
 	[_thisPos]

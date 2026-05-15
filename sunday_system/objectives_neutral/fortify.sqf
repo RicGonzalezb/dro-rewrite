@@ -59,64 +59,77 @@ _taskType = "use";
 missionNamespace setVariable [format ["%1Completed", _taskName], 0, true];
 missionNamespace setVariable [(format ["%1_taskType", _taskName]), _taskType, true];
 
-// Completion trigger
-[_allBoxes, _taskName, _markerName, _markerText] spawn {
-	waitUntil {sleep 5; ({isNull _x} count (_this select 0)) == count (_this select 0)};
-	[(_this select 1), 'SUCCEEDED', true] spawn BIS_fnc_taskSetState;
-	missionNamespace setVariable [format ['%1Completed', (_this select 1)], 1, true];
-	(_this select 2) setMarkerAlpha 1;
-	
+// Completion trigger.
+// Migrated from a scheduled multi-stage `[args] spawn { ... waitUntil sleep 5 ... sleep 20 loop ... waitUntil sleep 5 ... }`
+// to a CBA chain:
+//   Stage A: PFH 5s — wait for all construct boxes to be built (boxes nulled).
+//   Stage B: synchronous cleanup (set fortify task SUCCEEDED, reveal marker).
+//   Stage C: spawn 3–5 defense groups at 20s intervals (first inline, rest via PFH 20s).
+//   Stage D: PFH 5s — wait for all defense groups dead/fleeing.
+//   Stage E: set defend task SUCCEEDED.
+[{
+	params ["_args", "_pfhId"];
+	_args params ["_allBoxes", "_taskName", "_markerName", "_markerText"];
+	// Stage A: all construct boxes have been replaced (each becomes null after build)
+	if (({isNull _x} count _allBoxes) != count _allBoxes) exitWith {};
+	[_pfhId] call CBA_fnc_removePerFrameHandler;
+
+	// Stage B: fortify task succeeded
+	[_taskName, "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
+	missionNamespace setVariable [format ["%1Completed", _taskName], 1, true];
+	_markerName setMarkerAlpha 1;
+
 	taskCreationInProgress = true;
-	
-	_allGroups = [];
-	_messageSent = false;
-	_defendTaskName = format ["task%1", floor(random 100000)];
-	_defendTaskDesc = (format ["Hold and defend %2 from the attacking %1 force.", enemyFactionName, (_this select 3)]);
-	_defendTaskTitle = "Defend";
-	_defendTaskType = "defend";
-	
-	_spawnPos = [];		
-	_attempts = 0;
-	_scan = true;
+
+	// Compute ambush spawn positions (synchronous, cheap loop)
+	private _spawnPos = [];
+	private _attempts = 0;
+	private _scan = true;
 	while {_scan} do {
-		_thisPos = [(getMarkerPos (_this select 2)), 250, 450, 2, 0, 1, 0] call BIS_fnc_findSafePos;		
-		if ([objNull, "VIEW"] checkVisibility [(getMarkerPos (_this select 2)), _thisPos] < 0.2) then {_spawnPos = _thisPos; _scan = false;};		
-		if (_attempts > 200) then {_scan = false};
+		private _candidate = [(getMarkerPos _markerName), 250, 450, 2, 0, 1, 0] call BIS_fnc_findSafePos;
+		if ([objNull, "VIEW"] checkVisibility [(getMarkerPos _markerName), _candidate] < 0.2) then { _spawnPos = _candidate; _scan = false; };
+		if (_attempts > 200) then { _scan = false; };
 		_attempts = _attempts + 1;
-	};	
-	_spawnPos2 = [];
+	};
+	private _spawnPos2 = [];
 	if (count _spawnPos > 0) then {
-		_dir = _spawnPos getDir (getMarkerPos (_this select 2));
-		_thisPos2 = _spawnPos getPos [(random [50, 100, 75]), (selectRandom [_dir - 90, _dir + 90])];
-		if ([objNull, "VIEW"] checkVisibility [(getMarkerPos (_this select 2)), _thisPos2] < 0.2) then {_spawnPos2 = _thisPos2; _scan = false;};
-	};	
-	
-	for "_i" from 0 to ([2, 4] call BIS_fnc_randomInt) step 1 do {		
-		_spawnGroup = if (count _spawnPos > 0) then {
+		private _dir = _spawnPos getDir (getMarkerPos _markerName);
+		private _candidate2 = _spawnPos getPos [(random [50, 100, 75]), (selectRandom [_dir - 90, _dir + 90])];
+		if ([objNull, "VIEW"] checkVisibility [(getMarkerPos _markerName), _candidate2] < 0.2) then { _spawnPos2 = _candidate2; };
+	};
+
+	// Shared state for Stage C (mutated across PFH ticks via array reference)
+	private _defendTaskName = format ["task%1", floor(random 100000)];
+	// _state = [_allGroups, _messageSent, _i, _total]
+	private _state = [[], false, 0, ([2, 4] call BIS_fnc_randomInt)];
+
+	// Local helper to spawn one ambush group + handle the first-time defend-task creation
+	private _spawnOne = {
+		params ["_state", "_markerName", "_markerText", "_defendTaskName", "_spawnPos", "_spawnPos2"];
+		_state params ["_allGroups", "_messageSent"];
+		private _spawnGroup = if (count _spawnPos > 0) then {
 			if (count _spawnPos2 > 0) then {
-				[(getMarkerPos (_this select 2)), (selectRandom [_spawnPos, _spawnPos2])] call dro_triggerAmbushSpawn;
+				[(getMarkerPos _markerName), (selectRandom [_spawnPos, _spawnPos2])] call dro_triggerAmbushSpawn;
 			} else {
-				[(getMarkerPos (_this select 2)), _spawnPos] call dro_triggerAmbushSpawn;
-			};			
-		} else {		
-			[(getMarkerPos (_this select 2))] call dro_triggerAmbushSpawn;		
+				[(getMarkerPos _markerName), _spawnPos] call dro_triggerAmbushSpawn;
+			};
+		} else {
+			[(getMarkerPos _markerName)] call dro_triggerAmbushSpawn;
 		};
 		if (!isNull _spawnGroup) then {
 			_allGroups pushBack _spawnGroup;
-			//_spawnGroup deleteGroupWhenEmpty false;
 		};
 		if (!_messageSent && !isNull _spawnGroup) then {
-			_messageSent = true;
-			["AMBUSHOP"] spawn dro_sendProgressMessage;									
-			//_id = [_defendTaskName, true, [_defendTaskDesc, _defendTaskTitle, (_this select 2)], (getMarkerPos (_this select 2)), "CREATED", 1, false, true, _defendTaskType, true] call BIS_fnc_setTask;			
+			_state set [1, true];
+			["AMBUSHOP"] spawn dro_sendProgressMessage;
 			[
 				[
 					_defendTaskName,
-					_defendTaskDesc,
-					_defendTaskTitle,
-					(_this select 2),
-					_defendTaskType,
-					(getMarkerPos (_this select 2)),
+					(format ["Hold and defend %2 from the attacking %1 force.", enemyFactionName, _markerText]),
+					"Defend",
+					_markerName,
+					"defend",
+					(getMarkerPos _markerName),
 					0,
 					nil,
 					nil,
@@ -129,18 +142,48 @@ missionNamespace setVariable [(format ["%1_taskType", _taskName]), _taskType, tr
 			] call sun_assignTask;
 			taskCreationInProgress = false;
 		};
-		sleep 20;		
-	};	
-	
-	if (count _allGroups > 0) then {
-		waitUntil {
-			sleep 5;
-			[_allGroups] call sun_checkAllDeadFleeing
+	};
+
+	// Stage C — first group inline (matches original behaviour: first spawn happens immediately)
+	[_state, _markerName, _markerText, _defendTaskName, _spawnPos, _spawnPos2] call _spawnOne;
+
+	// Stage C — remaining groups via PFH 20s
+	if ((_state select 3) > 0) then {
+		[{
+			params ["_args", "_pfhId"];
+			_args params ["_state", "_markerName", "_markerText", "_defendTaskName", "_spawnPos", "_spawnPos2", "_spawnOne"];
+			[_state, _markerName, _markerText, _defendTaskName, _spawnPos, _spawnPos2] call _spawnOne;
+			_state set [2, (_state select 2) + 1];
+			if ((_state select 2) >= (_state select 3)) then {
+				[_pfhId] call CBA_fnc_removePerFrameHandler;
+				// Stage D — if any defenders spawned, wait until they're all dead/fleeing
+				private _allGroups = _state select 0;
+				if (count _allGroups > 0) then {
+					[{
+						params ["_args2", "_pfhId2"];
+						_args2 params ["_allGroups", "_defendTaskName"];
+						if (!([_allGroups] call sun_checkAllDeadFleeing)) exitWith {};
+						[_pfhId2] call CBA_fnc_removePerFrameHandler;
+						// Stage E — defend task succeeded
+						[_defendTaskName, "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
+					}, 5, [_allGroups, _defendTaskName]] call CBA_fnc_addPerFrameHandler;
+				};
+			};
+		}, 20, [_state, _markerName, _markerText, _defendTaskName, _spawnPos, _spawnPos2, _spawnOne]] call CBA_fnc_addPerFrameHandler;
+	} else {
+		// Edge case: only one group total — go straight to Stage D
+		private _allGroups = _state select 0;
+		if (count _allGroups > 0) then {
+			[{
+				params ["_args2", "_pfhId2"];
+				_args2 params ["_allGroups", "_defendTaskName"];
+				if (!([_allGroups] call sun_checkAllDeadFleeing)) exitWith {};
+				[_pfhId2] call CBA_fnc_removePerFrameHandler;
+				[_defendTaskName, "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
+			}, 5, [_allGroups, _defendTaskName]] call CBA_fnc_addPerFrameHandler;
 		};
 	};
-	[_defendTaskName, 'SUCCEEDED', true] spawn BIS_fnc_taskSetState;
-	
-};
+}, 5, [_allBoxes, _taskName, _markerName, _markerText]] call CBA_fnc_addPerFrameHandler;
 
 allObjectives pushBack _taskName;
 objData pushBack [

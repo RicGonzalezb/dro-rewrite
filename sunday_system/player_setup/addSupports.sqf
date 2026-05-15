@@ -32,15 +32,13 @@ if (_dropChance > _supplyChance) then {
 			[_x, "DRO_Support_Request_Drop"] remoteExec ["BIS_fnc_addCommMenuItem", _x, true];	
 		} forEach (units (grpNetId call BIS_fnc_groupFromNetId));
 	} else {
-		[] spawn {
-			sleep 10;
+		// Migrated from `[] spawn { sleep 10; pushBack }` to CBA_fnc_waitAndExecute.
+		[{
 			dro_messageStack pushBack [
-				[
-					["Command", "We don't have any supply drop resources available.", 0]		
-				],
+				[ ["Command", "We don't have any supply drop resources available.", 0] ],
 				true
-			];	
-		};
+			];
+		}, [], 10] call CBA_fnc_waitAndExecute;
 	};
 };
 
@@ -115,26 +113,22 @@ if (_artyChance > _supplyChance) then {
 						
 		} else {
 			diag_log "DRO: Valid artillery support position not found";			 
-			[] spawn {
-				sleep 10;
+			// Migrated from `[] spawn { sleep 10; pushBack }` to CBA_fnc_waitAndExecute.
+			[{
 				dro_messageStack pushBack [
-					[
-						["Command", "We don't have any artillery positions available.", 0]		
-					],
+					[ ["Command", "We don't have any artillery positions available.", 0] ],
 					true
-				];	
-			};
+				];
+			}, [], 10] call CBA_fnc_waitAndExecute;
 		};
 	} else {
-		[] spawn {
-			sleep 10;
+		// Migrated from `[] spawn { sleep 10; pushBack }` to CBA_fnc_waitAndExecute.
+		[{
 			dro_messageStack pushBack [
-				[
-					["Command", "We don't have any artillery positions available.", 0]		
-				],
+				[ ["Command", "We don't have any artillery positions available.", 0] ],
 				true
-			];	
-		};
+			];
+		}, [], 10] call CBA_fnc_waitAndExecute;
 	};
 };
 

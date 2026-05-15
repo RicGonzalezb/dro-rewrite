@@ -56,59 +56,104 @@ missionNamespace setVariable [(format ["%1_taskType", _subTaskName2]), "defend",
 _thisCiv setVariable ["taskName", _taskName, true];
 _thisCiv setVariable ["subTasks", _subTasks, true];
 
-// Completion trigger
-[_thisCiv, _taskName, _subTasks] spawn {
-	params ["_thisCiv", "_taskName", "_subTasks"];
-	if (_taskName call BIS_fnc_taskCompleted) exitWith {};
-	
-	waitUntil {
-		sleep 3;
-		if (_taskName call BIS_fnc_taskCompleted) exitWith {true};		
-		(((leader (grpNetId call BIS_fnc_groupFromNetId)) distance _thisCiv) < 6)
-	};
-	if (_taskName call BIS_fnc_taskCompleted) exitWith {};
-	["PROTECT_CIV_MEET", (name (leader (grpNetId call BIS_fnc_groupFromNetId))), [name _thisCiv], false] spawn dro_sendProgressMessage;
-	
-	_thisCiv setUnitPos "DOWN";	
-	_thisCiv setCaptive false;
-	
-	[((_subTasks select 0) select 0), 'SUCCEEDED', true] spawn BIS_fnc_taskSetState;
-	missionNamespace setVariable [format ['%1Completed', ((_subTasks select 0) select 0)], 1, true];
-	[((_subTasks select 0) select 1), "ASSIGNED", true] call BIS_fnc_taskSetState;
-	_allGroups = [];
-	_messageSent = false;
-	for "_i" from 0 to ([1, 3] call BIS_fnc_randomInt) step 1 do {		
-		_spawnGroup = [(getPos _thisCiv)] call dro_triggerAmbushSpawn;		
-		if (!isNull _spawnGroup) then {
-			_allGroups pushBack _spawnGroup;
-			//_spawnGroup deleteGroupWhenEmpty false;
-		};		
-		if (!_messageSent && !isNull _spawnGroup) then {
-			_messageSent = true;
+// Completion trigger — multi-stage flow.
+// Migrated from a scheduled `[args] spawn { waitUntil sleep 3 ... loop sleep 40 ... waitUntil sleep 5 ... }`
+// to a CBA chain. Each stage short-circuits if the parent task was already completed.
+//   Stage A: PFH 3s — wait until player squad leader is within 6m of civ.
+//   Stage B: synchronous — mark "Contact" subtask SUCCEEDED, civ goes DOWN.
+//   Stage C: PFH 40s spawning N+1 ambush groups (first inline, rest via PFH).
+//   Stage D: PFH 5s — wait until all spawned groups are dead/fleeing.
+//   Stage E: synchronous — mark "Protect" subtask + main task SUCCEEDED.
+//   Stage F: waitAndExecute 30s — re-enable civ AI and stand up.
+if (!(_taskName call BIS_fnc_taskCompleted)) then {
+	[{
+		params ["_args", "_pfhId"];
+		_args params ["_thisCiv", "_taskName", "_subTasks"];
+		if (isNull _thisCiv) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+		if (_taskName call BIS_fnc_taskCompleted) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+		if (((leader (grpNetId call BIS_fnc_groupFromNetId)) distance _thisCiv) >= 6) exitWith {};
+		[_pfhId] call CBA_fnc_removePerFrameHandler;
+
+		// Stage B
+		["PROTECT_CIV_MEET", (name (leader (grpNetId call BIS_fnc_groupFromNetId))), [name _thisCiv], false] spawn dro_sendProgressMessage;
+		_thisCiv setUnitPos "DOWN";
+		_thisCiv setCaptive false;
+		[((_subTasks select 0) select 0), "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
+		missionNamespace setVariable [format ["%1Completed", ((_subTasks select 0) select 0)], 1, true];
+		[((_subTasks select 0) select 1), "ASSIGNED", true] call BIS_fnc_taskSetState;
+
+		// Stage C — spawn helper: pushes a new ambush group, sends AMBUSHCIV message once.
+		// _state = [_allGroups, _messageSent, _i, _total]
+		private _state = [[], false, 0, ([1, 3] call BIS_fnc_randomInt) + 1];
+		private _spawnOne = {
+			params ["_state", "_thisCiv", "_taskName"];
 			if (_taskName call BIS_fnc_taskCompleted) exitWith {};
-			["AMBUSHCIV", "Command", [name _thisCiv]] spawn dro_sendProgressMessage;			
+			private _spawnGroup = [(getPos _thisCiv)] call dro_triggerAmbushSpawn;
+			if (!isNull _spawnGroup) then {
+				(_state select 0) pushBack _spawnGroup;
+			};
+			if (!(_state select 1) && {!isNull _spawnGroup}) then {
+				_state set [1, true];
+				["AMBUSHCIV", "Command", [name _thisCiv]] spawn dro_sendProgressMessage;
+			};
 		};
-		sleep 40;		
-	};
-	
-	if (count _allGroups > 0) then {
-		waitUntil {
-			sleep 5;
-			if (_taskName call BIS_fnc_taskCompleted) exitWith {true};
-			[_allGroups] call sun_checkAllDeadFleeing
+
+		// First group inline (matches original: first iteration runs immediately)
+		[_state, _thisCiv, _taskName] call _spawnOne;
+		_state set [2, 1];
+
+		// Stage D — kicks off once all groups have been spawned (or task already completed).
+		private _stageD = {
+			params ["_state", "_taskName", "_subTasks", "_thisCiv"];
+			private _allGroups = _state select 0;
+			if (count _allGroups == 0 || {_taskName call BIS_fnc_taskCompleted}) exitWith {
+				[_state, _taskName, _subTasks, _thisCiv] call (missionNamespace getVariable "DRO_protectCiv_stageE");
+			};
+			[{
+				params ["_args", "_pfhId"];
+				_args params ["_allGroups", "_taskName", "_subTasks", "_thisCiv"];
+				if (_taskName call BIS_fnc_taskCompleted) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+				if (!([_allGroups] call sun_checkAllDeadFleeing)) exitWith {};
+				[_pfhId] call CBA_fnc_removePerFrameHandler;
+				[nil, _taskName, _subTasks, _thisCiv] call (missionNamespace getVariable "DRO_protectCiv_stageE");
+			}, 5, [_allGroups, _taskName, _subTasks, _thisCiv]] call CBA_fnc_addPerFrameHandler;
 		};
-	};
-	
-	if (_taskName call BIS_fnc_taskCompleted) exitWith {};
-	["PROTECT_CIV_CLEAR", (name (leader (grpNetId call BIS_fnc_groupFromNetId))), [name _thisCiv], false] spawn dro_sendProgressMessage;
-	[((_subTasks select 0) select 1), "SUCCEEDED", true] call BIS_fnc_taskSetState;
-	missionNamespace setVariable [format ['%1Completed', ((_subTasks select 0) select 1)], 1, true];
-	[_taskName, "SUCCEEDED", true] call BIS_fnc_taskSetState;
-	missionNamespace setVariable [format ['%1Completed', _taskName], 1, true];
-	
-	sleep 30;
-	_thisCiv enableAI "PATH";
-	_thisCiv setUnitPos "UP";
+
+		// Stage E — runs cleanup/SUCCEEDED + Stage F.
+		missionNamespace setVariable ["DRO_protectCiv_stageE", {
+			params ["", "_taskName", "_subTasks", "_thisCiv"];
+			if (_taskName call BIS_fnc_taskCompleted) exitWith {};
+			["PROTECT_CIV_CLEAR", (name (leader (grpNetId call BIS_fnc_groupFromNetId))), [name _thisCiv], false] spawn dro_sendProgressMessage;
+			[((_subTasks select 0) select 1), "SUCCEEDED", true] call BIS_fnc_taskSetState;
+			missionNamespace setVariable [format ["%1Completed", ((_subTasks select 0) select 1)], 1, true];
+			[_taskName, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+			missionNamespace setVariable [format ["%1Completed", _taskName], 1, true];
+			// Stage F
+			[{
+				params ["_thisCiv"];
+				if (!isNull _thisCiv && {alive _thisCiv}) then {
+					_thisCiv enableAI "PATH";
+					_thisCiv setUnitPos "UP";
+				};
+			}, [_thisCiv], 30] call CBA_fnc_waitAndExecute;
+		}];
+
+		// Stage C — remaining groups via PFH 40s
+		if ((_state select 2) >= (_state select 3)) then {
+			[_state, _taskName, _subTasks, _thisCiv] call _stageD;
+		} else {
+			[{
+				params ["_args", "_pfhId"];
+				_args params ["_state", "_thisCiv", "_taskName", "_subTasks", "_spawnOne", "_stageD"];
+				[_state, _thisCiv, _taskName] call _spawnOne;
+				_state set [2, (_state select 2) + 1];
+				if ((_state select 2) >= (_state select 3) || {_taskName call BIS_fnc_taskCompleted}) then {
+					[_pfhId] call CBA_fnc_removePerFrameHandler;
+					[_state, _taskName, _subTasks, _thisCiv] call _stageD;
+				};
+			}, 40, [_state, _thisCiv, _taskName, _subTasks, _spawnOne, _stageD]] call CBA_fnc_addPerFrameHandler;
+		};
+	}, 3, [_thisCiv, _taskName, _subTasks]] call CBA_fnc_addPerFrameHandler;
 };
 
 // Create triggers

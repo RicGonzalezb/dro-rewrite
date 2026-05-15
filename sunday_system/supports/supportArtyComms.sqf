@@ -194,7 +194,5 @@ DRO_artyCommit = {
 	//(_this select 0) kbTell [_this select 2, ""BIS_SUPP_protocol"", ""Artillery_Accomplished"", BIS_SUPP_channels select ([WEST, EAST, RESISTANCE] find side group (_this select 0))];
 };
 
-[] spawn {
-	sleep 0.1;
-	showCommandingMenu "#USER:DRO_SUPP_MENU";
-};
+// Migrated from `[] spawn { sleep 0.1; showCommandingMenu }` to CBA_fnc_waitAndExecute.
+[{ showCommandingMenu "#USER:DRO_SUPP_MENU" }, [], 0.1] call CBA_fnc_waitAndExecute;

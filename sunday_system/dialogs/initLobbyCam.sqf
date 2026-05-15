@@ -27,12 +27,12 @@ camLobbyTarget = _target;
 cameraEffectEnableHUD false;
 showCinemaBorder false;
 diag_log format ["DRO: Lobby cam created: %1", camLobby];
-[_target] spawn {
-	sleep 0.2;
-	_target = _this select 0;
-	_class = (configfile >> "CfgVehicles" >> (_target getVariable "unitClass") >> "displayName") call BIS_fnc_getCfgData;
-	_weapon	= (configfile >> "CfgWeapons" >> primaryWeapon _target >> "displayName") call BIS_fnc_getCfgData;
-	_string = format ["%2%1%3%1%4%1%5", "\n", name _target, rank _target, _class, _weapon];
+// Migrated from `[_target] spawn { sleep 0.2; ctrlSetText }` to CBA_fnc_waitAndExecute.
+[{
+	params ["_target"];
+	private _class = (configfile >> "CfgVehicles" >> (_target getVariable "unitClass") >> "displayName") call BIS_fnc_getCfgData;
+	private _weapon = (configfile >> "CfgWeapons" >> primaryWeapon _target >> "displayName") call BIS_fnc_getCfgData;
+	private _string = format ["%2%1%3%1%4%1%5", "\n", name _target, rank _target, _class, _weapon];
 	((findDisplay 626262) displayCtrl 1160) ctrlSetText _string;
-};
+}, [_target], 0.2] call CBA_fnc_waitAndExecute;
 

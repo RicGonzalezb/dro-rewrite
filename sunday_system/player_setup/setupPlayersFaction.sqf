@@ -101,10 +101,16 @@ if (_resupplyValid) then {
 				_resupply addMagazineCargoGlobal [(_x select 0), 2];
 			} forEach _magazines;	
 		} forEach (units (grpNetId call BIS_fnc_groupFromNetId));
-		[_resupply] spawn {
-			waitUntil {sleep 5; (missionNameSpace getVariable ["playersReady", 0]) == 1};
-			[(_this select 0)] call sun_supplyBox;
-		};		
+		// Migrated from `[_resupply] spawn { waitUntil {sleep 5; playersReady}; sun_supplyBox }`
+		// to CBA_fnc_waitUntilAndExecute (cheap flag check).
+		[
+			{ (missionNameSpace getVariable ["playersReady", 0]) == 1 },
+			{
+				params ["_resupply"];
+				[_resupply] call sun_supplyBox;
+			},
+			[_resupply]
+		] call CBA_fnc_waitUntilAndExecute;
 		markerResupply = createMarker ["resupplyMkr", _resupplyPos];
 		markerResupply setMarkerShape "ICON";
 		markerResupply setMarkerColor markerColorPlayers;
@@ -875,68 +881,68 @@ switch (insertType) do {
 		while {(count (waypoints (_insertHeli) )) > 0} do {
 		   deleteWaypoint ((waypoints (_insertHeli) ) select 0);
 		};
-		[_heliGroup, _randomStartingLocation, _insertHeli, _heliPos, _playerGroupUnique] spawn {
-			_heliGroup = (_this select 0);
-			_randomStartingLocation = (_this select 1);
-			_insertHeli = (_this select 2);
-			_heliPos = (_this select 3);
-			_playerGroupUnique = (_this select 4);
-			
-			private _wp0 = _heliGroup addWaypoint [(getPos _insertHeli), 0];
-			_wp0 setWaypointBehaviour "CARELESS";
-			_wp0 setWaypointSpeed "NORMAL";
-			_wp0 setWaypointType "MOVE";
-			
-			private _wpLand = _heliGroup addWaypoint [_randomStartingLocation, 0];
-			_wpLand setWaypointType "MOVE";
-			_wpLand setWaypointStatements ["TRUE", "(vehicle this) land 'GET OUT'"];
-			if (_insertHeli distance _randomStartingLocation <= 15) then {
-				_textArrived = selectRandom [
-					"Air taxi at hotel, dropping off fares.",
-					"Infil on station, team is stepping off.",
-					"Major league door-kickers inbound ETA 1 mike.",
-					"Helo at LZ, infil is green, 10 seconds!"
-				];
-				dro_messageStack pushBack [[[str (driver _insertHeli), _textArrived, 0]], true];
-			};
-			diag_log format ["DRO: Insert heli waypoints: %1, %2", waypointPosition _wp0, waypointPosition _wpLand];
-			waitUntil {
-				sleep 2;
-				((getPos _insertHeli) select 2) <= 2;
-			};
+		// Migrated from `[args] spawn { setup; waitUntil sleep 2 altitude; cargoEjection; waitUntil sleep 1 cargoOut+setVelocity; finalWaypoint }`
+		// to synchronous setup + chained CBA PFHs.
+		private _wp0 = _heliGroup addWaypoint [(getPos _insertHeli), 0];
+		_wp0 setWaypointBehaviour "CARELESS";
+		_wp0 setWaypointSpeed "NORMAL";
+		_wp0 setWaypointType "MOVE";
+
+		private _wpLand = _heliGroup addWaypoint [_randomStartingLocation, 0];
+		_wpLand setWaypointType "MOVE";
+		_wpLand setWaypointStatements ["TRUE", "(vehicle this) land 'GET OUT'"];
+		if (_insertHeli distance _randomStartingLocation <= 15) then {
+			private _textArrived = selectRandom [
+				"Air taxi at hotel, dropping off fares.",
+				"Infil on station, team is stepping off.",
+				"Major league door-kickers inbound ETA 1 mike.",
+				"Helo at LZ, infil is green, 10 seconds!"
+			];
+			dro_messageStack pushBack [[[str (driver _insertHeli), _textArrived, 0]], true];
+		};
+		diag_log format ["DRO: Insert heli waypoints: %1, %2", waypointPosition _wp0, waypointPosition _wpLand];
+
+		// Stage A (PFH 2s): wait for heli altitude to drop to ≤2m
+		[{
+			params ["_args", "_pfhId"];
+			_args params ["_heliGroup", "_randomStartingLocation", "_insertHeli", "_heliPos", "_playerGroupUnique"];
+			if (isNull _insertHeli) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+			if (((getPos _insertHeli) select 2) > 2) exitWith {};
+			[_pfhId] call CBA_fnc_removePerFrameHandler;
+
 			_insertHeli disableAI "MOVE";
 			diag_log "DRO: Insert heli AI disabled";
-			//{ unassignVehicle _x; doGetOut _x; } forEach ((units (grpNetId call BIS_fnc_groupFromNetId)) + _playerGroupUnique);
-			_listInsertHeliCargo = ((fullcrew [_insertHeli, "cargo"] apply {_x select 0}) + (_playerGroupUnique - [objNull]));
-			_listInsertHeliCargoUnique = _listInsertHeliCargo arrayIntersect _listInsertHeliCargo;
+			private _listInsertHeliCargo = ((fullcrew [_insertHeli, "cargo"] apply {_x select 0}) + (_playerGroupUnique - [objNull]));
+			private _listInsertHeliCargoUnique = _listInsertHeliCargo arrayIntersect _listInsertHeliCargo;
 			diag_log format ["DRO: Insert heli cargo: %1", _listInsertHeliCargoUnique];
 			{unassignVehicle _x; doGetOut _x} forEach _listInsertHeliCargoUnique;
-			waitUntil {
-				sleep 1;
+
+			// Stage B (PFH 1s): hold heli still (setVelocity 0) until all cargo has exited
+			[{
+				params ["_args", "_pfhId"];
+				_args params ["_heliGroup", "_randomStartingLocation", "_insertHeli", "_heliPos", "_listInsertHeliCargoUnique"];
+				if (isNull _insertHeli) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
 				_insertHeli setVelocity [0, 0, 0];
-				/*
-				({_x in _insertHeli} count (units (grpNetId call BIS_fnc_groupFromNetId))) == 0;
-				({_x in _insertHeli} count _playerGroupUnique) == 0;
-				{ unitReady _x; } forEach ((units (grpNetId call BIS_fnc_groupFromNetId)) + _playerGroupUnique);
-				*/
-				({_x in _insertHeli} count _listInsertHeliCargoUnique) == 0;
-			};
-			_insertHeli enableAI "MOVE";
-			diag_log "DRO: Insert heli AI enabled";
-			(units (grpNetId call BIS_fnc_groupFromNetId)) doFollow (leader (grpNetId call BIS_fnc_groupFromNetId));
-			private _wpEnd = _heliGroup addWaypoint [_heliPos, 0];
-			_wpEnd setWaypointType "MOVE";
-			_wpEnd setWaypointStatements ["TRUE", "_heli = objectParent this; {(objectParent _x) deleteVehicleCrew _x} forEach (crew _heli); deleteVehicle _heli; _heli = nil;"];
-			if (_insertHeli distance _randomStartingLocation >= 25) then {
-				_textArrived = selectRandom [
-					"Solid infil, we are dusted off and RTB.",
-					"We're on deck; let's shake and bake!",
-					"We are RTB, don't do anything I wouldn't do!",
-					"We're in the pipe, five by five."
-				];
-				dro_messageStack pushBack [[[str (driver _insertHeli), _textArrived, 0]], true];
-			};
-		};
+				if (({_x in _insertHeli} count _listInsertHeliCargoUnique) != 0) exitWith {};
+				[_pfhId] call CBA_fnc_removePerFrameHandler;
+
+				_insertHeli enableAI "MOVE";
+				diag_log "DRO: Insert heli AI enabled";
+				(units (grpNetId call BIS_fnc_groupFromNetId)) doFollow (leader (grpNetId call BIS_fnc_groupFromNetId));
+				private _wpEnd = _heliGroup addWaypoint [_heliPos, 0];
+				_wpEnd setWaypointType "MOVE";
+				_wpEnd setWaypointStatements ["TRUE", "_heli = objectParent this; {(objectParent _x) deleteVehicleCrew _x} forEach (crew _heli); deleteVehicle _heli; _heli = nil;"];
+				if (_insertHeli distance _randomStartingLocation >= 25) then {
+					private _textArrived = selectRandom [
+						"Solid infil, we are dusted off and RTB.",
+						"We're on deck; let's shake and bake!",
+						"We are RTB, don't do anything I wouldn't do!",
+						"We're in the pipe, five by five."
+					];
+					dro_messageStack pushBack [[[str (driver _insertHeli), _textArrived, 0]], true];
+				};
+			}, 1, [_heliGroup, _randomStartingLocation, _insertHeli, _heliPos, _listInsertHeliCargoUnique]] call CBA_fnc_addPerFrameHandler;
+		}, 2, [_heliGroup, _randomStartingLocation, _insertHeli, _heliPos, _playerGroupUnique]] call CBA_fnc_addPerFrameHandler;
 		
 		// Draw drop marker
 		deleteMarker "campMkr";

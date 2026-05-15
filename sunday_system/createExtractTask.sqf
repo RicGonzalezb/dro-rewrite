@@ -150,73 +150,82 @@ switch (_extractStyle) do {
 		_string = format ["Rendezvous with %1 before leaving the AO.", groupId friendlySquad];
 		_taskMeet = ["taskExtract_b", true, [_string, "Rendezvous", ""], (leader friendlySquad), "CREATED", 5, true, true, "exit", true] call BIS_fnc_setTask;
 		["END_RENDEZVOUS"] spawn dro_sendProgressMessage;
-		waitUntil {sleep 5; ({(_x distance (leader friendlySquad)) < 10} count allPlayers > 0)};
-		(units friendlySquad) joinSilent (grpNetId call BIS_fnc_groupFromNetId);
-		['taskExtract_b', 'SUCCEEDED', true] spawn BIS_fnc_taskSetState;
-		
-		// Filter available helicopters for transportation space
-		_numPassengers = count (units (grpNetId call BIS_fnc_groupFromNetId));
-		_heliTransports = [];
-		{
-			if ([_x] call sun_getTrueCargo >= _numPassengers) then {
-				_heliTransports pushBack _x;
+		// Migrated from scheduled `waitUntil {sleep 5; player near friendly}; lots_of_cleanup`
+		// to self-removing CBA PFH delta=5. All post-rendezvous setup moves into the callback.
+		[{
+			params ["_args", "_pfhId"];
+			_args params ["_playerGroupLeader"];
+			if (({(_x distance (leader friendlySquad)) < 10} count allPlayers) == 0) exitWith {};
+			[_pfhId] call CBA_fnc_removePerFrameHandler;
+
+			(units friendlySquad) joinSilent (grpNetId call BIS_fnc_groupFromNetId);
+			["taskExtract_b", "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
+
+			// Filter available helicopters for transportation space
+			private _numPassengers = count (units (grpNetId call BIS_fnc_groupFromNetId));
+			private _heliTransports = [];
+			{
+				if ([_x] call sun_getTrueCargo >= _numPassengers) then {
+					_heliTransports pushBack _x;
+				};
+			} forEach pHeliClasses;
+			diag_log format ["DRO: _heliTransports = %1", _heliTransports];
+			private _taskCreated = "";
+			if (((count _heliTransports) > 0) && {!extractHeliUsed}) then {
+				_taskCreated = ["taskExtract", true, ["Extract from the AO. A helicopter transport is available to support. Alternatively leave the AO by any means available.", "Extract", ""], objNull, "CREATED", 5, true, true, "exit", true] call BIS_fnc_setTask;
+				diag_log format ["DRO: Extract task created: %1", _taskCreated];
+				[_playerGroupLeader, "heliExtract"] remoteExec ["BIS_fnc_addCommMenuItem", _playerGroupLeader, true];
+			} else {
+				_taskCreated = ["taskExtract", true, ["Leave the AO by any means to extract. Helicopter transport is unavailable.", "Extract", ""], objNull, "CREATED", 5, true, true, "exit", true] call BIS_fnc_setTask;
+				diag_log format ["DRO: Extract task created: %1", _taskCreated];
 			};
-		} forEach pHeliClasses;
-		diag_log format ["DRO: _heliTransports = %1", _heliTransports];
-		if (((count _heliTransports) > 0) && !extractHeliUsed) then {
-			_taskCreated = ["taskExtract", true, ["Extract from the AO. A helicopter transport is available to support. Alternatively leave the AO by any means available.", "Extract", ""], objNull, "CREATED", 5, true, true, "exit", true] call BIS_fnc_setTask;	
-			diag_log format ["DRO: Extract task created: %1", _taskCreated];
-			//[(leader (grpNetId call BIS_fnc_groupFromNetId)), "heliExtract"] remoteExec ["BIS_fnc_addCommMenuItem", (leader (grpNetId call BIS_fnc_groupFromNetId)), true];	
-			[_playerGroupLeader, "heliExtract"] remoteExec ["BIS_fnc_addCommMenuItem", _playerGroupLeader, true];
-		} else {
-			_taskCreated = ["taskExtract", true, ["Leave the AO by any means to extract. Helicopter transport is unavailable.", "Extract", ""], objNull, "CREATED", 5, true, true, "exit", true] call BIS_fnc_setTask;	
-			diag_log format ["DRO: Extract task created: %1", _taskCreated];
-		};
-		"mkrAOC" setMarkerAlpha 1;
-		
-		// Send new enemies to chase players if stealth is not maintained
-		if (!stealthActive) then {
-			if (enemyCommsActive) then {
-				diag_log 'DRO: Reinforcing due to mission completion';
-				//[(leader (grpNetId call BIS_fnc_groupFromNetId)), [2,4]] execVM 'sunday_system\reinforce.sqf';
-				[_playerGroupLeader, [2,4]] execVM 'sunday_system\reinforce.sqf';
+			"mkrAOC" setMarkerAlpha 1;
+
+			// Send new enemies to chase players if stealth is not maintained
+			if (!stealthActive) then {
+				if (enemyCommsActive) then {
+					diag_log "DRO: Reinforcing due to mission completion";
+					[_playerGroupLeader, [2,4]] execVM "sunday_system\reinforce.sqf";
+				};
+				diag_log "DRO: Init staggered attack";
+				[30] execVM "sunday_system\generate_enemies\staggeredAttack.sqf";
 			};
-			// Make existing enemies close in on players
-			diag_log "DRO: Init staggered attack";	
-			[30] execVM 'sunday_system\generate_enemies\staggeredAttack.sqf';
-		};
-		
-		// Extraction success trigger
-		trgExtract = createTrigger ["EmptyDetector", getPos trgAOC, true];
-		trgExtract setTriggerArea [(triggerArea trgAOC) select 0, (triggerArea trgAOC) select 1, 0, true];
-		trgExtract setTriggerActivation ["ANY", "PRESENT", false];
-		trgExtract setTriggerStatements [
-			"
-				({vehicle _x in thisList} count allPlayers == 0) &&
-				({alive _x} count allPlayers > 0)
-			",
-			"
-				[] execVM 'sunday_system\endMission.sqf';
-			",
-			""
-		];
-		
-		//["LeadTrack02_F_Mark"] remoteExec ["playMusic", 0];
-		if (worldName in ["Cam_Lao_Nam","vn_khe_sanh","vn_the_bra"]) then {
-			[musicVNExtract, 0, 0.7] remoteExec ["BIS_fnc_playMusic", ([0, -2] select isDedicated)];
-		} else {
-			[musicExtract, 0, 0.7] remoteExec ["BIS_fnc_playMusic", ([0, -2] select isDedicated)];
-		};
+
+			// Extraction success trigger
+			trgExtract = createTrigger ["EmptyDetector", getPos trgAOC, true];
+			trgExtract setTriggerArea [(triggerArea trgAOC) select 0, (triggerArea trgAOC) select 1, 0, true];
+			trgExtract setTriggerActivation ["ANY", "PRESENT", false];
+			trgExtract setTriggerStatements [
+				"
+					({vehicle _x in thisList} count allPlayers == 0) &&
+					({alive _x} count allPlayers > 0)
+				",
+				"
+					[] execVM 'sunday_system\endMission.sqf';
+				",
+				""
+			];
+
+			if (worldName in ["Cam_Lao_Nam","vn_khe_sanh","vn_the_bra"]) then {
+				[musicVNExtract, 0, 0.7] remoteExec ["BIS_fnc_playMusic", ([0, -2] select isDedicated)];
+			} else {
+				[musicExtract, 0, 0.7] remoteExec ["BIS_fnc_playMusic", ([0, -2] select isDedicated)];
+			};
+		}, 5, [_playerGroupLeader]] call CBA_fnc_addPerFrameHandler;
 	};
 	case "HOLD": {
 		if ("RENDEZVOUS" in _extractStyles) then {
 			_string = format ["Rendezvous with %1 and hold the area together.", groupId friendlySquad];
 			_taskMeet = ["taskExtract_b", true, [_string, "Rendezvous", ""], (leader friendlySquad), "CREATED", 5, true, true, "exit", true] call BIS_fnc_setTask;
-			[] spawn {
-				waitUntil {sleep 5; ({(_x distance (leader friendlySquad)) < 10} count allPlayers > 0)};
+			// Migrated from `[] spawn { waitUntil {sleep 5; player near friendly}; cleanup }`
+			// to self-removing CBA PFH delta=5.
+			[{
+				params ["_args", "_pfhId"];
+				if (({(_x distance (leader friendlySquad)) < 10} count allPlayers) == 0) exitWith {};
+				[_pfhId] call CBA_fnc_removePerFrameHandler;
 				(units friendlySquad) joinSilent (grpNetId call BIS_fnc_groupFromNetId);
-				['taskExtract_b', 'SUCCEEDED', true] spawn BIS_fnc_taskSetState;
-			};
+				["taskExtract_b", "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
+			}, 5, []] call CBA_fnc_addPerFrameHandler;
 		};
 		
 		_groupPositions = [];

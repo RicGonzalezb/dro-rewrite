@@ -59,15 +59,21 @@ if (count _heliTransports > 0) then {
 	//[_heli, true] remoteExec ["setCaptive", 0];
 	//_heli setCaptive true;
 	
-	[_heli] spawn {
-		waitUntil {sleep 5; (!alive (_this select 0)) || !([(_this select 0)] call sun_helicopterCanFly) || (((getPos (_this select 0)) select 2) < 3)};
-		if ((!alive (_this select 0)) || !([(_this select 0)] call sun_helicopterCanFly)) then {
-			_text = format ["We've just lost contact with %1, you'll need to extract on your own.", (_this select 0)];
+	// Extract heli loss-of-contact watcher. Migrated from
+	// `[_heli] spawn { waitUntil {sleep 5; dead/grounded/altLt3}; if hostile-state then message }`
+	// to a self-removing CBA PFH delta=5.
+	[{
+		params ["_args", "_pfhId"];
+		_args params ["_heli"];
+		if (isNull _heli) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+		private _grounded = (!alive _heli) || {!([_heli] call sun_helicopterCanFly)} || {((getPos _heli) select 2) < 3};
+		if (!_grounded) exitWith {};
+		[_pfhId] call CBA_fnc_removePerFrameHandler;
+		if ((!alive _heli) || {!([_heli] call sun_helicopterCanFly)}) then {
+			private _text = format ["We've just lost contact with %1, you'll need to extract on your own.", _heli];
 			dro_messageStack pushBack [[["Command", _text, 0]], true];
-			//["Command", _text] spawn BIS_fnc_showSubtitle;
-			//[] remoteExec ["sun_playSubtitleRadio", 0];
 		};
-	};
+	}, 5, [_heli]] call CBA_fnc_addPerFrameHandler;
 	
 	_text = format ["This is %1, request received. Proceeding to grid %2.", _heli, mapGridPosition _lzPos];
 	dro_messageStack pushBack [[[(str (driver _heli)), _text, 0]], true];
@@ -101,52 +107,58 @@ if (count _heliTransports > 0) then {
 	waitUntil {(((getPos _heli) select 2) < 10)};
 	_heli allowDamage false;
 	
-	waitUntil {
-		sleep 3;
-		//((isTouchingGround _heli) || (((getPos _heli) select 2) <= 3));
-		isTouchingGround _heli;
-	};
-	_textArrived = selectRandom [
-		"Extract at position, waiting for team.",
-		"Ride's here, boys!",
-		"Extract arriving on grid, ready for pickup.",
-		"Extract to team actual, extract is at the LZ.",
-		"Enemy spotted during landing, suggest immediate exfil.",
-		"We took some small arms coming in, they know we're here!"
-	];
-	dro_messageStack pushBack [[[str (driver _heli), _textArrived, 0]], true];
-	
-	if ([_heli] call sun_helicopterCanFly) then {
-		[(leader (grpNetId call BIS_fnc_groupFromNetId)), "extractLeave"] remoteExec ["BIS_fnc_addCommMenuItem", (leader (grpNetId call BIS_fnc_groupFromNetId)), true];
-	} else {
-		if (alive (leader _heliGroup)) then {
-			dro_messageStack pushBack [[[str (driver _heli), "We've taken too much damage to fly, we're grounded for now.", 0]], true];			
+	// Migrated from chained scheduled `waitUntil { sleep N; ... }` to nested CBA PFHs.
+	// Stage A (PFH 3s): touchdown — heli isTouchingGround.
+	// Stage B (synchronous in A's callback): arrived message + maybe add extractLeave menu.
+	// Stage C (PFH 1s): hold position with setVelocity [0,0,0] + disableAI MOVE,
+	//                   exit when canFly fails (no return waypoint) OR extractLeave==true (depart).
+	[{
+		params ["_args", "_pfhId"];
+		_args params ["_heli", "_heliGroup", "_spawnPos"];
+		if (isNull _heli) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+		if (!(isTouchingGround _heli)) exitWith {};
+		[_pfhId] call CBA_fnc_removePerFrameHandler;
+
+		private _textArrived = selectRandom [
+			"Extract at position, waiting for team.",
+			"Ride's here, boys!",
+			"Extract arriving on grid, ready for pickup.",
+			"Extract to team actual, extract is at the LZ.",
+			"Enemy spotted during landing, suggest immediate exfil.",
+			"We took some small arms coming in, they know we're here!"
+		];
+		dro_messageStack pushBack [[[str (driver _heli), _textArrived, 0]], true];
+
+		if ([_heli] call sun_helicopterCanFly) then {
+			[(leader (grpNetId call BIS_fnc_groupFromNetId)), "extractLeave"] remoteExec ["BIS_fnc_addCommMenuItem", (leader (grpNetId call BIS_fnc_groupFromNetId)), true];
+		} else {
+			if (alive (leader _heliGroup)) then {
+				dro_messageStack pushBack [[[str (driver _heli), "We've taken too much damage to fly, we're grounded for now.", 0]], true];
+			};
 		};
-	};
-		
-	waitUntil {
-		if (!([_heli] call sun_helicopterCanFly)) exitWith {
-			_break = true;
-			true;
-		};
-		sleep 1;
-		_heli setVelocity [0, 0, 0];
-		_heli disableAI "MOVE";
-		if (!isNil "extractLeave") then {
-			extractLeave;
-		};
-		//({_x in _heli} count (units (grpNetId call BIS_fnc_groupFromNetId))) == count (units (grpNetId call BIS_fnc_groupFromNetId))
-	};
-	_heli enableAI "MOVE";
-	if (!(_break)) then {
-		//[] remoteExec ["sun_playRadioRandom", 0];
-		//[(driver _heli), "Copy that, we're outbound."] remoteExec ["sideChat", 0];
-		dro_messageStack pushBack [[[str (driver _heli), "Copy that, we're outbound.", 0]], true];
-		if (!isNil "extractPos") then {_spawnPos = extractPos};
-		private _wpExtract = _heliGroup addWaypoint [_spawnPos, 0];
-		_wpExtract setWaypointBehaviour "CARELESS";
-		_wpExtract setWaypointSpeed "NORMAL";
-		_wpExtract setWaypointType "MOVE";
-		_wpExtract setWaypointStatements ["TRUE", "(vehicle this) land ""LAND"""];
-	};
+
+		[{
+			params ["_args", "_pfhId"];
+			_args params ["_heli", "_heliGroup", "_spawnPos"];
+			if (isNull _heli) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+			if (!([_heli] call sun_helicopterCanFly)) exitWith {
+				[_pfhId] call CBA_fnc_removePerFrameHandler;
+				_heli enableAI "MOVE";
+				// break path — no return waypoint, heli is grounded
+			};
+			_heli setVelocity [0, 0, 0];
+			_heli disableAI "MOVE";
+			if (!isNil "extractLeave" && {extractLeave}) then {
+				[_pfhId] call CBA_fnc_removePerFrameHandler;
+				_heli enableAI "MOVE";
+				dro_messageStack pushBack [[[str (driver _heli), "Copy that, we're outbound.", 0]], true];
+				private _outPos = if (!isNil "extractPos") then { extractPos } else { _spawnPos };
+				private _wpExtract = _heliGroup addWaypoint [_outPos, 0];
+				_wpExtract setWaypointBehaviour "CARELESS";
+				_wpExtract setWaypointSpeed "NORMAL";
+				_wpExtract setWaypointType "MOVE";
+				_wpExtract setWaypointStatements ["TRUE", "(vehicle this) land ""LAND"""];
+			};
+		}, 1, [_heli, _heliGroup, _spawnPos]] call CBA_fnc_addPerFrameHandler;
+	}, 3, [_heli, _heliGroup, _spawnPos]] call CBA_fnc_addPerFrameHandler;
 };

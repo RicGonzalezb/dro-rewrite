@@ -146,7 +146,5 @@ DRO_CASCommit = {
 	};
 };
 
-[] spawn {
-	sleep 0.1;
-	showCommandingMenu "#USER:DRO_SUPP_MENU";
-};
+// Migrated from `[] spawn { sleep 0.1; showCommandingMenu }` to CBA_fnc_waitAndExecute.
+[{ showCommandingMenu "#USER:DRO_SUPP_MENU" }, [], 0.1] call CBA_fnc_waitAndExecute;

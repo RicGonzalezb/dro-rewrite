@@ -32,61 +32,51 @@ dro_civDeathHandler = {
 					switch (civDeathCounter) do {
 						case 0: {};
 						case 1: {
-							[_this] spawn {
-								sleep 2;							
-								_text = format["%1 has caused a civilian casualty. Command will not accept collateral damage, adjust your approach to ensure civilians are kept out of the line of fire.", name ((_this select 0) select 1)];
-								//["Command", _text] spawn BIS_fnc_showSubtitle;
-								//[] spawn sun_playSubtitleRadio;
+							// Migrated from `[_this] spawn { sleep 2; pushBack message }` to CBA_fnc_waitAndExecute.
+							private _text = format["%1 has caused a civilian casualty. Command will not accept collateral damage, adjust your approach to ensure civilians are kept out of the line of fire.", name (_this select 1)];
+							[{
+								params ["_text"];
 								dro_messageStack pushBack [[["Command", _text, 0]], true];
-							};
+							}, [_text], 2] call CBA_fnc_waitAndExecute;
 						};
 						case 3: {
-							[_this] spawn {
-								sleep 2;
-								_text = format["%1 has caused a civilian casualty. This is your second warning! If you cannot complete your objectives without causing collateral damage you must withdraw.", name ((_this select 0) select 1)];
-								//["Command", _text] spawn BIS_fnc_showSubtitle;
-								//[] spawn sun_playSubtitleRadio;
+							// Migrated from `[_this] spawn { sleep 2; pushBack message }` to CBA_fnc_waitAndExecute.
+							private _text = format["%1 has caused a civilian casualty. This is your second warning! If you cannot complete your objectives without causing collateral damage you must withdraw.", name (_this select 1)];
+							[{
+								params ["_text"];
 								dro_messageStack pushBack [[["Command", _text, 0]], true];
-							};
+							}, [_text], 2] call CBA_fnc_waitAndExecute;
 						};
 						case 5: {
-							[_this] spawn {
-								sleep 2;
-								_text = format["Your team are responsible for excessive civilian casualties! Pull out immediately, the mission is over!", name ((_this select 0) select 1)];
-								//["Command", _text] spawn BIS_fnc_showSubtitle;
-								//[] spawn sun_playSubtitleRadio;
+							// Migrated from `[_this] spawn { sleep 2; message + fail all tasks }` to CBA_fnc_waitAndExecute.
+							private _text = format["Your team are responsible for excessive civilian casualties! Pull out immediately, the mission is over!"];
+							[{
+								params ["_text"];
 								dro_messageStack pushBack [[["Command", _text, 0]], true];
-								//if (player == leader group player) then {
-									{
-										[_x, 'FAILED', true] spawn BIS_fnc_taskSetState;
-									} forEach taskIDs;
-								//};
-							};
+								{
+									[_x, "FAILED", true] spawn BIS_fnc_taskSetState;
+								} forEach taskIDs;
+							}, [_text], 2] call CBA_fnc_waitAndExecute;
 						};
 						case 6: {
-							[_this] spawn {
-								sleep 2;
-								//[] execVM "sunday_system\endMission.sqf";
-								
+							// Migrated from `[_this] spawn { sleep 2; FX; sleep 5; endMission }` to chained CBA_fnc_waitAndExecute.
+							[{
 								[["", "BLACK OUT", 5]] remoteExec ["cutText", 0];
 								[5, 0] remoteExec ["fadeSound", 0];
 								[5, 0] remoteExec ["fadeSpeech", 0];
-								sleep 5;
-								if (isMultiplayer) then {
-									'DROEnd_FailCiv2' call BIS_fnc_endMissionServer;
-								} else {
-									'DROEnd_FailCiv2' call BIS_fnc_endMission;
-								};
-								
-							};
+								[{
+									if (isMultiplayer) then {
+										"DROEnd_FailCiv2" call BIS_fnc_endMissionServer;
+									} else {
+										"DROEnd_FailCiv2" call BIS_fnc_endMission;
+									};
+								}, [], 5] call CBA_fnc_waitAndExecute;
+							}, [], 2] call CBA_fnc_waitAndExecute;
 						};
 						default {
-							[_this] spawn {
-								_text = format["%1 has caused a civilian casualty. Command will not accept collateral damage, adjust your approach to ensure civilians are kept out of the line of fire.", name ((_this select 0) select 1)];
-								//["Command", _text] spawn BIS_fnc_showSubtitle;
-								//[] spawn sun_playSubtitleRadio;
-								dro_messageStack pushBack [[["Command", _text, 0]], true];
-							};
+							// Removed `[_this] spawn { ... }` wrapper — no sleep, message can be pushed synchronously.
+							private _text = format["%1 has caused a civilian casualty. Command will not accept collateral damage, adjust your approach to ensure civilians are kept out of the line of fire.", name (_this select 1)];
+							dro_messageStack pushBack [[["Command", _text, 0]], true];
 						};
 					};
 				};

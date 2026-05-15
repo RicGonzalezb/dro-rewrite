@@ -63,7 +63,8 @@ if (_vehicle isKindOf "Helicopter") then {
 	
 	waitUntil {_vehicle distance _safePos < 500};
 
-	[_vehicle] spawn {sleep 600; if (alive (_this#0)) then {deleteVehicle (_this#0)}; }; //#LordShadeDeleteVeh
+	// Migrated from `[_vehicle] spawn {sleep 600; if alive then deleteVehicle}` to CBA_fnc_waitAndExecute. //#LordShadeDeleteVeh
+	[{ params ["_v"]; if (alive _v) then { deleteVehicle _v }; }, [_vehicle], 600] call CBA_fnc_waitAndExecute;
 		
 	if (!isNil "_heliInsertType") then {		
 		if (toUpper _heliInsertType == "LAND") then {

@@ -279,34 +279,37 @@ if (_ambFriendlyChance > 0.75) then {
 			};
 			_thisSquad allowFleeing 0;
 			_squads pushBack _thisSquad;
-			[_thisSquad] spawn {
-				params ["_thisSquad"];
-				//waitUntil {sleep 10; !isNil "trgExtract" || !isNil "trgExtract_b"};
-				waitUntil {sleep 10; DRO_beginFriendlyAssault};
-				_waypoints = [];
-				_wp0 = _thisSquad addWaypoint [(getPos (leader _thisSquad)), 0];
-				_wp0 setWaypointType "MOVE";
-				_wp0 setWaypointSpeed "NORMAL";
-				_wp0 setWaypointBehaviour "AWARE";
-				_wp0 setWaypointCombatMode "BLUE";
+			// Migrated from `[_thisSquad] spawn { waitUntil {sleep 10; DRO_beginFriendlyAssault}; addWaypoints }`
+			// to CBA_fnc_waitUntilAndExecute (flag check is cheap).
+			[
+				{ DRO_beginFriendlyAssault },
+				{
+					params ["_thisSquad"];
+					private _waypoints = [];
+					private _wp0 = _thisSquad addWaypoint [(getPos (leader _thisSquad)), 0];
+					_wp0 setWaypointType "MOVE";
+					_wp0 setWaypointSpeed "NORMAL";
+					_wp0 setWaypointBehaviour "AWARE";
+					_wp0 setWaypointCombatMode "BLUE";
 
-				_wp1Pos = ((holdAO select 0) getPos [300, ((holdAO select 0) getDir (getPos (leader _thisSquad)))]);
-				_wp1 = _thisSquad addWaypoint [_wp1Pos, 0];
-				_wp1 setWaypointType "MOVE";				
-				_wp1 setWaypointCombatMode "GREEN";
-				_waypoints pushBack [_wp1Pos, 0];
-				
-				for "_i" from 0 to 2 do {
-					_randomPos = [[[getMarkerPos "mkrHold", 50]], ["water"]] call BIS_fnc_randomPos;
-					_wp = _thisSquad addWaypoint [_randomPos, 0];
-					_wp setWaypointType "MOVE";
-					_wp setWaypointCombatMode "YELLOW";
-					_waypoints pushBack [_randomPos, 0];
-				};
-				
-				[_thisSquad, _waypoints] spawn sun_waypointCheck;
-				
-			};
+					private _wp1Pos = ((holdAO select 0) getPos [300, ((holdAO select 0) getDir (getPos (leader _thisSquad)))]);
+					private _wp1 = _thisSquad addWaypoint [_wp1Pos, 0];
+					_wp1 setWaypointType "MOVE";
+					_wp1 setWaypointCombatMode "GREEN";
+					_waypoints pushBack [_wp1Pos, 0];
+
+					for "_i" from 0 to 2 do {
+						private _randomPos = [[[getMarkerPos "mkrHold", 50]], ["water"]] call BIS_fnc_randomPos;
+						private _wp = _thisSquad addWaypoint [_randomPos, 0];
+						_wp setWaypointType "MOVE";
+						_wp setWaypointCombatMode "YELLOW";
+						_waypoints pushBack [_randomPos, 0];
+					};
+
+					[_thisSquad, _waypoints] spawn sun_waypointCheck;
+				},
+				[_thisSquad]
+			] call CBA_fnc_waitUntilAndExecute;
 		};
 	};
 };
@@ -399,38 +402,41 @@ if (_friendlyChance > 0.75) then {
 		_mkrEnd setMarkerType "mil_join_noShadow";
 		_mkrEnd setMarkerColor markerColorPlayers;
 		_mkrEnd setMarkerText (format ["%1 Rendezvous", _thisCallsign]);
-		[_thisTrg, _rendezvousPos] spawn {
-			params ["_thisTrg", "_rendezvousPos"];			
-			//waitUntil {sleep 10; triggerActivated trgAOC};			
-			waitUntil {sleep 10; DRO_beginFriendlyAssault};			
-			["FRIENDLY_START", groupId friendlySquad] spawn dro_sendProgressMessage;
+		// Migrated from `[_thisTrg, _rendezvousPos] spawn { waitUntil {sleep 10; DRO_beginFriendlyAssault}; setupSquad+waypoints }`
+		// to CBA_fnc_waitUntilAndExecute (flag check is cheap).
+		[
+			{ DRO_beginFriendlyAssault },
 			{
-				_x setCaptive false;
-				_x setUnitPos "UP";
-				_x setUnitPos "AUTO";
-			} forEach (units friendlySquad);
-			
-			_waypoints = [];
-			_wp0 = friendlySquad addWaypoint [(getPos (leader friendlySquad)), 0];
-			_wp0 setWaypointType "MOVE";
-			_wp0 setWaypointSpeed "NORMAL";
-			_wp0 setWaypointBehaviour "AWARE";
-			_wp0 setWaypointCombatMode "GREEN";
-			
-			for "_i" from 0 to 2 do {
-				_randomPos = [[_thisTrg], ["water"]] call BIS_fnc_randomPos;
-				_wp = friendlySquad addWaypoint [_randomPos, 0];
-				_wp setWaypointType "MOVE";
-				_waypoints pushBack [_randomPos, 0];
-			};
+				params ["_thisTrg", "_rendezvousPos"];
+				["FRIENDLY_START", groupId friendlySquad] spawn dro_sendProgressMessage;
+				{
+					_x setCaptive false;
+					_x setUnitPos "UP";
+					_x setUnitPos "AUTO";
+				} forEach (units friendlySquad);
 
-			_wp = friendlySquad addWaypoint [_rendezvousPos, 0];
-			_wp setWaypointType "MOVE";
-			_waypoints pushBack [_rendezvousPos, 0];
-			
-			[friendlySquad, _waypoints] spawn sun_waypointCheck;
-			
-		};
+				private _waypoints = [];
+				private _wp0 = friendlySquad addWaypoint [(getPos (leader friendlySquad)), 0];
+				_wp0 setWaypointType "MOVE";
+				_wp0 setWaypointSpeed "NORMAL";
+				_wp0 setWaypointBehaviour "AWARE";
+				_wp0 setWaypointCombatMode "GREEN";
+
+				for "_i" from 0 to 2 do {
+					private _randomPos = [[_thisTrg], ["water"]] call BIS_fnc_randomPos;
+					private _wp = friendlySquad addWaypoint [_randomPos, 0];
+					_wp setWaypointType "MOVE";
+					_waypoints pushBack [_randomPos, 0];
+				};
+
+				private _wpEnd = friendlySquad addWaypoint [_rendezvousPos, 0];
+				_wpEnd setWaypointType "MOVE";
+				_waypoints pushBack [_rendezvousPos, 0];
+
+				[friendlySquad, _waypoints] spawn sun_waypointCheck;
+			},
+			[_thisTrg, _rendezvousPos]
+		] call CBA_fnc_waitUntilAndExecute;
 		
 	};
 };
