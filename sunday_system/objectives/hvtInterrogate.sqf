@@ -12,7 +12,7 @@ _hvtChar = nil;
 _hvtPos = [];
 _subTasks = [];
 
-_hvtCodename = [hvtCodenames] call sun_selectRemove;
+_hvtCodename = [hvtCodenames] call DRO_fnc_selectRemove;
 _taskName = format ["task%1", floor(random 100000)];
 _captureSubTaskName = format ["subtask%1", floor(random 100000)];
 _extractSubTaskName = format ["subtask%1", floor(random 100000)];
@@ -22,12 +22,12 @@ _intelSubTaskName = format ["subtask%1", floor(random 100000)];
 _hvtStyle = selectRandom _hvtStyles;
 switch (_hvtStyle) do {
 	case "INSIDE": {				
-		_building = [(((AOLocations select _AOIndex) select 2) select 7)] call sun_selectRemove;
+		_building = [(((AOLocations select _AOIndex) select 2) select 7)] call DRO_fnc_selectRemove;
 		_buildingPlaces = [_building] call BIS_fnc_buildingPositions;
 		_thisBuildingPlace = [0,((count _buildingPlaces)-1)] call BIS_fnc_randomInt;
 		
 		// Create HVT unit
-		_hvtGroup = [getPos _building, enemySide, _hvtType, [], [1, 1], true, "NONE"] call dro_spawnGroupWeighted;
+		_hvtGroup = [getPos _building, enemySide, _hvtType, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
 		_hvtChar = ((units _hvtGroup) select 0);
 		//_hvtGroup = createGroup enemySide;
 		//_hvtChar = _hvtGroup createUnit [_hvtType, getPos _building, [], 0, "NONE"];			
@@ -56,7 +56,7 @@ switch (_hvtStyle) do {
 		
 	};
 	case "OUTSIDE": {		
-		_hvtPos = [(((AOLocations select _AOIndex) select 2) select 4)] call sun_selectRemove;	
+		_hvtPos = [(((AOLocations select _AOIndex) select 2) select 4)] call DRO_fnc_selectRemove;	
 		_hvtPos set [2,0];					
 		
 		// STATIONARY
@@ -67,7 +67,7 @@ switch (_hvtStyle) do {
 				_spawnedObjects = [_hvtPos, (random 360), _objects] call BIS_fnc_ObjectsMapper;					
 				{
 					if (typeOf _x == "Sign_Arrow_Blue_F") then {								
-						_guardGroup = [getPos _x, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;
+						_guardGroup = [getPos _x, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
 						_guardUnit = ((units _guardGroup) select 0);
 						if (!isNil "_guardUnit") then {	
 							_guardUnit setFormDir (getDir _x);
@@ -78,15 +78,15 @@ switch (_hvtStyle) do {
 				} forEach _spawnedObjects;					
 				// Create HVT unit						
 				_hvtSpawnPos = _hvtPos findEmptyPosition [0, 15, _hvtType];
-				_hvtGroup = [_hvtSpawnPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call dro_spawnGroupWeighted;
+				_hvtGroup = [_hvtSpawnPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
 				_hvtChar = ((units _hvtGroup) select 0);
 				//_hvtGroup = createGroup enemySide;
 				//_hvtChar = _hvtGroup createUnit [_hvtType, _hvtSpawnPos, [], 0, "NONE"];
-				if ([_hvtChar] call sun_checkIntersect) then {
+				if ([_hvtChar] call DRO_fnc_checkIntersect) then {
 					deleteVehicle _hvtChar;
 					_hvtSpawnPos = _hvtPos findEmptyPosition [25, 50, _hvtType];
 					//_hvtChar = _hvtGroup createUnit [_hvtType, _hvtSpawnPos, [], 0, "NONE"];
-					_hvtGroup = [_hvtSpawnPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call dro_spawnGroupWeighted;
+					_hvtGroup = [_hvtSpawnPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
 					_hvtChar = ((units _hvtGroup) select 0);
 				};
 				//_hvtChar = createVehicle [_hvtType, _hvtSpawnPos, [], 0, "NONE"];									
@@ -95,7 +95,7 @@ switch (_hvtStyle) do {
 			case "MEETINGS": {
 				// Create HVT unit
 				_hvtSpawnPos = _hvtPos findEmptyPosition [0, 15, _hvtType];
-				_hvtGroup = [_hvtSpawnPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call dro_spawnGroupWeighted;
+				_hvtGroup = [_hvtSpawnPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
 				_hvtChar = ((units _hvtGroup) select 0);
 				//_hvtGroup = createGroup enemySide;
 				//_hvtChar = _hvtGroup createUnit [_hvtType, _hvtSpawnPos, [], 0, "NONE"];
@@ -134,7 +134,7 @@ switch (_hvtStyle) do {
 	};
 	case "OUTSIDETRAVEL": {
 		diag_log (((AOLocations select _AOIndex) select 2) select 2);
-		_hvtPos = [(((AOLocations select _AOIndex) select 2) select 2)] call sun_selectRemove;
+		_hvtPos = [(((AOLocations select _AOIndex) select 2) select 2)] call DRO_fnc_selectRemove;
 	
 		// Get a selection of possible new travel locations if chance allows
 		_travelPositions = [];			
@@ -160,12 +160,12 @@ switch (_hvtStyle) do {
 				if (count _possibleLocTypes > 0) then {
 					if (_i == 0) then {
 						_selectedPosArray = ((((AOLocations select _i) select 2) select (selectRandom _possibleLocTypes)));					
-						_selectedPos = [_selectedPosArray] call sun_selectRemove;					
+						_selectedPos = [_selectedPosArray] call DRO_fnc_selectRemove;					
 						_travelPositions pushBack _selectedPos;
 					} else {
 						if (random 1 > 0.5) then {
 							_selectedPosArray = ((((AOLocations select _i) select 2) select (selectRandom _possibleLocTypes)));					
-							_selectedPos = [_selectedPosArray] call sun_selectRemove;					
+							_selectedPos = [_selectedPosArray] call DRO_fnc_selectRemove;					
 							_travelPositions pushBack _selectedPos;
 						};
 					};
@@ -174,11 +174,11 @@ switch (_hvtStyle) do {
 		};
 		if (count _travelPositions > 0) then {
 			// TRAVELLING			
-			_hvtGroup = [_hvtPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call dro_spawnGroupWeighted;
+			_hvtGroup = [_hvtPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
 			_hvtChar = ((units _hvtGroup) select 0);
 			//_hvtGroup = createGroup enemySide;
 			//_hvtChar = _hvtGroup createUnit [_hvtType, _hvtPos, [], 0, "NONE"];
-			if ([_hvtChar] call sun_checkIntersect) then {
+			if ([_hvtChar] call DRO_fnc_checkIntersect) then {
 				deleteVehicle _hvtChar;
 				_hvtSpawnPos = _hvtPos findEmptyPosition [25, 50, _hvtType];
 				_hvtChar = _hvtGroup createUnit [_hvtType, _hvtSpawnPos, [], 0, "NONE"];
@@ -214,12 +214,12 @@ switch (_hvtStyle) do {
 	};
 };
 
-if (_break) exitWith {[(AOLocations call BIS_fnc_randomIndex), false] call fnc_selectObjective};
+if (_break) exitWith {[(AOLocations call BIS_fnc_randomIndex), false] call DRO_fnc_selectObjective};
 
 // Create guards
 _minAI = round (4 * aiMultiplier);
 _maxAI = round (6 * aiMultiplier);
-_guardGroup = [_hvtPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;
+_guardGroup = [_hvtPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;
 waitUntil {!isNil "_guardGroup"};
 _hvtChar setVariable ["guards", (units _guardGroup), true];
 (units _guardGroup) join (group _hvtChar);
@@ -239,7 +239,7 @@ for "_i" from 0 to count _lastNameClass - 1 do {
 	_lastNames pushBack (getText (_lastNameClass select _i));
 };
 if ((count _firstNames > 0) && (count _lastNames > 0)) then {		
-	[_hvtChar, (selectRandom _firstNames), (selectRandom _lastNames), (speaker _hvtChar), (selectRandom eFacesArray)] remoteExec ["sun_setNameMP", 0, true];
+	[_hvtChar, (selectRandom _firstNames), (selectRandom _lastNames), (speaker _hvtChar), (selectRandom eFacesArray)] remoteExec ["DRO_fnc_setNameMP", 0, true];
 };
 removeAllWeapons _hvtChar;
 if (random 1 > 0.3) then {
@@ -350,7 +350,7 @@ if (dynamicSim == 0) then {
 		[10, false, (_this select 1)] execVM "sunday_system\intel\revealIntel.sqf";
 		(_this select 0) switchmove "";
 		[(_this select 0)] joinSilent (grpNetId call BIS_fnc_groupFromNetId);
-		[(_this select 0)] call sun_addResetAction;
+		[(_this select 0)] call DRO_fnc_addResetAction;
 		[(_this select 0) getVariable "extractTask", "ASSIGNED", true] spawn BIS_fnc_taskSetState;
 		[(leader (grpNetId call BIS_fnc_groupFromNetId)), "heliExtract"] remoteExec ["BIS_fnc_addCommMenuItem", (leader (grpNetId call BIS_fnc_groupFromNetId)), true];
 		'mkrAOC' setMarkerAlpha 1;

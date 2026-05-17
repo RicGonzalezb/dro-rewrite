@@ -37,7 +37,7 @@ DRO_messageListenerPFH = [{
 	// Acquire lock and broadcast
 	DRO_messagePlaying = true;
 	_message remoteExec ["BIS_fnc_EXP_camp_playSubtitles", 0];
-	if (_playAudio) then { [] remoteExec ["sun_playSubtitleRadio", 0]; };
+	if (_playAudio) then { [] remoteExec ["DRO_fnc_playSubtitleRadio", 0]; };
 
 	// Wait (non-scheduled) until the subtitle appears AND then disappears
 	// on the host, then release the lock so the next message can play.

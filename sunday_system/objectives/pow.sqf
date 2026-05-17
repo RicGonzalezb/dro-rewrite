@@ -17,7 +17,7 @@ _break = false;
 switch (_powStyle) do {			
 	case "OUTSIDE": {
 		// Move to random location	
-		_powPos = [(((AOLocations select _AOIndex) select 2) select 6)] call sun_selectRemove;				
+		_powPos = [(((AOLocations select _AOIndex) select 2) select 6)] call DRO_fnc_selectRemove;				
 		_powPos set [2, 0];
 				
 		_powSpawnPos = [];
@@ -45,23 +45,23 @@ switch (_powStyle) do {
 		];
 		_numCampObjects = [3,8] call BIS_fnc_randomInt;
 		for "_i" from 1 to _numCampObjects do {
-			_spawnPos = [_powPos, (1.5 + random 3), (random 360)] call dro_extendPos;
+			_spawnPos = [_powPos, (1.5 + random 3), (random 360)] call DRO_fnc_extendPos;
 			_selectedObject = selectRandom _campObjects;
 			_object = createVehicle [_selectedObject, _spawnPos, [], 2, "NONE"];
 			_object setDir (random 360);
 		};
 		
-		_group = [_powPos, playersSide, powClass, [], [1, 1], true, "NONE"] call dro_spawnGroupWeighted;
+		_group = [_powPos, playersSide, powClass, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
 		_powChar = ((units _group) select 0);
 		//_group = createGroup playersSide;
 		//_powChar = _group createUnit [powClass, _powPos, [], 0, "NONE"];
 		_dist = 10;
-		while {([_powChar] call sun_checkIntersect) && (_dist < 100)} do {
-			[_group, (_powPos getPos [_dist, (random 360)])] call sun_moveGroup;
+		while {([_powChar] call DRO_fnc_checkIntersect) && (_dist < 100)} do {
+			[_group, (_powPos getPos [_dist, (random 360)])] call DRO_fnc_moveGroup;
 			_dist = _dist + 5;
 		};
 		/*
-		if ([_powChar] call sun_checkIntersect) then {
+		if ([_powChar] call DRO_fnc_checkIntersect) then {
 			deleteVehicle _powChar;
 			_powSpawnPos = _powPos findEmptyPosition [25, 50, powClass];
 			_powChar = _group createUnit [powClass, _powSpawnPos, [], 0, "NONE"];
@@ -70,11 +70,11 @@ switch (_powStyle) do {
 	};
 	case "INSIDE": {	
 		// If nearby building possible then move to that building and spawn guards
-		_building = [(((AOLocations select _AOIndex) select 2) select 7)] call sun_selectRemove;
+		_building = [(((AOLocations select _AOIndex) select 2) select 7)] call DRO_fnc_selectRemove;
 		_buildingPlaces = [_building] call BIS_fnc_buildingPositions;
 		_thisBuildingPlace = [0,((count _buildingPlaces)-1)] call BIS_fnc_randomInt;				
 		_powPos = getPos _building;
-		_group = [_powPos, playersSide, powClass, [], [1, 1], true, "NONE"] call dro_spawnGroupWeighted;
+		_group = [_powPos, playersSide, powClass, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
 		_powChar = ((units _group) select 0);
 		
 		//_group = createGroup playersSide;
@@ -84,7 +84,7 @@ switch (_powStyle) do {
 };
 
 if (_break) exitWith {
-	[(AOLocations call BIS_fnc_randomIndex), false] call fnc_selectObjective;
+	[(AOLocations call BIS_fnc_randomIndex), false] call DRO_fnc_selectObjective;
 };
 
 _powChar setCaptive true;
@@ -125,12 +125,12 @@ if (_possibleLocsMaxIndex > 0) then {
 		if (count _possibleLocTypes > 0) then {
 			if (_i == 0) then {
 				_selectedPosArray = ((((AOLocations select _i) select 2) select (selectRandom _possibleLocTypes)));					
-				_selectedPos = [_selectedPosArray] call sun_selectRemove;					
+				_selectedPos = [_selectedPosArray] call DRO_fnc_selectRemove;					
 				_travelPositions pushBack _selectedPos;
 			} else {
 				if (random 1 > 0.5) then {
 					_selectedPosArray = ((((AOLocations select _i) select 2) select (selectRandom _possibleLocTypes)));					
-					_selectedPos = [_selectedPosArray] call sun_selectRemove;					
+					_selectedPos = [_selectedPosArray] call DRO_fnc_selectRemove;					
 					_travelPositions pushBack _selectedPos;
 				};
 			};
@@ -148,8 +148,8 @@ if (count _travelPositions > 0) then {
 	// TRAVELLING					
 	_minAI = round (2 * aiMultiplier);
 	_maxAI = round (3 * aiMultiplier);
-	_guardGroup = [_powPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;
-	_guardGroup2 = [_powPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;
+	_guardGroup = [_powPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;
+	_guardGroup2 = [_powPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;
 	waitUntil {!isNil "_guardGroup"};	
 	waitUntil {!isNil "_guardGroup2"};	
 	_allGuards = (units _guardGroup) + (units _guardGroup2);
@@ -191,7 +191,7 @@ if (count _travelPositions > 0) then {
 		"	
 			[(thisTrigger getVariable 'powChar'), 'MOVE'] remoteExec ['enableAI', (thisTrigger getVariable 'powChar')];			
 			[(thisTrigger getVariable 'powChar')] joinSilent (grpNetId call BIS_fnc_groupFromNetId);
-			[(thisTrigger getVariable 'powChar')] call sun_addResetAction;
+			[(thisTrigger getVariable 'powChar')] call DRO_fnc_addResetAction;
 			[(thisTrigger getVariable 'powChar'), false] remoteExec ['setCaptive', (thisTrigger getVariable 'powChar'), true];
 			[(thisTrigger getVariable 'thisTask'), 'SUCCEEDED', true] spawn BIS_fnc_taskSetState;
 			'mkrAOC' setMarkerAlpha 1;				
@@ -229,7 +229,7 @@ if (_spawnStationary) then {
 			*/
 		},
 		{
-			[(_this select 0), (_this select 1)] call dro_hostageRelease;		
+			[(_this select 0), (_this select 1)] call DRO_fnc_hostageRelease;		
 		},
 		{},
 		[],
@@ -241,18 +241,18 @@ if (_spawnStationary) then {
 	// Spawn patrolling guards
 	_minAI = round (2 * aiMultiplier);
 	_maxAI = round (3 * aiMultiplier);
-	_spawnedSquad = [_powPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;						
+	_spawnedSquad = [_powPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;						
 	if (!isNil "_spawnedSquad") then {
 		[_spawnedSquad, _powPos, [10, 30], "limited"] execVM "sunday_system\orders\patrolArea.sqf";	
 	};
-	_spawnedSquad2 = [_powPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;		
+	_spawnedSquad2 = [_powPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;		
 	if (!isNil "_spawnedSquad2") then {			
 		[_spawnedSquad2, getPos _powChar] call bis_fnc_taskDefend;
 	};
 };
 
 if (_break) exitWith {
-	[(AOLocations call BIS_fnc_randomIndex), false] call fnc_selectObjective;
+	[(AOLocations call BIS_fnc_randomIndex), false] call DRO_fnc_selectObjective;
 };
 
 // Setup identity
@@ -271,7 +271,7 @@ _lastName = "";
 if ((count _firstNames > 0) && (count _lastNames > 0)) then {
 	_firstName = (selectRandom _firstNames);
 	_lastName = (selectRandom _lastNames);
-	[_powChar, _firstName, _lastName, (speaker _powChar), (selectRandom pFacesArray)] remoteExec ["sun_setNameMP", 0, true];
+	[_powChar, _firstName, _lastName, (speaker _powChar), (selectRandom pFacesArray)] remoteExec ["DRO_fnc_setNameMP", 0, true];
 };
 if (random 1 > 0.5) then {
 	removeUniform _powChar;	

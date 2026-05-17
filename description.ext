@@ -636,3 +636,161 @@ class vn_artillery_settings
 	};
 };
 */
+
+// ============================================================
+// M3 — CfgFunctions migration (replaces #include lib pattern)
+// All functions available as DRO_fnc_<name> before mission init
+// ============================================================
+class CfgFunctions
+{
+    class DRO
+    {
+        // -------------------------------------------------
+        // Core lib functions (migrated from sundayFunctions,
+        // droFunctions, menuFunctions, reviveFunctions,
+        // generateEnemiesFunctions). Files in functions/fn_*.sqf
+        // -------------------------------------------------
+        class core
+        {
+            file = "functions";
+            class AIHeal {};
+            class AIListen {};
+            class addArsenal {};
+            class addConstructAction {};
+            class addConstructPoint {};
+            class addIntel {};
+            class addResetAction {};
+            class addReviveToUnit {};
+            class addSabotageAction {};
+            class assignTask {};
+            class avgPos {};
+            class backpackFix {};
+            class briefingJIP {};
+            class callLoadScreen {};
+            class changeLocal {};
+            class checkAOIndexes {};
+            class checkAllDeadFleeing {};
+            class checkIntersect {};
+            class checkRouteWater {};
+            class checkVehicleSpawn {};
+            class civDeathHandler {};
+            class clearData {};
+            class clearInsert {};
+            class createSimpleObject {};
+            class createVehicleCrew {};
+            class daySelChange {};
+            class defineGrid {};
+            class detectPosMP {};
+            class drag {};
+            class dragActionAdd {};
+            class extendPos {};
+            class extractIdentities {};
+            class findFAK {};
+            class findRoadRoute {};
+            class findWallPositions {};
+            class getArtilleryRanges {};
+            class getCfgSide {};
+            class getCfgUnitSide {};
+            class getRoadDir {};
+            class getTrueCargo {};
+            class getUnitPositionId {};
+            class goat {};
+            class groupToVehicle {};
+            class handleDamage {};
+            class handleKilled {};
+            class heliInsertion {};
+            class helicopterCanFly {};
+            class hostageRelease {};
+            class hvtCapture {};
+            class initLobbyCam {};
+            class inputDaysData {};
+            class jipNewUnit {};
+            class loadoutCompat {};
+            class lobbyCamTarget {};
+            class lobbyChangeLabel {};
+            class lobbyMapPreview {};
+            class lobbyReadyButton {};
+            class localBuildingPatrol {};
+            class loopSounds {};
+            class menuMap {};
+            class menuSlider {};
+            class missionName {};
+            class missionPreset {};
+            class monthSelChange {};
+            class moveGroup {};
+            class moveInCargo {};
+            class newUnit {};
+            class newUnits {};
+            class pasteLoadoutAdd {};
+            class pasteLoadoutRemove {};
+            class playRadioRandom {};
+            class playSubtitleRadio {};
+            class randomCam {};
+            class randomTime {};
+            class removeDragAction {};
+            class removeEnemyNVG {};
+            class replaceSimpleObject {};
+            class resetAI {};
+            class resetCamera {};
+            class reviveActionAdd {};
+            class reviveUnit {};
+            class selectRemove {};
+            class sendProgressMessage {};
+            class setNameMP {};
+            class setPlayerGroup {};
+            class setSkillAction {};
+            class spawnEnemyGarrison {};
+            class spawnGroupWeighted {};
+            class stringCommaList {};
+            class suicideActionAdd {};
+            class supplyBox {};
+            class switchButton {};
+            class switchButtonSet {};
+            class switchButtonWeather {};
+            class switchLookup {};
+            class triggerAmbushSpawn {};
+            class unitTaskObjective {};
+            class waypointCheck {};
+        };
+
+        // -------------------------------------------------
+        // AO generation (migrated from compile preprocessFile)
+        // DRO_fnc_generateAO, DRO_fnc_generateAOLoc, etc.
+        // -------------------------------------------------
+        class generate_ao
+        {
+            class generateAO { file = "sunday_system\generate_ao\generateAO.sqf"; };
+            class generateAOLoc { file = "sunday_system\generate_ao\generateAOLocation.sqf"; };
+            class generateCampsite { file = "sunday_system\generate_ao\generateCampsite.sqf"; };
+        };
+
+        // -------------------------------------------------
+        // Objectives
+        // -------------------------------------------------
+        class objectives
+        {
+            class selectObjective { file = "sunday_system\objectives\objSelect.sqf"; };
+            class selectReactiveObjective { file = "sunday_system\objectives\selectReactiveTask.sqf"; };
+        };
+
+        // -------------------------------------------------
+        // Faction / class definitions
+        // -------------------------------------------------
+        class factions
+        {
+            class defineFactionClasses { file = "sunday_system\fnc_lib\defineFactionClasses.sqf"; };
+        };
+
+        // -------------------------------------------------
+        // Enemy generation (individual spawners)
+        // -------------------------------------------------
+        class enemies_gen
+        {
+            class generateRoadblock { file = "sunday_system\generate_enemies\generateRoadblock.sqf"; };
+            class generateBunker { file = "sunday_system\generate_enemies\generateBunker.sqf"; };
+            class generateBarrier { file = "sunday_system\generate_enemies\generateBarrier.sqf"; };
+            class generateEmplacement { file = "sunday_system\generate_enemies\generateEmplacement.sqf"; };
+            class spawnEnemyCompound { file = "sunday_system\generate_enemies\generateCompound.sqf"; };
+        };
+    };
+};

@@ -50,7 +50,7 @@ if (_startRecon) then {
 		{		
 			_unit = _x;
 			if (isPlayer _unit) then {
-				[_taskName, _reconMarkerPos] remoteExec ["dro_detectPosMP", _unit, false];			
+				[_taskName, _reconMarkerPos] remoteExec ["DRO_fnc_detectPosMP", _unit, false];			
 			};
 		} forEach _playerGroupUnique;
 		
@@ -58,7 +58,7 @@ if (_startRecon) then {
 			diag_log "DRO: Observe task completed";
 			_reconComplete = true;
 			_hideMarker = if (["clear", (_objData select 2)] call BIS_fnc_inString) then {false} else {true};
-			[_objData, true, true, _hideMarker, true] call sun_assignTask;		
+			[_objData, true, true, _hideMarker, true] call DRO_fnc_assignTask;		
 			[_reconTaskName, "SUCCEEDED", true] spawn BIS_fnc_taskSetState;
 			_splitString = (_objData select 2) splitString ":";
 			_text = switch (_splitString select 0) do {
@@ -108,7 +108,7 @@ if (_startRecon) then {
 				};
 				default {(selectRandom ["we've got more work to do here.", "you've turned up something interesting."])};
 			};
-			["OBSERVE_SUCCEED", "Command", [_text]] spawn dro_sendProgressMessage;
+			["OBSERVE_SUCCEED", "Command", [_text]] spawn DRO_fnc_sendProgressMessage;
 		};	
 	};
 };

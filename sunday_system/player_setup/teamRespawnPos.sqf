@@ -32,7 +32,7 @@ DRO_teamRespawnPosPFH = [{
 	} forEach _playerGroupUnique;
 
 	if (count _unitPositions > 0) then {
-		private _avgPos = [_unitPositions] call sun_avgPos;
+		private _avgPos = [_unitPositions] call DRO_fnc_avgPos;
 
 		// Save the current average position if a significant distance change has occurred
 		if (count _savedPositions > 0) then {

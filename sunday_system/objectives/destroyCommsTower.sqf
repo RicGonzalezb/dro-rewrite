@@ -25,9 +25,9 @@ if (count _objects > 0) then {
 		};
 	} forEach AOLocations;	
 	if (count _validIndexes > 0) then {		
-		_thisBuilding = [(((AOLocations select (selectRandom _validIndexes)) select 2) select 7)] call sun_selectRemove;		
+		_thisBuilding = [(((AOLocations select (selectRandom _validIndexes)) select 2) select 7)] call DRO_fnc_selectRemove;		
 		if (!isNil "_thisBuilding") then {
-			_wallPositions = [_thisBuilding] call sun_findWallPositions;
+			_wallPositions = [_thisBuilding] call DRO_fnc_findWallPositions;
 			_towerTypes = [
 				"Land_Communication_F",
 				"Land_TTowerSmall_2_F",
@@ -46,7 +46,7 @@ if (count _objects > 0) then {
 			
 			if (count _objects == 0) exitWith {};
 			
-			_transmitter = [_objects] call sun_selectRemove;
+			_transmitter = [_objects] call DRO_fnc_selectRemove;
 			{
 				deleteVehicle _x;
 			} forEach _objects;			
@@ -70,7 +70,7 @@ if (!isNil "_transmitter") then {
 	_markerPower setMarkerAlpha 1;
 	
 	_spawnPos = [(getPos _transmitter), 15, (random 360)] call BIS_fnc_relPos;
-	_spawnedSquad = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [2,3]] call dro_spawnGroupWeighted;
+	_spawnedSquad = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [2,3]] call DRO_fnc_spawnGroupWeighted;
 	waitUntil {!isNil "_spawnedSquad"};
 	[_spawnedSquad, (getPos _transmitter), 20] call BIS_fnc_taskPatrol;
 	
@@ -98,7 +98,7 @@ if (!isNil "_transmitter") then {
 		};
 	};
 	
-	//[_transmitter] call dro_addSabotageAction;
+	//[_transmitter] call DRO_fnc_addSabotageAction;
 	
 	// Add destruction event handlers
 	/*

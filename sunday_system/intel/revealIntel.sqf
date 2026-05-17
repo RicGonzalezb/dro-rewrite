@@ -8,7 +8,7 @@ _radioTaskIntel = "";
 _thisTask = [];
 if (count taskIntel > 0) then {
 	for "_i" from 1 to ((round((count taskIntel)*0.4)) max 1) step 1 do {		
-		_thisTask = [taskIntel] call sun_selectRemove;	
+		_thisTask = [taskIntel] call DRO_fnc_selectRemove;	
 		
 		if ([_thisTask select 0] call BIS_fnc_taskExists) then {
 			_taskDescData = [_thisTask select 0] call BIS_fnc_taskDescription;						
@@ -177,7 +177,7 @@ for "_i" from 1 to _numReveals step 1 do {
 		_sortedMarkers = [enemyIntelMarkers, [_caller], {_input0 distance (getMarkerPos _x)}, "ASCEND"] call BIS_fnc_sortBy;
 		_thisMarker = _sortedMarkers select 0;
 		enemyIntelMarkers = enemyIntelMarkers - [_thisMarker];
-		//_thisMarker = [enemyIntelMarkers] call sun_selectRemove;			
+		//_thisMarker = [enemyIntelMarkers] call DRO_fnc_selectRemove;			
 		//diag_log format ["DRO: Revealing marker %1", _thisMarker];
 		if (typeName _thisMarker == "ARRAY") then {
 						
@@ -220,7 +220,7 @@ if (!isNull _caller) then {
 				],
 				false
 			];
-			["REVEAL_INTEL", name _caller, [_radioDesc, _radioTaskIntel], false] spawn dro_sendProgressMessage;
+			["REVEAL_INTEL", name _caller, [_radioDesc, _radioTaskIntel], false] spawn DRO_fnc_sendProgressMessage;
 		};
 	} else {
 		_phrase = selectRandom [

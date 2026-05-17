@@ -1,13 +1,13 @@
 params ["_AOIndex"];
 
 if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {		
-	_thisPos = [(((AOLocations select _AOIndex) select 2) select 5)] call sun_selectRemove;
+	_thisPos = [(((AOLocations select _AOIndex) select 2) select 5)] call DRO_fnc_selectRemove;
 	_bunkerTypes = ["Land_BagBunker_Large_F", "Land_BagBunker_Tower_F"];
 	_bunkerPos = [_thisPos, 0, 100, 15, 0, 1, 0, [], [[0,0,0], [0,0,0]]] call BIS_fnc_findSafePos;
 	if !(_bunkerPos isEqualTo [0,0,0]) then {
 		_startDir = random 360;
 		_bunkerType = selectRandom _bunkerTypes;
-		_bunker = [_bunkerType, _bunkerPos, _startDir] call dro_createSimpleObject;
+		_bunker = [_bunkerType, _bunkerPos, _startDir] call DRO_fnc_createSimpleObject;
 		_dir = _startDir;
 		_rotation = _startDir;		
 		_bunkerGroup = createGroup enemySide;
@@ -16,7 +16,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 		
 		_guardPositions = [];
 		for "_i" from 1 to 4 do {
-			_cornerPos = [_bunkerPos, 10, _dir] call dro_extendPos;
+			_cornerPos = [_bunkerPos, 10, _dir] call DRO_fnc_extendPos;
 			_objList = (selectRandom compositionsBunkerCorners);								
 			_spawnedObjects = [_cornerPos, _dir, _objList] call BIS_fnc_ObjectsMapper;
 			// Collect guard positions					
@@ -32,7 +32,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 			_rotation = _rotation + 90;
 		};		
 		{
-			_guardGroup = [(_x select 0), enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;
+			_guardGroup = [(_x select 0), enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
 			waitUntil {!isNil "_guardGroup"};
 			_guardUnit = ((units _guardGroup) select 0);					
 			_guardUnit setFormDir (_x select 1);
@@ -51,8 +51,8 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 				_leaderChosen = 0;
 				for "_n" from 1 to _numBunkerGuards do {
 					_dir = random 360;
-					_spawnPos = [_bunkerPos, 4, _dir] call dro_extendPos;
-					_bunkerGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;												
+					_spawnPos = [_bunkerPos, 4, _dir] call DRO_fnc_extendPos;
+					_bunkerGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;												
 					if (!isNil "_bunkerGroup") then {
 						_unit = ((units _bunkerGroup) select 0);
 						_unit setFormDir _dir;
@@ -77,7 +77,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 				for "_n" from 1 to _numBunkerGuards do {
 					_dir = random 360;						
 					_spawnPos = _bunkerPos findEmptyPosition [0,20];
-					_bunkerGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;						
+					_bunkerGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;						
 					if (!isNil "_bunkerGroup") then {
 						_unit = ((units _bunkerGroup) select 0);
 						_unit setFormDir _dir;
@@ -95,7 +95,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 					};
 				};					
 				_spawnPos = [(getPos _bunker select 0), (getPos _bunker select 1), (getPos _bunker select 2)];
-				_bunkerGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;					
+				_bunkerGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;					
 				if (!isNil "_bunkerGroup") then {
 					_unit = ((units _bunkerGroup) select 0);
 					_unit setPosATL [(getPos _bunker select 0), (getPos _bunker select 1), (getPos _bunker select 2)+3.5];
@@ -112,7 +112,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 				_turretPos = _bunkerPos findEmptyPosition [5, 20, _turretClass];
 				if (count _turretPos > 0) then {
 					_turret = _turretClass createVehicle _turretPos;
-					[_turret] call sun_createVehicleCrew;
+					[_turret] call DRO_fnc_createVehicleCrew;
 					//createVehicleCrew _turret;
 				};
 			};

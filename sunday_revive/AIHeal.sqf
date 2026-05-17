@@ -147,7 +147,7 @@ if (_cancelRevive) exitWith {
 	[] call endRevive;
 };
 
-[_target, _medic] call rev_reviveUnit;
+[_target, _medic] call DRO_fnc_reviveUnit;
 [] call endRevive;
 
 

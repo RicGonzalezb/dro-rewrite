@@ -1,9 +1,9 @@
 diag_log "DRO: Main DRO script started";
 
-#include "sunday_system\fnc_lib\sundayFunctions.sqf";
-#include "sunday_system\fnc_lib\droFunctions.sqf";
-#include "sunday_revive\reviveFunctions.sqf";
-#include "sunday_system\generate_enemies\generateEnemiesFunctions.sqf";
+// [M3 removed] #include "sunday_system\fnc_lib\sundayFunctions.sqf";
+// [M3 removed] #include "sunday_system\fnc_lib\droFunctions.sqf";
+// [M3 removed] #include "sunday_revive\reviveFunctions.sqf";
+// [M3 removed] #include "sunday_system\generate_enemies\generateEnemiesFunctions.sqf";
 
 [] execVM "sunday_system\fnc_lib\objectsLibrary.sqf";
 
@@ -31,7 +31,7 @@ publicVariable "topUnit";
 
 diag_log format ["DRO: topUnit = %1", topUnit];
 
-[(profileNamespace getVariable ["DRO_timeOfDay", 0])] call sun_randomTime;
+[(profileNamespace getVariable ["DRO_timeOfDay", 0])] call DRO_fnc_randomTime;
 
 playersFaction = "";
 enemyFaction = "";
@@ -84,19 +84,19 @@ enemyPosCollection = [];
 diag_log "DRO: Variables defined";
 diag_log "DRO: Compiling scripts";
 
-fnc_generateAO = compile preprocessFile "sunday_system\generate_ao\generateAO.sqf";
-fnc_generateAOLoc = compile preprocessFile "sunday_system\generate_ao\generateAOLocation.sqf";
-fnc_generateCampsite = compile preprocessFile "sunday_system\generate_ao\generateCampsite.sqf";
+// [M3 removed] DRO_fnc_generateAO = compile preprocessFile "sunday_system\generate_ao\generateAO.sqf";
+// [M3 removed] DRO_fnc_generateAOLoc = compile preprocessFile "sunday_system\generate_ao\generateAOLocation.sqf";
+// [M3 removed] DRO_fnc_generateCampsite = compile preprocessFile "sunday_system\generate_ao\generateCampsite.sqf";
 
-fnc_selectObjective = compile preprocessFile "sunday_system\objectives\objSelect.sqf";
-fnc_selectReactiveObjective = compile preprocessFile "sunday_system\objectives\selectReactiveTask.sqf";
-fnc_defineFactionClasses = compile preprocessFile "sunday_system\fnc_lib\defineFactionClasses.sqf";
+// [M3 removed] DRO_fnc_selectObjective = compile preprocessFile "sunday_system\objectives\objSelect.sqf";
+// [M3 removed] DRO_fnc_selectReactiveObjective = compile preprocessFile "sunday_system\objectives\selectReactiveTask.sqf";
+// [M3 removed] DRO_fnc_defineFactionClasses = compile preprocessFile "sunday_system\fnc_lib\defineFactionClasses.sqf";
 
-fnc_generateRoadblock = compile preprocessFile "sunday_system\generate_enemies\generateRoadblock.sqf";
-fnc_generateBunker = compile preprocessFile "sunday_system\generate_enemies\generateBunker.sqf";
-fnc_generateBarrier = compile preprocessFile "sunday_system\generate_enemies\generateBarrier.sqf";
-fnc_generateEmplacement = compile preprocessFile "sunday_system\generate_enemies\generateEmplacement.sqf";
-fnc_spawnEnemyCompound = compile preprocessFile "sunday_system\generate_enemies\generateCompound.sqf";
+// [M3 removed] DRO_fnc_generateRoadblock = compile preprocessFile "sunday_system\generate_enemies\generateRoadblock.sqf";
+// [M3 removed] DRO_fnc_generateBunker = compile preprocessFile "sunday_system\generate_enemies\generateBunker.sqf";
+// [M3 removed] DRO_fnc_generateBarrier = compile preprocessFile "sunday_system\generate_enemies\generateBarrier.sqf";
+// [M3 removed] DRO_fnc_generateEmplacement = compile preprocessFile "sunday_system\generate_enemies\generateEmplacement.sqf";
+// [M3 removed] DRO_fnc_spawnEnemyCompound = compile preprocessFile "sunday_system\generate_enemies\generateCompound.sqf";
 
 diag_log "DRO: Compiling scripts finished";
 
@@ -267,7 +267,7 @@ switch (paramAIWeaponLight) do {
 // Get player faction
 playersFactionName = (configFile >> "CfgFactionClasses" >> playersFaction >> "displayName") call BIS_fnc_GetCfgData;
 _playerSideNum = (configFile >> "CfgFactionClasses" >> playersFaction >> "side") call BIS_fnc_GetCfgData;
-playersSide = [_playerSideNum] call sun_getCfgSide;
+playersSide = [_playerSideNum] call DRO_fnc_getCfgSide;
 playersSideCfgGroups = "West";
 switch (playersSide) do {
 	case east: {		
@@ -292,7 +292,7 @@ playerGroup = units (group _topUnit);
 DROgroupPlayers = group _topUnit;
 groupLeader = leader DROgroupPlayers;
 callsigns = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Lima", "Kilo", "Viper", "Scorpion", "Hunter"];
-playerCallsign = [callsigns] call sun_selectRemove; 
+playerCallsign = [callsigns] call DRO_fnc_selectRemove; 
 publicVariable "playerCallsign";
 
 grpNetId = group _topUnit call BIS_fnc_netId;
@@ -331,7 +331,7 @@ diag_log format ["DRO: grpNetId = %1", grpNetId];
 _scriptStartTime = time;
 [((findDisplay 888888) displayCtrl 8889), "EXTRACTING FACTION DATA"] remoteExecCall ["ctrlSetText", 0];
 diag_log "DRO: Beginning faction extraction";
-[] call fnc_defineFactionClasses;
+[] call DRO_fnc_defineFactionClasses;
 
 DROgroupPlayers = (group _topUnit);
 
@@ -512,7 +512,7 @@ diag_log format ["DRO: Player side extraction scripts run time = %1", time - _sc
 enemyFactionName = (configFile >> "CfgFactionClasses" >> enemyFaction >> "displayName") call BIS_fnc_GetCfgData;
 _enemySideNum = (configFile >> "CfgFactionClasses" >> enemyFaction >> "side") call BIS_fnc_GetCfgData;
 sleep 0.01;
-enemySide = [_enemySideNum] call sun_getCfgSide;
+enemySide = [_enemySideNum] call DRO_fnc_getCfgSide;
 
 if (playersSide == enemySide) then {
 	enemySide = switch (enemySide) do {
@@ -599,7 +599,7 @@ diag_log "DRO: Call AO script";
 _scriptStartTime = time;
 [((findDisplay 888888) displayCtrl 8889), "GENERATING AREA OF OPERATIONS"] remoteExecCall ["ctrlSetText", 0];
 // Generate AO and collect data
-[] call fnc_generateAO;
+[] call DRO_fnc_generateAO;
 diag_log format ["DRO: AO script run time = %1", time - _scriptStartTime];
 // Reconfigure AO markers
 {
@@ -854,7 +854,7 @@ if (count _speakersArray > 0) then {
 // Assign identities to players
 {		
 	_identity = (nameLookup select _forEachIndex);
-	[_x, (_identity select 0), (_identity select 1), (_identity select 2), (_identity select 3)] remoteExec ["sun_setNameMP", 0, true];
+	[_x, (_identity select 0), (_identity select 1), (_identity select 2), (_identity select 3)] remoteExec ["DRO_fnc_setNameMP", 0, true];
 	_x setVariable ["respawnIdentity", [_x, (_identity select 0), (_identity select 1), (_identity select 2), (_identity select 3)], true];	
 } forEach playerGroup;
 publicVariable "nameLookup";
@@ -863,7 +863,7 @@ missionNameSpace setVariable ["initArsenal", 1];
 publicVariable "initArsenal";
 /*
 if (month == 0 || day == 0) then {
-	[timeOfDay] remoteExec ['sun_randomTime', 0, true];
+	[timeOfDay] remoteExec ['DRO_fnc_randomTime', 0, true];
 };
 */
 
@@ -947,9 +947,9 @@ reconPatrolUnused = true;
 for "_i" from 1 to (_numObjs) do {
 	[((findDisplay 888888) displayCtrl 8889), (format ["GENERATING OBJECTIVE %1", _i])] remoteExecCall ["ctrlSetText", 0];
 	if (_i == 1) then {		
-		[0] call fnc_selectObjective;
+		[0] call DRO_fnc_selectObjective;
 	} else {		
-		[(AOLocations call BIS_fnc_randomIndex)] call fnc_selectObjective;	
+		[(AOLocations call BIS_fnc_randomIndex)] call DRO_fnc_selectObjective;	
 	};	
 };
 waitUntil {count allObjectives == _numObjs};
@@ -966,7 +966,7 @@ waitUntil {scriptDone _objGroupingHandle};
 	if ((_x select 6) < baseReconChance) then {
 		// Create task from task data
 		diag_log "DRO: Creating regular task";
-		[_x, true, true] call sun_assignTask;			
+		[_x, true, true] call DRO_fnc_assignTask;			
 	} else {		
 		// Create recon addition
 		diag_log "DRO: Creating a recon task";
@@ -977,7 +977,7 @@ waitUntil {scriptDone _objGroupingHandle};
 diag_log format ["DRO: Objective scripts run time = %1", time - _scriptStartTime];
 
 // Mission name
-_missionName = [] call dro_missionName;
+_missionName = [] call DRO_fnc_missionName;
 missionNameSpace setVariable ["mName", _missionName, true];
 
 // *****
@@ -1132,7 +1132,7 @@ if (stealthEnabled == 1) then {
 		_AOIndexesShuffled = _AOIndexes call BIS_fnc_arrayShuffle;
 		{
 			if (count (((AOLocations select _x) select 2) select 7) > 0) exitWith {
-				_building = [(((AOLocations select _x) select 2) select 7)] call sun_selectRemove;
+				_building = [(((AOLocations select _x) select 2) select 7)] call DRO_fnc_selectRemove;
 				[_building] execVM "sunday_system\objectives\destroyPowerUnit.sqf";
 			};
 		} forEach _AOIndexesShuffled;		
@@ -1149,7 +1149,7 @@ if (random 1 > 0.5) then {
 _introPosCollect = travelPosPOIMil + enemyPosCollection;
 {_introPosCollect pushBack (_x select 5)} forEach objData;
 for "_c" from 0 to 2 do {
-	_thisTarget = [_introPosCollect] call sun_selectRemove;
+	_thisTarget = [_introPosCollect] call DRO_fnc_selectRemove;
 	_randPos = [_thisTarget, 5, 15, 3, 1, 0.4, 0, [], [0,0,0]] call BIS_fnc_findSafePos;
 	if !(_randPos isEqualTo [0,0,0]) then {
 	
@@ -1201,7 +1201,7 @@ diag_log format ["DRO: Player setup script run time = %1", time - _scriptStartTi
 if (!isNil "DRO_simpleObjects") then {
 	if (count DRO_simpleObjects > 0) then {
 		{
-			[_x] call sun_replaceSimpleObject;
+			[_x] call DRO_fnc_replaceSimpleObject;
 		} forEach DRO_simpleObjects;
 	};
 };
@@ -1228,7 +1228,7 @@ if (random 1 > 0.3) then {
 		};
 		if (count _vehClass > 0) then {
 			if (count (((AOLocations select 0) select 2) select 0) > 0) then {
-				_pos = [(((AOLocations select 0) select 2) select 0)] call sun_selectRemove;
+				_pos = [(((AOLocations select 0) select 2) select 0)] call DRO_fnc_selectRemove;
 				_veh = _vehClass createVehicle _pos;			
 				_roadList = _pos nearRoads 10;
 				if (count _roadList > 0) then {
@@ -1276,7 +1276,7 @@ if (minesEnabled == 1) then {
 };
 
 // Remove enemy NVG because it's bullshit
-[] call sun_removeEnemyNVG;
+[] call DRO_fnc_removeEnemyNVG;
 
 // Attempt to set CBA ACE3 stamina
 if ((["Stamina", 0] call BIS_fnc_getParamValue > 0) || ((staminaDisabled) > 0)) then {

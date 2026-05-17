@@ -56,17 +56,17 @@ while {true} do {
 			if (count _medikitMedics > 0) then {
 				if (count _medikitMedics > 1) then {
 					_closestMedics = [_medikitMedics, [_downedUnit], {_x distance _input0}, "ASCEND"] call BIS_fnc_sortBy;					
-					[(_closestMedics select 0), _downedUnit] remoteExec ["rev_AIHeal", (_closestMedics select 0)];
+					[(_closestMedics select 0), _downedUnit] remoteExec ["DRO_fnc_AIHeal", (_closestMedics select 0)];
 				} else {					
-					[(_medikitMedics select 0), _downedUnit] remoteExec ["rev_AIHeal", (_medikitMedics select 0)];
+					[(_medikitMedics select 0), _downedUnit] remoteExec ["DRO_fnc_AIHeal", (_medikitMedics select 0)];
 				};				
 			} else {
 				if (count _fakMedics > 0) then {
 					if (count _fakMedics > 1) then {
 						_closestMedics = [_fakMedics, [_downedUnit], {_x distance _input0}, "ASCEND"] call BIS_fnc_sortBy;						
-						[(_closestMedics select 0), _downedUnit] remoteExec ["rev_AIHeal", (_closestMedics select 0)];
+						[(_closestMedics select 0), _downedUnit] remoteExec ["DRO_fnc_AIHeal", (_closestMedics select 0)];
 					} else {						
-						[(_fakMedics select 0), _downedUnit] remoteExec ["rev_AIHeal", (_fakMedics select 0)];
+						[(_fakMedics select 0), _downedUnit] remoteExec ["DRO_fnc_AIHeal", (_fakMedics select 0)];
 					};					
 				};				
 			};

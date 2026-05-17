@@ -104,7 +104,7 @@ _crate addItemCargoGlobal ["FirstAidKit", 10];
 		_crate addMagazineCargoGlobal [(_x select 0), 2];
 	} forEach _magazines;	
 } forEach (units (grpNetId call BIS_fnc_groupFromNetId));
-[_crate, (grpNetId call BIS_fnc_groupFromNetId)] call sun_supplyBox;
+[_crate, (grpNetId call BIS_fnc_groupFromNetId)] call DRO_fnc_supplyBox;
 //waitUntil {(((position _crate) select 2) < 100)};
 
 

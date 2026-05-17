@@ -33,7 +33,7 @@ if ((player == _thisUnit) OR (!isPlayer _thisUnit)) then {
 			_thisUnit setVariable ["unitClass", _infCopy, true];
 			_thisUnit setUnitLoadout (getUnitLoadout _infCopy);
 			
-			_thisUnit call chz_loadoutCompat;
+			_thisUnit call DRO_fnc_loadoutCompat;
 		};
 	};
 };
@@ -44,6 +44,6 @@ if ((player == _thisUnit) OR (!isPlayer _thisUnit)) then {
 	} else {
 		(_return select 1)
 	};	
-	[626262, (_thisUnit getVariable "unitLoadoutIDC"), _class] remoteExec ["sun_lobbyChangeLabel", _x];	
+	[626262, (_thisUnit getVariable "unitLoadoutIDC"), _class] remoteExec ["DRO_fnc_lobbyChangeLabel", _x];	
 	
 } forEach _playerGroupCBA;

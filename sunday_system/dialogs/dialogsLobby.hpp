@@ -43,7 +43,7 @@ class DRO_lobbyDialog {
 			w = "2.5 * pixelGridNoUIScale * pixelW";	
 			h = "3 * pixelGridNoUIScale * pixelH";
 			sizeEx = "((pixelH * (pixelGridNoUIScale) * 2) * 2) * 0.5";
-			action = "['LEFT', (findDisplay 626262)] spawn dro_menuSlider";
+			action = "['LEFT', (findDisplay 626262)] spawn DRO_fnc_menuSlider";
 			soundClick[] = {"A3\missions_f\data\sounds\border_out.ogg",1,1.3};
 		};
 		class menuRight: DROBasicButton
@@ -55,7 +55,7 @@ class DRO_lobbyDialog {
 			w = "2.5 * pixelGridNoUIScale * pixelW";	
 			h = "3 * pixelGridNoUIScale * pixelH";
 			sizeEx = "((pixelH * (pixelGridNoUIScale) * 2) * 2) * 0.5";		
-			action = "['RIGHT', (findDisplay 626262)] spawn dro_menuSlider";	
+			action = "['RIGHT', (findDisplay 626262)] spawn DRO_fnc_menuSlider";	
 			soundClick[] = {"A3\missions_f\data\sounds\border_in.ogg",1,1.3};			
 		};
 		class loadoutGroup: RscControlsGroup {
@@ -93,7 +93,7 @@ class DRO_lobbyDialog {
 			y = "safezoneH - (4 * pixelGridNoUIScale * pixelH)";
 			w = "4 * pixelGridNoUIScale * pixelW";
 			h = "4 * pixelGridNoUIScale * pixelH";			
-			action = "[] spawn sun_lobbyMapPreview";
+			action = "[] spawn DRO_fnc_lobbyMapPreview";
 		};
 		class insertGroup: RscControlsGroup {
 			idc = 6070;			
@@ -118,7 +118,7 @@ class DRO_lobbyDialog {
 					y = "2.5 * pixelGridNoUIScale * pixelH";
 					w = "16.75 * pixelGridNoUIScale * pixelW";	
 					h = "3 * pixelGridNoUIScale * pixelH";				
-					action = "[] call sun_clearInsert;";		
+					action = "[] call DRO_fnc_clearInsert;";		
 				};
 				class lobbySelectStart: DROBasicButton
 				{			
@@ -259,7 +259,7 @@ class DRO_lobbyDialog {
 			w = "23 * pixelGridNoUIScale * pixelW";
 			h = "4 * pixelGridNoUIScale * pixelH";	
 			sizeEx = "((pixelH * (pixelGridNoUIScale) * 2) * 2.5) * 0.5";	
-			action = "[] call sun_lobbyReadyButton;";			
+			action = "[] call DRO_fnc_lobbyReadyButton;";			
 		};		
 	};
 };

@@ -50,7 +50,7 @@ if (_artyChance > _supplyChance) then {
 		_availableArty = [];
 		{
 			_artyClass = (selectRandom _artyList);						
-			_artyRanges = [_artyClass] call dro_getArtilleryRanges;
+			_artyRanges = [_artyClass] call DRO_fnc_getArtilleryRanges;
 			_minRange = (_artyRanges select 0);
 			_maxRange = (_artyRanges select 1);			
 			_trgArea = triggerArea trgAOC;
@@ -96,7 +96,7 @@ if (_artyChance > _supplyChance) then {
 			_artyVeh = createVehicle [_artyClass, _artyPos, [], 0, "NONE"];
 			_artyVeh setDir ([_artyPos, trgAOC] call BIS_fnc_dirTo);			
 			diag_log format ["DRO: _artyVeh = %1", _artyVeh];			
-			[_artyVeh, playersSide, false] call sun_createVehicleCrew;
+			[_artyVeh, playersSide, false] call DRO_fnc_createVehicleCrew;
 			_artyVeh disableAI "PATH";
 			
 			dro_messageStack pushBack [

@@ -23,9 +23,9 @@ switch (_reinfType) do {
 			if (reactiveChance > 0.85) then {
 				diag_log "DRO: Creating reactive task";
 				reactiveChance = 0;
-				[] call fnc_selectReactiveObjective;
+				[] call DRO_fnc_selectReactiveObjective;
 			} else {
-				["TASK_SUCCEED"] spawn dro_sendProgressMessage;
+				["TASK_SUCCEED"] spawn DRO_fnc_sendProgressMessage;
 			};
 		}, 10, [_thisTask]] call CBA_fnc_addPerFrameHandler;
 	};
@@ -40,9 +40,9 @@ switch (_reinfType) do {
 			if (reactiveChance > 0.85) then {
 				diag_log "DRO: Creating reactive task";
 				reactiveChance = 0;
-				[] call fnc_selectReactiveObjective;
+				[] call DRO_fnc_selectReactiveObjective;
 			} else {
-				["TASK_SUCCEED"] spawn dro_sendProgressMessage;
+				["TASK_SUCCEED"] spawn DRO_fnc_sendProgressMessage;
 			};
 			reinforceChance = ((reinforceChance + 0.1) * aiMultiplier);
 			if ((random 1) < reinforceChance) then {
@@ -62,9 +62,9 @@ switch (_reinfType) do {
 			[_pfhId] call CBA_fnc_removePerFrameHandler;
 			[{
 				params ["_objectivePos"];
-				private _ambushGroup = [_objectivePos] call dro_triggerAmbushSpawn;
+				private _ambushGroup = [_objectivePos] call DRO_fnc_triggerAmbushSpawn;
 				if (!isNull _ambushGroup) then {
-					["AMBUSH"] spawn dro_sendProgressMessage;
+					["AMBUSH"] spawn DRO_fnc_sendProgressMessage;
 				};
 			}, [_objectivePos], 5] call CBA_fnc_waitAndExecute;
 		}, 10, [_objectivePos, _thisTask]] call CBA_fnc_addPerFrameHandler;
@@ -79,7 +79,7 @@ switch (_reinfType) do {
 			if (reactiveChance > 0.85) then {
 				diag_log "DRO: Creating reactive task";
 				reactiveChance = 0;
-				[] call fnc_selectReactiveObjective;
+				[] call DRO_fnc_selectReactiveObjective;
 			};
 		}, 10, [_thisTask]] call CBA_fnc_addPerFrameHandler;
 	};

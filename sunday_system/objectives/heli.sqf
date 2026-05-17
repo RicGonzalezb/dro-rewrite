@@ -15,10 +15,10 @@ _vehicleType = selectRandom _vehicleList;
 _helipadUsed = 0;
 _thisPos = [];		
 if (count (((AOLocations select _AOIndex) select 2) select 8) > 0) then {			
-	_thisPos = getPos ([(((AOLocations select _AOIndex) select 2) select 8)] call sun_selectRemove);
+	_thisPos = getPos ([(((AOLocations select _AOIndex) select 2) select 8)] call DRO_fnc_selectRemove);
 	_helipadUsed = 1;
 } else {
-	_thisPos = [(((AOLocations select _AOIndex) select 2) select 4)] call sun_selectRemove;	
+	_thisPos = [(((AOLocations select _AOIndex) select 2) select 4)] call DRO_fnc_selectRemove;	
 	_tempPos = [(_thisPos select 0), (_thisPos select 1), 0];
 	_thisPos = _tempPos;			
 };		
@@ -31,12 +31,12 @@ _taskType = "destroy";
 missionNamespace setVariable [format ["%1Completed", _taskName], 0, true];
 
 _thisVeh = _vehicleType createVehicle _thisPos;
-_thisVeh = [_thisVeh] call sun_checkVehicleSpawn;
-if (isNull _thisVeh) exitWith {[(AOLocations call BIS_fnc_randomIndex), false] call fnc_selectObjective};			
+_thisVeh = [_thisVeh] call DRO_fnc_checkVehicleSpawn;
+if (isNull _thisVeh) exitWith {[(AOLocations call BIS_fnc_randomIndex), false] call DRO_fnc_selectObjective};			
 _thisVeh setVariable ["thisTask", _taskName, true];			
 missionNamespace setVariable [(format ["%1_taskType", _taskName]), _taskType, true];
 
-[_thisVeh] call dro_addSabotageAction;
+[_thisVeh] call DRO_fnc_addSabotageAction;
 
 // Add destruction event handler
 _thisVeh addEventHandler ["Killed", {
@@ -66,21 +66,21 @@ if (_helipadUsed == 0) then {
 	_rotation = (_startDir - 45);
 	for "_i" from 1 to 4 do {
 		_cornerPos = [_thisPos, 16, _dir] call BIS_fnc_relPos;
-		_corner = ["Land_HBarrierWall_corner_F", _cornerPos, _rotation] call dro_createSimpleObject;		
+		_corner = ["Land_HBarrierWall_corner_F", _cornerPos, _rotation] call DRO_fnc_createSimpleObject;		
 		_lightPos = [_thisPos, 10, _dir] call BIS_fnc_relPos;
-		_light = ["PortableHelipadLight_01_red_F", _lightPos, _rotation] call dro_createSimpleObject;		
+		_light = ["PortableHelipadLight_01_red_F", _lightPos, _rotation] call DRO_fnc_createSimpleObject;		
 		_dir = _dir + 90;
 		_rotation = _rotation + 90;
 	};
 	
 	_towerPos = [_thisPos, 20, random 360] call BIS_fnc_relPos;
-	["Land_HBarrierTower_F", _towerPos, (_startDir+45)] call dro_createSimpleObject;	
+	["Land_HBarrierTower_F", _towerPos, (_startDir+45)] call DRO_fnc_createSimpleObject;	
 } else {
 	_thisPad = nearestObject [_thisPos, "HeliH"];
 	_dir = (getDir _thisPad);
 	for "_i" from 1 to 4 do {				
 		_lightPos = [_thisPos, 10, _dir] call BIS_fnc_relPos;
-		_light = ["PortableHelipadLight_01_red_F", _lightPos, _dir] call dro_createSimpleObject;		
+		_light = ["PortableHelipadLight_01_red_F", _lightPos, _dir] call DRO_fnc_createSimpleObject;		
 		_dir = _dir + 90;				
 	};
 };
@@ -90,13 +90,13 @@ _itemsArray = ["Land_AirIntakePlug_05_F", "Land_DieselGroundPowerUnit_01_F", "La
 for "_i" from 1 to _randItems do {
 	_itemPos = [_thisPos, 8, 20, 1, 0, 1, 0] call BIS_fnc_findSafePos;
 	_thisItem = selectRandom _itemsArray;
-	[_thisItem, _itemPos, (random 360)] call dro_createSimpleObject;	
+	[_thisItem, _itemPos, (random 360)] call DRO_fnc_createSimpleObject;	
 };
 
 // Guards
 _minAI = round (2 * aiMultiplier);
 _maxAI = round (4 * aiMultiplier);
-_spawnedSquad = [_thisPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;						
+_spawnedSquad = [_thisPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;						
 if (!isNil "_spawnedSquad") then {
 	[_spawnedSquad, _thisPos] call bis_fnc_taskDefend;
 };
@@ -118,7 +118,7 @@ if (_possibleLocsMaxIndex > 0) then {
 				} else {
 					((((AOLocations select _i) select 2) select (selectRandom _possibleLocTypes)))
 				};				
-				_selectedPos = [_selectedPosArray] call sun_selectRemove;					
+				_selectedPos = [_selectedPosArray] call DRO_fnc_selectRemove;					
 				_travelPositions pushBack _selectedPos;
 			};
 		};		
@@ -126,7 +126,7 @@ if (_possibleLocsMaxIndex > 0) then {
 };
 
 if (count _travelPositions > 0) then {
-	[_thisVeh] call sun_createVehicleCrew;
+	[_thisVeh] call DRO_fnc_createVehicleCrew;
 	//createVehicleCrew _thisVeh;
 	waitUntil {!isNull (driver _thisVeh)};
 	_vehGroup = group (driver _thisVeh);

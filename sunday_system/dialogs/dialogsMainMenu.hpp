@@ -86,7 +86,7 @@ class sundayDialog {
 			w = "2.5 * pixelGridNoUIScale * pixelW";	
 			h = "3 * pixelGridNoUIScale * pixelH";
 			sizeEx = "((pixelH * (pixelGridNoUIScale) * 2) * 2) * 0.5";
-			action = "['LEFT', (findDisplay 52525)] spawn dro_menuSlider";
+			action = "['LEFT', (findDisplay 52525)] spawn DRO_fnc_menuSlider";
 			soundClick[] = {"A3\missions_f\data\sounds\border_out.ogg",1,1.3};
 		};
 		class menuRight: DROBasicButton
@@ -98,7 +98,7 @@ class sundayDialog {
 			w = "2.5 * pixelGridNoUIScale * pixelW";	
 			h = "3 * pixelGridNoUIScale * pixelH";
 			sizeEx = "((pixelH * (pixelGridNoUIScale) * 2) * 2) * 0.5";	
-			action = "['RIGHT', (findDisplay 52525)] spawn dro_menuSlider";
+			action = "['RIGHT', (findDisplay 52525)] spawn DRO_fnc_menuSlider";
 			soundClick[] = {"A3\missions_f\data\sounds\border_in.ogg",1,1.3};
 		};
 		class sundayTitlePlayer: sundayText
@@ -212,7 +212,7 @@ class sundayDialog {
 					y = "safezoneH - (24 * pixelGridNoUIScale * pixelH)";
 					w = "20 * pixelGridNoUIScale * pixelW";	
 					h = "3 * pixelGridNoUIScale * pixelH";		
-					action = "[] call dro_clearData";		
+					action = "[] call DRO_fnc_clearData";		
 				};
 			};
 		};
@@ -247,7 +247,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 2094;
-							action = "['MAIN', 2090, true, 'PRESET'] call sun_switchButton";
+							action = "['MAIN', 2090, true, 'PRESET'] call DRO_fnc_switchButton";
 							tooltip = "";
 						};
 					};		
@@ -303,7 +303,7 @@ class sundayDialog {
 							w = "11.75 * pixelGridNoUIScale * pixelW";	
 							h = "3 * pixelGridNoUIScale * pixelH";
 							sizeEx = "((pixelH * (pixelGridNoUIScale) * 2) * 1.25) * 0.5";			
-							action = "[] spawn dro_menuMap";		
+							action = "[] spawn DRO_fnc_menuMap";		
 						};
 					};
 				};
@@ -328,7 +328,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 2024;
-							action = "['MAIN', 2020] call sun_switchButton";
+							action = "['MAIN', 2020] call DRO_fnc_switchButton";
 							tooltip = "When enabled up to five extra locations will be chosen in addition to the selected AO location to make a larger area for the mission.";
 						};
 						
@@ -359,7 +359,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 2034;
-							action = "['MAIN', 2030] call sun_switchButton";
+							action = "['MAIN', 2030] call DRO_fnc_switchButton";
 							tooltip = "Normal reduces the AI's aiming ability dramatically while leaving their strategic skills almost unchanged. Hard is similar but with slightly better aiming skills. CUSTOM makes no changes to any AI skills and leaves them as set in your mission difficulty menu or custom difficulty class.";			
 						};
 					};		
@@ -421,7 +421,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 2054;
-							action = "['MAIN', 2050] call sun_switchButton";
+							action = "['MAIN', 2050] call DRO_fnc_switchButton";
 							tooltip = "Enable the possibility for minefields to be present or disable them altogether.";
 						};
 					};		
@@ -447,7 +447,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 2064;
-							action = "['MAIN', 2060] call sun_switchButton";
+							action = "['MAIN', 2060] call DRO_fnc_switchButton";
 							tooltip = "Enable the possibility for civilians to be present or disable them altogether.";
 						};
 					};		
@@ -473,7 +473,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 2074;
-							action = "['MAIN', 2070] call sun_switchButton";
+							action = "['MAIN', 2070] call DRO_fnc_switchButton";
 							tooltip = "Enable or disable player stealth tracking throughout the mission. 'Random' only has a chance to enable stealth on dusk or night starts.";
 						};
 					};		
@@ -499,7 +499,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 2084;
-							action = "['MAIN', 2080] call sun_switchButton";
+							action = "['MAIN', 2080] call DRO_fnc_switchButton";
 							tooltip = "Set the revive bleed-out time or disable the built-in revive script in favor of an alternative.";
 						};
 					};		
@@ -525,7 +525,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 3044;
-							action = "['MAIN', 3040] call sun_switchButton";
+							action = "['MAIN', 3040] call DRO_fnc_switchButton";
 							tooltip = "Enables or disables stamina/fatigue for players and AI in the player's group. This has no effect on ACE Advanced Fatigue if set by the server admin in CONFIGURE ADDONS.";
 						};
 					};		
@@ -551,7 +551,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 2404;
-							action = "['MAIN', 2400] call sun_switchButton";
+							action = "['MAIN', 2400] call DRO_fnc_switchButton";
 							tooltip = "Enable or disable the Arma dynamic simulation system. Can improve performance when enabled but will disable AI on units outside the player's immediate area.";
 						};
 					};		
@@ -589,7 +589,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 3014;
-							action = "['MAIN', 3010, true, 'TIME'] call sun_switchButton";
+							action = "['MAIN', 3010, true, 'TIME'] call DRO_fnc_switchButton";
 							tooltip = "Set the mission start time.";
 						};
 					};		
@@ -615,7 +615,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 3024;
-							action = "['MAIN', 3020] call sun_switchButtonWeather";
+							action = "['MAIN', 3020] call DRO_fnc_switchButtonWeather";
 							tooltip = "Set the mission start weather.";
 						};
 					};		
@@ -661,7 +661,7 @@ class sundayDialog {
 					y = "10 * pixelGridNoUIScale * pixelH";	
 					w = "23 * pixelGridNoUIScale * pixelW";	
 					h = "1.5 * pixelGridNoUIScale * pixelH";						
-					onSliderPosChanged = "_mult = ((_this select 1)/10); _rounded = round (_mult * (10 ^ 3)) / (10 ^ 3); ['MAIN', 3020, true, 1] call sun_switchButtonWeather; weatherOvercast = _rounded; publicVariable 'weatherOvercast';";
+					onSliderPosChanged = "_mult = ((_this select 1)/10); _rounded = round (_mult * (10 ^ 3)) / (10 ^ 3); ['MAIN', 3020, true, 1] call DRO_fnc_switchButtonWeather; weatherOvercast = _rounded; publicVariable 'weatherOvercast';";
 				};
 				class Spacer3: sundaySpacer {
 					idc = 2110;					
@@ -685,7 +685,7 @@ class sundayDialog {
 					y = "14 * pixelGridNoUIScale * pixelH";					
 					w = "10 * pixelGridNoUIScale * pixelW";
 					h = "1.75 * pixelGridNoUIScale * pixelH";					
-					onLBSelChanged = "[_this] spawn sun_monthSelChange;";		
+					onLBSelChanged = "[_this] spawn DRO_fnc_monthSelChange;";		
 				};
 				class sundayTitleDay: sundayText
 				{
@@ -705,7 +705,7 @@ class sundayDialog {
 					y = "17 * pixelGridNoUIScale * pixelH";					
 					w = "10 * pixelGridNoUIScale * pixelW";
 					h = "1.75 * pixelGridNoUIScale * pixelH";					
-					onLBSelChanged = "[_this] spawn sun_daySelChange;";		
+					onLBSelChanged = "[_this] spawn DRO_fnc_daySelChange;";		
 				};
 				class Spacer4: sundaySpacer {
 					idc = 2302;					
@@ -732,7 +732,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 3034;
-							action = "['MAIN', 3030] call sun_switchButton";
+							action = "['MAIN', 3030] call DRO_fnc_switchButton";
 							tooltip = "Enabled or disable the presence of ambient animals.";
 						};
 					};		
@@ -769,7 +769,7 @@ class sundayDialog {
 						};
 						class SwitchButton: sundaySelButton {
 							idc = 4014;
-							action = "['MAIN', 4010] call sun_switchButton";
+							action = "['MAIN', 4010] call DRO_fnc_switchButton";
 						};
 					};		
 				};				

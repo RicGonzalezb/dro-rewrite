@@ -1,7 +1,7 @@
 params ["_AOIndex"];
 
 if (count (((AOLocations select _AOIndex) select 2) select 4) > 0) then {	
-	_pos = [(((AOLocations select _AOIndex) select 2) select 4)] call sun_selectRemove; 
+	_pos = [(((AOLocations select _AOIndex) select 2) select 4)] call DRO_fnc_selectRemove; 
 	_objects = (selectRandom compositionsEmplacements);	
 	_spawnedObjects = [_pos, random 360, _objects] call BIS_fnc_ObjectsMapper;
 	
@@ -11,10 +11,10 @@ if (count (((AOLocations select _AOIndex) select 2) select 4) > 0) then {
 	_leader = nil;
 	_leaderChosen = false;	
 	for "_i" from 1 to _numInf step 1 do {	
-		_spawnPos = [_pos, (5 + random 2), _direction] call dro_extendPos;		
+		_spawnPos = [_pos, (5 + random 2), _direction] call DRO_fnc_extendPos;		
 		_dirOut = [_pos, _spawnPos] call BIS_fnc_dirTo;
 		_direction = _direction + _dirMod;		
-		_guardGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;
+		_guardGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
 		waitUntil {!isNil "_guardGroup"};
 		_guardUnit = ((units _guardGroup) select 0);					
 		_guardUnit setFormDir _dirOut;

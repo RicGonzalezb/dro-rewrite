@@ -28,7 +28,7 @@ _extractStyle = _extractStyles selectRandomWeighted _extractWeights;
 _numPassengers = count (units (grpNetId call BIS_fnc_groupFromNetId));
 _heliTransports = [];
 {
-	if ([_x] call sun_getTrueCargo >= _numPassengers) then {
+	if ([_x] call DRO_fnc_getTrueCargo >= _numPassengers) then {
 		_heliTransports pushBack _x;
 	};
 } forEach pHeliClasses;
@@ -96,7 +96,7 @@ switch (_extractStyle) do {
 		} else {
 			[musicExtract, 0, 0.7] remoteExec ["BIS_fnc_playMusic", ([0, -2] select isDedicated)];
 		};
-		["END_LEAVE"] spawn dro_sendProgressMessage;
+		["END_LEAVE"] spawn DRO_fnc_sendProgressMessage;
 	};
 	case "RTB": {
 		if (((count _heliTransports) > 0) && !extractHeliUsed) then {
@@ -144,12 +144,12 @@ switch (_extractStyle) do {
 		} else {
 			[musicExtract, 0, 0.7] remoteExec ["BIS_fnc_playMusic", ([0, -2] select isDedicated)];
 		};
-		["END_RTB"] spawn dro_sendProgressMessage;
+		["END_RTB"] spawn DRO_fnc_sendProgressMessage;
 	};
 	case "RENDEZVOUS": {
 		_string = format ["Rendezvous with %1 before leaving the AO.", groupId friendlySquad];
 		_taskMeet = ["taskExtract_b", true, [_string, "Rendezvous", ""], (leader friendlySquad), "CREATED", 5, true, true, "exit", true] call BIS_fnc_setTask;
-		["END_RENDEZVOUS"] spawn dro_sendProgressMessage;
+		["END_RENDEZVOUS"] spawn DRO_fnc_sendProgressMessage;
 		// Migrated from scheduled `waitUntil {sleep 5; player near friendly}; lots_of_cleanup`
 		// to self-removing CBA PFH delta=5. All post-rendezvous setup moves into the callback.
 		[{
@@ -165,7 +165,7 @@ switch (_extractStyle) do {
 			private _numPassengers = count (units (grpNetId call BIS_fnc_groupFromNetId));
 			private _heliTransports = [];
 			{
-				if ([_x] call sun_getTrueCargo >= _numPassengers) then {
+				if ([_x] call DRO_fnc_getTrueCargo >= _numPassengers) then {
 					_heliTransports pushBack _x;
 				};
 			} forEach pHeliClasses;
@@ -238,7 +238,7 @@ switch (_extractStyle) do {
 		} forEach allGroups;
 		diag_log format ["DRO: _groupPositions = %1", _groupPositions];
 		_avgPos = if (count _groupPositions > 0) then {
-			[_groupPositions] call sun_avgPos;
+			[_groupPositions] call DRO_fnc_avgPos;
 		} else {
 			(holdAO select 0)
 		};
@@ -247,7 +247,7 @@ switch (_extractStyle) do {
 		_taskCreated = ["taskExtract", true, [_string, "Take and Hold", ""], _avgPos, "CREATED", 5, true, true, "defend", true] call BIS_fnc_setTask;
 		diag_log format ["DRO: Extract task created: %1", _taskCreated];
 		
-		["END_HOLD"] spawn dro_sendProgressMessage;
+		["END_HOLD"] spawn DRO_fnc_sendProgressMessage;
 		
 		_holdAreaSize = ((holdAO select 1) / 4);
 		_markerHold = createMarker ["mkrHold", _avgPos];

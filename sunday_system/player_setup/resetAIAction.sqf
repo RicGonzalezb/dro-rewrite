@@ -30,7 +30,7 @@ _unitNew = _grp createUnit [_class, _pos, [], 0, "NONE"];
 diag_log format ["DRO: reset - created unit %1 in group %2, side %3", _unitNew, _grp, playersSide];
 
 if (reviveDisabled < 3) then {	
-	[_unitNew, _unit] call rev_addReviveToUnit;
+	[_unitNew, _unit] call DRO_fnc_addReviveToUnit;
 };
 
 deleteVehicle _unit;
@@ -44,7 +44,7 @@ diag_log format ["DRO: reset - unit %1 new var name is %2", _unitNew, vehicleVar
 //[_unitNew, ([format ["%1 %2", _firstName, _lastName], _firstName, _lastName])] remoteExec ["setName", 0, true];
 [_unitNew, _lastName] remoteExec ["setNameSound", 0, true];
 
-[_unitNew, _firstName, _lastName, _speaker, _face] remoteExec ['sun_setNameMP', 0, true];
+[_unitNew, _firstName, _lastName, _speaker, _face] remoteExec ['DRO_fnc_setNameMP', 0, true];
 
 diag_log "DRO: reset - names set";
 
@@ -54,7 +54,7 @@ diag_log format ["DRO: reset - unit %1 joined to group %2 in position %3", _unit
 _unitNew setUnitLoadout _loadout;
 _unitNew setVariable ["respawnLoadout", (getUnitLoadout _unitNew), true];
 
-[_unitNew] call sun_addResetAction;
+[_unitNew] call DRO_fnc_addResetAction;
 
 // Re-enabled
 _unitNew setUnitTrait ["Medic", true];

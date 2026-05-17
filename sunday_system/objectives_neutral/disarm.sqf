@@ -16,9 +16,9 @@ if (count (((AOLocations select _AOIndex) select 2) select 2) > 0) then {
 _style = selectRandom _styles;
 
 _thisPos = if (_style == "ROAD") then {
-	[(((AOLocations select _AOIndex) select 2) select 0)] call sun_selectRemove;
+	[(((AOLocations select _AOIndex) select 2) select 0)] call DRO_fnc_selectRemove;
 } else {
-	[(((AOLocations select _AOIndex) select 2) select 2)] call sun_selectRemove;	
+	[(((AOLocations select _AOIndex) select 2) select 2)] call DRO_fnc_selectRemove;	
 };
 
 // Create disarm targets
@@ -30,7 +30,7 @@ _disarmTargetsUXO = [];
 // Create roadside IED
 if (_style == "ROAD") then {
 	_road = ((_thisPos nearRoads 10) select 0);
-	_roadDir = ([_road] call sun_getRoadDir);
+	_roadDir = ([_road] call DRO_fnc_getRoadDir);
 	_IED = createMine [(selectRandom _IEDPool), (_thisPos getPos [4, _roadDir + (selectRandom [-90, 90])]), [], 0];
 	_disarmTargetsIED pushBack _IED;
 };
@@ -55,7 +55,7 @@ _taskDesc = selectRandom [
 // Marker
 _markerName = format["disarmMkr%1", floor(random 10000)];
 if (count _disarmTargetsUXO > 0) then {
-	_avgPos = [(_disarmTargetsUXO + _disarmTargetsIED)] call sun_avgPos;
+	_avgPos = [(_disarmTargetsUXO + _disarmTargetsIED)] call DRO_fnc_avgPos;
 	_thisPos = _avgPos;
 
 	// Get marker size

@@ -73,7 +73,7 @@ DRO_CASCommit = {
 	_provider = createVehicle [_CASClass, _spawnPos, [], 0, "FLY"];
 	_provider flyInHeight _height/2;
 	_provider setPos _spawnPos;
-	[_provider, playersSide, false] call sun_createVehicleCrew;	
+	[_provider, playersSide, false] call DRO_fnc_createVehicleCrew;	
 	
 	_speed = if (_CASClass isKindOf "Helicopter") then {200 / 3.6} else {400 / 3.6};
 	

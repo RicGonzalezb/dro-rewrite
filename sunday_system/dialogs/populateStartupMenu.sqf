@@ -54,20 +54,20 @@ _index = lbAdd [2106, "1"];
 _index = lbAdd [2106, "2"];
 _index = lbAdd [2106, "3"];
 
-["MAIN", 2020, false] call sun_switchButton;
-["MAIN", 2030, false] call sun_switchButton;
-["MAIN", 2050, false] call sun_switchButton;
-["MAIN", 2060, false] call sun_switchButton;
-["MAIN", 2070, false] call sun_switchButton;
-["MAIN", 2080, false] call sun_switchButton;
-["MAIN", 2090, false] call sun_switchButton;
-["MAIN", 2400, false] call sun_switchButton;
-["MAIN", 3010, false, "TIME"] call sun_switchButton;
-['MAIN', 3020, false] call sun_switchButtonWeather;
-["MAIN", 3030, false] call sun_switchButton;
-["MAIN", 3040, false] call sun_switchButton;
-["MAIN", 4010, false] call sun_switchButton;
-//["MAIN", 3020, false] call sun_switchButton;
+["MAIN", 2020, false] call DRO_fnc_switchButton;
+["MAIN", 2030, false] call DRO_fnc_switchButton;
+["MAIN", 2050, false] call DRO_fnc_switchButton;
+["MAIN", 2060, false] call DRO_fnc_switchButton;
+["MAIN", 2070, false] call DRO_fnc_switchButton;
+["MAIN", 2080, false] call DRO_fnc_switchButton;
+["MAIN", 2090, false] call DRO_fnc_switchButton;
+["MAIN", 2400, false] call DRO_fnc_switchButton;
+["MAIN", 3010, false, "TIME"] call DRO_fnc_switchButton;
+['MAIN', 3020, false] call DRO_fnc_switchButtonWeather;
+["MAIN", 3030, false] call DRO_fnc_switchButton;
+["MAIN", 3040, false] call DRO_fnc_switchButton;
+["MAIN", 4010, false] call DRO_fnc_switchButton;
+//["MAIN", 3020, false] call DRO_fnc_switchButton;
 
 /*
 lbAdd [2117, "Enabled"];
@@ -77,7 +77,7 @@ lbAdd [2117, "Disabled"];
 
 lbSetCurSel [2104, month];
 //lbSetCurSel [2117, animalsEnabled];
-[2301] call dro_inputDaysData;
+[2301] call DRO_fnc_inputDaysData;
 lbSetCurSel [2301, day];
 //lbSetCurSel [2103, timeOfDay];
 

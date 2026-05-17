@@ -42,7 +42,7 @@ while {!_reconComplete} do {
 	{
 		_unit = _x;
 		if (isPlayer _unit) then {
-			[_taskName, _taskPos] remoteExec ["dro_detectPosMP", _unit, false];
+			[_taskName, _taskPos] remoteExec ["DRO_fnc_detectPosMP", _unit, false];
 		};
 	} forEach _playerGroupUnique;
 	

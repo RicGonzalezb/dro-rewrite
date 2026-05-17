@@ -28,7 +28,7 @@ for "_i" from 0 to ([0, 2] call BIS_fnc_randomInt) step 1 do {
 		_thisIndex = [_possibleIndexes, _indexWeights] call BIS_fnc_selectRandomWeighted;
 		_indexWeights set [(_possibleIndexes find _thisIndex), 0.1];
 		if (count (((AOLocations select _thisIndex) select 2) select 7) > 0) then {
-			_thisBuilding = [(((AOLocations select _thisIndex) select 2) select 7)] call sun_selectRemove;
+			_thisBuilding = [(((AOLocations select _thisIndex) select 2) select 7)] call DRO_fnc_selectRemove;
 			
 			_validSurfaces = [];
 			_allSurfaces = [];

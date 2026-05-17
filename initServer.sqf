@@ -20,8 +20,8 @@ missionNameSpace setVariable ["aoLocation", "", true];
 missionNameSpace setVariable ["lobbyComplete", 0, true];
 
 _vn_allowed_radio_backpacks = (missionConfigFile >> "vn_artillery_settings" >> "radio_backpacks") call BIS_fnc_getCfgDataArray;
-missionNameSpace setVariable ["vn_allowed_radio_backpacks", [], true];
+missionNameSpace setVariable ["vn_allowed_radio_backpacks", _vn_allowed_radio_backpacks, true];
 _vn_allowed_radio_vehicles = (missionConfigFile >> "vn_artillery_settings" >> "radio_vehicles") call BIS_fnc_getCfgDataArray;
-missionNameSpace setVariable ["vn_allowed_radio_vehicles", [], true];
+missionNameSpace setVariable ["vn_allowed_radio_vehicles", _vn_allowed_radio_vehicles, true];
 
 [] execVM "start.sqf";

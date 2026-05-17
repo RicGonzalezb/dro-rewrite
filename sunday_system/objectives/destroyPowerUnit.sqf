@@ -1,7 +1,7 @@
 params ["_thisBuilding"];
 _powerObjects = [["Land_PowerGenerator_F", 270], ["Land_DieselGroundPowerUnit_01_F", 270], ["Land_dp_transformer_F", 180], ["Land_DPP_01_transformer_F", 180]];
 
-_wallPositions = [_thisBuilding] call sun_findWallPositions;
+_wallPositions = [_thisBuilding] call DRO_fnc_findWallPositions;
 _objects = [];
 {
 	_wallPos = (_x select 0);
@@ -17,7 +17,7 @@ _objects = [];
 
 if (count _objects == 0) exitWith {};
 
-_powerUnit = [_objects] call sun_selectRemove;
+_powerUnit = [_objects] call DRO_fnc_selectRemove;
 {
 	deleteVehicle _x;
 } forEach _objects;
@@ -66,7 +66,7 @@ if (["powerTask"] call BIS_fnc_taskExists) then {
 _powerUnit setVariable ["thisTask", _taskName, true];
 missionNamespace setVariable [(format ["%1_taskType", _taskName]), "danger", true];
 
-[_powerUnit] call dro_addSabotageAction;
+[_powerUnit] call DRO_fnc_addSabotageAction;
 // Add destruction event handler
 _powerUnit addEventHandler ["Explosion", {
 	if ((_this select 1) > 0.2) then {

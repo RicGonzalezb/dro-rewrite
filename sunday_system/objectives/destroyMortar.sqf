@@ -5,7 +5,7 @@ _subTasks = [];
 _taskName = format ["task%1", floor(random 100000)];
 _intelSubTaskName = format ["subtask%1", floor(random 100000)];
 
-_thisPos = [(((AOLocations select _AOIndex) select 2) select 4)] call sun_selectRemove;
+_thisPos = [(((AOLocations select _AOIndex) select 2) select 4)] call DRO_fnc_selectRemove;
 _thisPos set [2, 0];
 				
 // Create objective
@@ -22,22 +22,22 @@ missionNamespace setVariable [format ["%1Completed", _taskName], 0, true];
 missionNamespace setVariable [(format ["%1_taskType", _taskName]), _taskType, true];
 
 // Create mortar units
-_mortPos = [_thisPos, 3, (random 360)] call dro_extendPos;				
+_mortPos = [_thisPos, 3, (random 360)] call DRO_fnc_extendPos;				
 _mortar = _mortarType createVehicle _mortPos;				
-_spawnedGunner = [_mortPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1, 1]] call dro_spawnGroupWeighted;		
+_spawnedGunner = [_mortPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1, 1]] call DRO_fnc_spawnGroupWeighted;		
 waitUntil {!isNil "_spawnedGunner"};
 ((units _spawnedGunner) select 0) assignAsGunner _mortar;
 (units _spawnedGunner) orderGetIn true;
 			
 _mort2Dir = [_mortPos, _thisPos] call BIS_fnc_dirTo;
-_mort2Pos = [_thisPos, 3, _mort2Dir] call dro_extendPos;
+_mort2Pos = [_thisPos, 3, _mort2Dir] call DRO_fnc_extendPos;
 _mortar2 = _mortarType createVehicle _mort2Pos;				
-_spawnedGunner2 = [_mortPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1, 1]] call dro_spawnGroupWeighted;	
+_spawnedGunner2 = [_mortPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1, 1]] call DRO_fnc_spawnGroupWeighted;	
 waitUntil {!isNil "_spawnedGunner2"};
 ((units _spawnedGunner2) select 0) assignAsGunner _mortar2;
 (units _spawnedGunner2) orderGetIn true;
 
-[[_mortar, _mortar2], _taskName] call dro_addSabotageAction;
+[[_mortar, _mortar2], _taskName] call DRO_fnc_addSabotageAction;
 // Create trigger				
 _trgComplete = createTrigger ["EmptyDetector", _thisPos, true];
 _trgComplete setTriggerArea [0, 0, 0, false];
@@ -65,14 +65,14 @@ _rotation = (_startDir - 180);
 for "_i" from 1 to 4 do {
 	_popChance = (random 100);
 	if (_popChance > 40) then {
-		_cornerPos = [_thisPos, 10, _dir] call dro_extendPos;
+		_cornerPos = [_thisPos, 10, _dir] call DRO_fnc_extendPos;
 		if (_popChance > 70) then {
 			// Corner bunker							
 			_cornerClass = selectRandom _cornerFortClasses;
-			_corner = [_cornerClass, _cornerPos, _rotation] call dro_createSimpleObject;
+			_corner = [_cornerClass, _cornerPos, _rotation] call DRO_fnc_createSimpleObject;
 							
 			// Create guard														
-			_group = [_cornerPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;
+			_group = [_cornerPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
 			_unit = ((units _group) select 0);							
 			if (!isNil "_unit") then {
 				_unitDir = (_rotation-180);
@@ -83,12 +83,12 @@ for "_i" from 1 to 4 do {
 		};
 		// Corner fortifications
 		_cornerFortExtraClasses = ["Land_Razorwire_F", "Land_BagFence_Long_F"];
-		_cornerFortPos1 = [_cornerPos, 5, (_dir-45)] call dro_extendPos;
-		_cornerFortPos2 = [_cornerPos, 5, (_dir+45)] call dro_extendPos;
+		_cornerFortPos1 = [_cornerPos, 5, (_dir-45)] call DRO_fnc_extendPos;
+		_cornerFortPos2 = [_cornerPos, 5, (_dir+45)] call DRO_fnc_extendPos;
 		
 		_cornerFortClass = selectRandom _cornerFortExtraClasses;
-		_cornerFortObject1 = [_cornerFortClass, _cornerFortPos1, (_rotation - 90)] call dro_createSimpleObject;
-		_cornerFortObject2 = [_cornerFortClass, _cornerFortPos2, (_rotation)] call dro_createSimpleObject;
+		_cornerFortObject1 = [_cornerFortClass, _cornerFortPos1, (_rotation - 90)] call DRO_fnc_createSimpleObject;
+		_cornerFortObject2 = [_cornerFortClass, _cornerFortPos2, (_rotation)] call DRO_fnc_createSimpleObject;
 		
 		_dir = _dir + 90;
 		_rotation = _rotation + 90;
@@ -109,7 +109,7 @@ for "_i" from 1 to _randItems do {
 };
 _minAI = round (3 * aiMultiplier);
 _maxAI = round (5 * aiMultiplier);
-_spawnedSquad = [_thisPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI]] call dro_spawnGroupWeighted;				
+_spawnedSquad = [_thisPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI]] call DRO_fnc_spawnGroupWeighted;				
 if (!isNil "_spawnedSquad") then {					
 	[_spawnedSquad, _thisPos, [10, 30], "limited"] execVM "sunday_system\orders\patrolArea.sqf";	
 };

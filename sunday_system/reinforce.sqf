@@ -34,14 +34,14 @@ for "_i" from 1 to _numReinforcements do {
 	};
 	if (count enemyGVPool > 0) then {
 		{
-			if (([_x] call sun_getTrueCargo) >= 4) exitWith {			
+			if (([_x] call DRO_fnc_getTrueCargo) >= 4) exitWith {			
 				_styles pushBackUnique "CARTRANSPORT";
 			};
 		} forEach enemyGVPool;		
 	};
 	if (count enemyHeliPool > 0 && count (((AOLocations select _AOIndex) select 2) select 4) > 0) then {
 		{
-			if (([_x] call sun_getTrueCargo) >= 4) exitWith {		
+			if (([_x] call DRO_fnc_getTrueCargo) >= 4) exitWith {		
 				_styles pushBackUnique "HELI";
 			};
 		} forEach enemyHeliPool;
@@ -78,7 +78,7 @@ for "_i" from 1 to _numReinforcements do {
 					// Spawn units
 					_minAI = 4*aiMultiplier;
 					_maxAI = 8*aiMultiplier;					
-					_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI], false] call dro_spawnGroupWeighted;				
+					_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI], false] call DRO_fnc_spawnGroupWeighted;				
 					if (!isNil "_reinfGroup") then {
 						[_reinfGroup, _targetPos] call BIS_fnc_taskAttack;
 						//[_reinfGroup, _targetPos, [50, 300], "FULL"] execVM "sunday_system\orders\patrolArea.sqf";											
@@ -112,17 +112,17 @@ for "_i" from 1 to _numReinforcements do {
 					};				
 										
 					// Spawn vehicle
-					_vehType = [enemyGVPool] call sun_selectRemove;
+					_vehType = [enemyGVPool] call DRO_fnc_selectRemove;
 					_reinfVeh = createVehicle [_vehType, _spawnPos, [], 0, "NONE"];					
-					[_reinfVeh, enemySide, false] call sun_createVehicleCrew;
+					[_reinfVeh, enemySide, false] call DRO_fnc_createVehicleCrew;
 					waitUntil {!isNull (driver _reinfVeh)};
 					// Spawn units
-					_maxUnits = ([_vehType] call sun_getTrueCargo);
+					_maxUnits = ([_vehType] call DRO_fnc_getTrueCargo);
 					_minAI = (_maxUnits/2) * aiMultiplier;				
 					
-					_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxUnits], false] call dro_spawnGroupWeighted;				
+					_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxUnits], false] call DRO_fnc_spawnGroupWeighted;				
 					if (!isNil "_reinfGroup") then {
-						[_reinfGroup, _reinfVeh, true] spawn sun_groupToVehicle;												
+						[_reinfGroup, _reinfVeh, true] spawn DRO_fnc_groupToVehicle;												
 						[_reinfVeh, _reinfGroup, _targetPos, true] execVM "sunday_system\orders\insertGroup.sqf";																				
 						diag_log format ["REINFORCEMENT: Car transport group %1 spawned at %2; inserting at %3",_reinfGroup, _spawnPos, _targetPos];
 					};
@@ -152,10 +152,10 @@ for "_i" from 1 to _numReinforcements do {
 					};					
 					
 					// Spawn vehicle
-					_vehType = [enemyGVTPool] call sun_selectRemove;
+					_vehType = [enemyGVTPool] call DRO_fnc_selectRemove;
 					if (!isNil "_vehType") then {
 						_reinfVeh = createVehicle [_vehType, _spawnPos, [], 0, "NONE"];
-						[_reinfVeh, enemySide, false] call sun_createVehicleCrew;
+						[_reinfVeh, enemySide, false] call DRO_fnc_createVehicleCrew;
 						waitUntil {!isNull (driver _reinfVeh)};
 						[group(driver _reinfVeh), _targetPos] call BIS_fnc_taskAttack;						
 						
@@ -191,18 +191,18 @@ for "_i" from 1 to _numReinforcements do {
 				};
 				
 				// Spawn vehicle
-				_vehType = [enemyHeliPool] call sun_selectRemove;
+				_vehType = [enemyHeliPool] call DRO_fnc_selectRemove;
 				_reinfVeh = createVehicle [_vehType, _spawnPos, [], 0, "FLY"];
 				_reinfVeh setPos _spawnPos;
-				[_reinfVeh, enemySide, false] call sun_createVehicleCrew;
+				[_reinfVeh, enemySide, false] call DRO_fnc_createVehicleCrew;
 				//createVehicleCrew _reinfVeh;
 				waitUntil {!isNull (driver _reinfVeh)};
 				// Spawn units
-				_maxUnits = ([_vehType] call sun_getTrueCargo);
+				_maxUnits = ([_vehType] call DRO_fnc_getTrueCargo);
 				_minAI = (_maxUnits/2) * aiMultiplier;								
-				_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxUnits], false] call dro_spawnGroupWeighted;			
+				_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxUnits], false] call DRO_fnc_spawnGroupWeighted;			
 				if (!isNil "_reinfGroup") then {
-					[_reinfGroup, _reinfVeh, true] spawn sun_groupToVehicle;					
+					[_reinfGroup, _reinfVeh, true] spawn DRO_fnc_groupToVehicle;					
 					[_reinfVeh, _reinfGroup, _insertPos, true, _heliInsertType] execVM "sunday_system\orders\insertGroup.sqf";						
 					diag_log format ["REINFORCEMENT: Heli transport group %1 spawned at %2; inserting at %3",_reinfGroup, _spawnPos, _insertPos];
 				} else {

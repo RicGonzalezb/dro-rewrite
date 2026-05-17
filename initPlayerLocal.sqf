@@ -4,10 +4,10 @@ _rscLayer cutRsc ["DRO_Splash", "PLAIN", 0, true];
 diag_log format ["DRO: Player %1 waiting for player init", player];
 waitUntil {!isNull player};
 
-#include "sunday_system\fnc_lib\sundayFunctions.sqf";
-#include "sunday_system\fnc_lib\droFunctions.sqf";
-#include "sunday_revive\reviveFunctions.sqf";
-#include "sunday_system\fnc_lib\menuFunctions.sqf";
+// [M3 removed] #include "sunday_system\fnc_lib\sundayFunctions.sqf";
+// [M3 removed] #include "sunday_system\fnc_lib\droFunctions.sqf";
+// [M3 removed] #include "sunday_revive\reviveFunctions.sqf";
+// [M3 removed] #include "sunday_system\fnc_lib\menuFunctions.sqf";
 
 addWeaponItemEverywhere = compileFinal " _this select 0 addPrimaryWeaponItem (_this select 1); ";
 addHandgunItemEverywhere = compileFinal " _this select 0 addHandgunItem (_this select 1); ";
@@ -109,13 +109,13 @@ if (_doJIP) exitWith {
 		selectPlayer _chosenSlotUnit;
 		removeAllActions _chosenSlotUnit;
 		if (reviveDisabled < 3) then {
-			[_chosenSlotUnit] call rev_addReviveToUnit;	
+			[_chosenSlotUnit] call DRO_fnc_addReviveToUnit;	
 		};
 	} else {
 		//_class = (selectRandom unitList);
 		//[player, _class] execVM 'sunday_system\player_setup\switchUnitLoadout.sqf';
 		//sleep 1;
-		[player, _pos] call sun_jipNewUnit;
+		[player, _pos] call DRO_fnc_jipNewUnit;
 	};
 	_allHCs = entities "HeadlessClient_F";
 	_currentPlayers = allPlayers - _allHCs;
@@ -138,7 +138,7 @@ if (_doJIP) exitWith {
 };
 
 sleep 0.1;
-["objectivesSpawned"] spawn sun_randomCam;
+["objectivesSpawned"] spawn DRO_fnc_randomCam;
 
 //cutText ["", "BLACK IN", 2];
 
@@ -180,7 +180,7 @@ _rscLayer cutFadeOut 2;
 //diag_log format ["DRO: Player %1 received serverReady", player];
 
 if (player != topUnit) then {
-	[toUpper "Please wait while mission is generated", "objectivesSpawned", 1, ""] spawn sun_callLoadScreen;
+	[toUpper "Please wait while mission is generated", "objectivesSpawned", 1, ""] spawn DRO_fnc_callLoadScreen;
 };
 
 [] spawn {

@@ -33,7 +33,7 @@ _lineHeight = 2.25 * pixelGridNoUIScale * pixelH;
 	} else {
 		_nameControl ctrlSetText (format ["%1 (AI):", (name _x)]);
 	};	
-	_nameControl ctrlSetEventHandler ["ButtonClick", (format ["[%1] call sun_lobbyCamTarget", _x])];	
+	_nameControl ctrlSetEventHandler ["ButtonClick", (format ["[%1] call DRO_fnc_lobbyCamTarget", _x])];	
 	_nameControl ctrlCommit 0;	
 	
 	// Create loadout switcher

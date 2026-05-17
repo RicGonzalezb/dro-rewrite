@@ -1,5 +1,5 @@
 params ["_AOIndex"];
-_thisPos = [(((AOLocations select _AOIndex) select 2) select 4)] call sun_selectRemove;
+_thisPos = [(((AOLocations select _AOIndex) select 2) select 4)] call DRO_fnc_selectRemove;
 
 _tempPos = [(_thisPos select 0), (_thisPos select 1), 0];
 _thisPos = _tempPos;
@@ -12,7 +12,7 @@ _powerTypes = ["Land_dp_transformer_F", "Land_PowerGenerator_F"];
 // Create objective generator
 _powerType = selectRandom _powerTypes;	
 
-_positionArray = [_thisPos, 3, 3, 8] call sun_defineGrid;
+_positionArray = [_thisPos, 3, 3, 8] call DRO_fnc_defineGrid;
 _powerPos = _positionArray select 4;
 _positionArray = _positionArray - [_powerPos];
 
@@ -85,9 +85,9 @@ _dir = (_startDir);
 _gateSide = [1,4] call BIS_fnc_randomInt;
 for "_i" from 1 to 4 do {
 
-	_fencePos1 = [_thisPos, 12, _dir] call dro_extendPos;					
-	_fencePos2 = [_fencePos1, 8, (_dir-90)] call dro_extendPos;					
-	_fencePos3 = [_fencePos1, 8, (_dir+90)] call dro_extendPos;	
+	_fencePos1 = [_thisPos, 12, _dir] call DRO_fnc_extendPos;					
+	_fencePos2 = [_fencePos1, 8, (_dir-90)] call DRO_fnc_extendPos;					
+	_fencePos3 = [_fencePos1, 8, (_dir+90)] call DRO_fnc_extendPos;	
 	
 	_fenceClass1 = "";
 	if (_i == _gateSide) then {
@@ -110,7 +110,7 @@ for "_i" from 1 to 4 do {
 };		
 _minAI = round (3 * aiMultiplier);;
 _maxAI = round (5 * aiMultiplier);;
-_spawnedSquad = [_thisPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI]] call dro_spawnGroupWeighted;				
+_spawnedSquad = [_thisPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI]] call DRO_fnc_spawnGroupWeighted;				
 if (!isNil "_spawnedSquad") then {	
 	[_spawnedSquad, _thisPos, [14, 30], "limited"] execVM "sunday_system\orders\patrolArea.sqf";	
 };

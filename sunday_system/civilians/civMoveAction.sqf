@@ -8,7 +8,7 @@
 				'"Move!"',  
 				{  
 					_dir = [(_this select 1), (_this select 0)] call BIS_fnc_dirTo;  
-					_movePos = [(getPos (_this select 0)), 200, _dir] call dro_extendPos;  
+					_movePos = [(getPos (_this select 0)), 200, _dir] call DRO_fnc_extendPos;  
 					while {(count (waypoints (group (_this select 0)))) > 0} do
 					{
 						deleteWaypoint ((waypoints (group (_this select 0))) select 0);

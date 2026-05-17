@@ -5,7 +5,7 @@ _subTasks = [];
 _taskName = format ["task%1", floor(random 100000)];
 _intelSubTaskName = format ["subtask%1", floor(random 100000)];
 
-_thisPos = [(((AOLocations select _AOIndex) select 2) select 6)] call sun_selectRemove;
+_thisPos = [(((AOLocations select _AOIndex) select 2) select 6)] call DRO_fnc_selectRemove;
 
 _targetArray = if (395180 in (getDLCs 1)) then {
 	["Box_Syndicate_WpsLaunch_F", "Box_Syndicate_Wps_F", "Box_IED_Exp_F", "Box_FIA_Ammo_F", "Box_FIA_Support_F", "Box_FIA_Wps_F"]
@@ -22,7 +22,7 @@ for "_i" from 1 to ([1,3] call BIS_fnc_randomInt) step 1 do {
 	_targetPos = _thisPos findEmptyPosition [1, 15, _thisTarget];
 	if (count _targetPos > 0) then {
 		_object = createVehicle [_thisTarget, _targetPos, [], 0, "CAN_COLLIDE"];
-		_object = [_object] call sun_checkVehicleSpawn;
+		_object = [_object] call DRO_fnc_checkVehicleSpawn;
 		if (!isNull _object) then {			
 			_spawnedObjects pushBack _object;
 			_object setDir (random 360);
@@ -32,13 +32,13 @@ for "_i" from 1 to ([1,3] call BIS_fnc_randomInt) step 1 do {
 
 if (count _spawnedObjects == 0) exitWith {
 	diag_log "DRO: No valid cache object positions found";
-	[(AOLocations call BIS_fnc_randomIndex)] call fnc_selectObjective;
+	[(AOLocations call BIS_fnc_randomIndex)] call DRO_fnc_selectObjective;
 };
 
 // Spawn enemies to guard the building
 _minAI = round (3 * aiMultiplier);
 _maxAI = round (5 * aiMultiplier);
-_spawnedSquad = [_thisPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI]] call dro_spawnGroupWeighted;				
+_spawnedSquad = [_thisPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI]] call DRO_fnc_spawnGroupWeighted;				
 if (!isNil "_spawnedSquad") then {					
 	[_spawnedSquad, _thisPos, [10, 30], "limited"] execVM "sunday_system\orders\patrolArea.sqf";	
 };
@@ -64,7 +64,7 @@ _subTaskTitle = "Optional: Collect Intel";
 _subTasks pushBack [_intelSubTaskName, _subTaskDesc, _subTaskTitle, "documents"];
 missionNamespace setVariable [(format ["%1_taskType", _intelSubTaskName]), "documents", true];
 
-[_spawnedObjects, _taskName] call dro_addSabotageAction;
+[_spawnedObjects, _taskName] call DRO_fnc_addSabotageAction;
 
 // Create trigger				
 _trgComplete = createTrigger ["EmptyDetector", _thisPos, true];

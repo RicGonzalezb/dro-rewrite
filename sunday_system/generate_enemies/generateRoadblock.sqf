@@ -1,7 +1,7 @@
 params ["_AOIndex"];
 
 if (count (((AOLocations select _AOIndex) select 2) select 1) > 0) then {
-	_roadPosition = [(((AOLocations select _AOIndex) select 2) select 1)] call sun_selectRemove; 
+	_roadPosition = [(((AOLocations select _AOIndex) select 2) select 1)] call DRO_fnc_selectRemove; 
 	
 	// Get road direction
 	_roadList = _roadPosition nearRoads 50;
@@ -34,7 +34,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 1) > 0) then {
 		_spawnPos = (_x select 0) findEmptyPosition [0,10];
 		if (count _spawnPos > 0) then {
 			if (_roadInfCount < _totalRoadInf) then {
-				_guardGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;
+				_guardGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
 				waitUntil {!isNil "_guardGroup"};
 				_guardUnit = ((units _guardGroup) select 0);					
 				_guardUnit setFormDir (_x select 1);
@@ -60,7 +60,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 1) > 0) then {
 			_turretPos = _roadPosition findEmptyPosition [0, 16, _turretClass];
 			if (count _turretPos > 0) then {
 				_turret = _turretClass createVehicle _turretPos;
-				[_turret] call sun_createVehicleCrew;
+				[_turret] call DRO_fnc_createVehicleCrew;
 				//createVehicleCrew _turret;
 			};
 		};

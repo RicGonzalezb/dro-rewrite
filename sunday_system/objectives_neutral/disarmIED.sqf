@@ -7,14 +7,14 @@ _subTaskName = format ["subtask%1", floor(random 100000)];
 
 diag_log format["DRO: Task seeking a position in: %1", str (((AOLocations select _AOIndex) select 2) select 0)];
 
-_thisPos = [(((AOLocations select _AOIndex) select 2) select 0)] call sun_selectRemove;
+_thisPos = [(((AOLocations select _AOIndex) select 2) select 0)] call DRO_fnc_selectRemove;
 	
 // Create disarm targets
 _IEDPool = ["IEDLandBig_F", "IEDUrbanBig_F", "IEDLandSmall_F", "IEDUrbanSmall_F"];
 
 // Create roadside IED
 _road = ((_thisPos nearRoads 10) select 0);
-_roadDir = ([_road] call sun_getRoadDir);
+_roadDir = ([_road] call DRO_fnc_getRoadDir);
 _IED = createMine [(selectRandom _IEDPool), (_thisPos getPos [4, _roadDir + (selectRandom [-90, 90])]), [], 0];
 _IEDPos = (getPos _IED);
 
@@ -43,7 +43,7 @@ _markerName = format["disarmMkr%1", floor(random 10000)];
 			_trgArea setTriggerArea [100, 100, 0, false];
 			_trgArea setTriggerActivation ["ANY", "PRESENT", false];
 			// Trigger statement migrated: spawn+sleep → CBA_fnc_waitAndExecute (random 30–60s delay).
-			_trgArea setTriggerStatements ["(({(group _x) == (grpNetId call BIS_fnc_groupFromNetId)} count thisList) > 0)", "[{[getPos (_this select 0)] call dro_triggerAmbushSpawn}, [thisTrigger], (random [30, 45, 60])] call CBA_fnc_waitAndExecute", ""];
+			_trgArea setTriggerStatements ["(({(group _x) == (grpNetId call BIS_fnc_groupFromNetId)} count thisList) > 0)", "[{[getPos (_this select 0)] call DRO_fnc_triggerAmbushSpawn}, [thisTrigger], (random [30, 45, 60])] call CBA_fnc_waitAndExecute", ""];
 		};
 	},
 	[_thisPos]

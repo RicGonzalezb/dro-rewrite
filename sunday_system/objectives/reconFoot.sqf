@@ -90,7 +90,7 @@ switch (_taskStyle) do {
 			};
 		};
 		
-		if (_break) exitWith {[(AOLocations call BIS_fnc_randomIndex)] call fnc_selectObjective};
+		if (_break) exitWith {[(AOLocations call BIS_fnc_randomIndex)] call DRO_fnc_selectObjective};
 		
 		_roadPoints = [];
 		_numPoints = [2,4] call BIS_fnc_randomInt;	
@@ -98,13 +98,13 @@ switch (_taskStyle) do {
 		for "_n" from 0 to _numPoints do {		
 			_roadPoints pushBack (getPos(_roadArray select (_n * _iterator)));		
 		};
-		if (count _roadPoints == 0) exitWith {[(AOLocations call BIS_fnc_randomIndex)] call fnc_selectObjective};
+		if (count _roadPoints == 0) exitWith {[(AOLocations call BIS_fnc_randomIndex)] call DRO_fnc_selectObjective};
 		_taskName = format ["task%1", floor(random 100000)];
 		_taskDesc = format ["Perform recon patrol on route in %1 territory.", enemyFactionName];
 		_taskTitle = "Recon Patrol";		
 		_taskType = "walk";
-		_taskPos = [_roadPoints] call sun_avgPos;
-		if (_taskPos isEqualTo [0,0,0]) exitWith {[(AOLocations call BIS_fnc_randomIndex)] call fnc_selectObjective};
+		_taskPos = [_roadPoints] call DRO_fnc_avgPos;
+		if (_taskPos isEqualTo [0,0,0]) exitWith {[(AOLocations call BIS_fnc_randomIndex)] call DRO_fnc_selectObjective};
 		missionNamespace setVariable [(format ["%1_taskType", _taskName]), _taskType, true];
 		
 		_markerName = format["reconMkr%1", floor(random 100000)];

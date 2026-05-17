@@ -26,8 +26,8 @@ switch (_selectedTask) do {
 		//_hvtChar = createVehicle [_hvtType, _hvtSpawnPos, [], 0, "FORM"];
 		_hvtGroup = [_hvtSpawnPos, enemySide, [_hvtType]] call BIS_fnc_spawnGroup;
 		_hvtChar = (units _hvtGroup) select 0;
-		_leadSquad = [_hvtSpawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1, round (3 * aiMultiplier)], false] call dro_spawnGroupWeighted;
-		_rearSquad = [_hvtSpawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [2, round (3 * aiMultiplier)], false] call dro_spawnGroupWeighted;
+		_leadSquad = [_hvtSpawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1, round (3 * aiMultiplier)], false] call DRO_fnc_spawnGroupWeighted;
+		_rearSquad = [_hvtSpawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [2, round (3 * aiMultiplier)], false] call DRO_fnc_spawnGroupWeighted;
 		
 		(units _hvtGroup) joinSilent _leadSquad;
 		(units _rearSquad) joinSilent _leadSquad;
@@ -81,7 +81,7 @@ switch (_selectedTask) do {
 			
 			_rotDir = 0;
 			for "_i" from 1 to 4 do {
-				_rotPos = [centerPos, _sizeLarge, _rotDir] call dro_extendPos;
+				_rotPos = [centerPos, _sizeLarge, _rotDir] call DRO_fnc_extendPos;
 				_roads = _rotPos nearRoads 500;
 				_allRoads = _allRoads + _roads;
 				_rotDir = _rotDir + 90;
@@ -100,7 +100,7 @@ switch (_selectedTask) do {
 			
 			_vehicleType = selectRandom eCarClasses;
 			_thisVeh = createVehicle [_vehicleType, _vehSpawnPos, [], 0, "NONE"];			
-			[_thisVeh, enemySide, false] call sun_createVehicleCrew;
+			[_thisVeh, enemySide, false] call DRO_fnc_createVehicleCrew;
 			//createVehicleCrew _thisVeh;
 			
 			_nearRoads = _thisVeh nearRoads 50;
@@ -167,4 +167,4 @@ switch (_selectedTask) do {
 };
 
 sleep 5;
-["REACTIVE_TASK", "Command", [_radioDesc]] spawn dro_sendProgressMessage;
+["REACTIVE_TASK", "Command", [_radioDesc]] spawn DRO_fnc_sendProgressMessage;

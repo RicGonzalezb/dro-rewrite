@@ -22,8 +22,8 @@ _minefieldPlaces = [];
 if (count _minefieldPlaces > 0) then {
 	_enemyIntelMarkers = [];
 	for "_i" from 1 to (([1,3] call BIS_fnc_randomInt) min (count _minefieldPlaces)) step 1 do {
-		_thisPos = [_minefieldPlaces] call dro_selectRemove;
-		_grid = [_thisPos, 5, 5, 25] call sun_defineGrid;
+		_thisPos = [_minefieldPlaces] call DRO_fnc_selectRemove;
+		_grid = [_thisPos, 5, 5, 25] call DRO_fnc_defineGrid;
 		
 		_markerName = format["mineMkr%1", floor(random 10000)];
 		_markerSizeX = ([60,100] call BIS_fnc_randomInt);
@@ -40,7 +40,7 @@ if (count _minefieldPlaces > 0) then {
 		{
 			if (_x inArea _mineMarker) then {
 				_mine = "APERSMine_Range_Ammo" createVehicle _x;
-				[(selectRandom ["Land_Sign_Mines_F", "Land_Sign_MinesTall_F", "Land_Sign_MinesTall_English_F"]), _x, (random 360)] call dro_createSimpleObject;
+				[(selectRandom ["Land_Sign_Mines_F", "Land_Sign_MinesTall_F", "Land_Sign_MinesTall_English_F"]), _x, (random 360)] call DRO_fnc_createSimpleObject;
 			};
 		} forEach _grid;		
 		
@@ -49,11 +49,11 @@ if (count _minefieldPlaces > 0) then {
 		_angle = 0;
 		_angleDif = 360/_numSigns;
 		for "_i" from 1 to (_numSigns) step 1 do {
-			_signPos = [_thisPos, _markerSizeMax, _angle] call dro_extendPos;
+			_signPos = [_thisPos, _markerSizeMax, _angle] call DRO_fnc_extendPos;
 			if (_i % 3 == 0) then {
-				["Land_Sign_MinesDanger_English_F", _signPos, ([_signPos, _thisPos] call BIS_fnc_dirTo)] call dro_createSimpleObject;	
+				["Land_Sign_MinesDanger_English_F", _signPos, ([_signPos, _thisPos] call BIS_fnc_dirTo)] call DRO_fnc_createSimpleObject;	
 			} else {
-				[(selectRandom ["Land_Sign_Mines_F", "Land_Sign_MinesTall_F", "Land_Sign_MinesTall_English_F"]), _signPos, ([_signPos, _thisPos] call BIS_fnc_dirTo)] call dro_createSimpleObject;	
+				[(selectRandom ["Land_Sign_Mines_F", "Land_Sign_MinesTall_F", "Land_Sign_MinesTall_English_F"]), _signPos, ([_signPos, _thisPos] call BIS_fnc_dirTo)] call DRO_fnc_createSimpleObject;	
 			};								
 			_angle = _angle + _angleDif;
 		};		

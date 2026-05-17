@@ -3,7 +3,7 @@
 
 params ["_AOIndex"];
 		
-_building = [(((AOLocations select _AOIndex) select 2) select 7)] call sun_selectRemove;
+_building = [(((AOLocations select _AOIndex) select 2) select 7)] call DRO_fnc_selectRemove;
 _buildingClass = typeOf _building;	
 _buildingPos = getPos _building;
 _buildingPositions = [_building] call BIS_fnc_buildingPositions;
@@ -49,7 +49,7 @@ _totalInf = round (5 * aiMultiplier);
 {
 	_chance = random 100;
 	if ((_chance > 50) && (_infCount < _totalInf)) then {
-		_group = [_x, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;
+		_group = [_x, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
 		_unit = ((units _group) select 0);
 		if (!isNil "_unit") then {	
 			_unit setUnitPos "UP";
@@ -61,7 +61,7 @@ _totalInf = round (5 * aiMultiplier);
 // Spawn enemies to guard the building
 _minAI = round (2 * aiMultiplier);
 _maxAI = round (5 * aiMultiplier);
-_spawnedSquad2 = [getPos _building, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;			
+_spawnedSquad2 = [getPos _building, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;			
 if (!isNil "_spawnedSquad2") then {	
 	[_spawnedSquad2, getPos _building, 100] call bis_fnc_taskPatrol;
 };
@@ -84,7 +84,7 @@ _taskType = "documents";
 missionNamespace setVariable [format ["%1Completed", _taskName], 0, true];
 missionNamespace setVariable [(format ["%1_taskType", _taskName]), _taskType, true];
 
-[_thisIntel, _taskName] remoteExec ["sun_addIntel", 0, true];
+[_thisIntel, _taskName] remoteExec ["DRO_fnc_addIntel", 0, true];
 	
 allObjectives pushBack _taskName;
 objData pushBack [

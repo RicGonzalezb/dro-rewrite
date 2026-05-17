@@ -23,7 +23,7 @@ _safePos = if (_vehicle isKindOf "Helicopter") then {
 	};
 };
 
-[_insertGroup, _vehicle, true] call sun_groupToVehicle;
+[_insertGroup, _vehicle, true] call DRO_fnc_groupToVehicle;
 
 while {(count (waypoints (_vehicle) )) > 0} do {
    deleteWaypoint ((waypoints (_vehicle) ) select 0);
@@ -37,7 +37,7 @@ _vehicle setVariable ["assignedGroup", _insertGroup];
 
 if (_vehicle isKindOf "Helicopter") then {
 	
-	_heliDestination = [_safePos, 4000, ([(getPos _vehicle), _safePos] call BIS_fnc_dirTo)] call dro_extendPos;
+	_heliDestination = [_safePos, 4000, ([(getPos _vehicle), _safePos] call BIS_fnc_dirTo)] call DRO_fnc_extendPos;
 	_heliDestination set [2, 300];
 	
 	_vehicle flyInHeight 300;

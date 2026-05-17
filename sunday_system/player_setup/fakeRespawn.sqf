@@ -40,7 +40,7 @@ if (count _respawnPos > 0) then {
 	diag_log format ["DRO: respawn - created unit %1 in group %2", _unit, _grp];
 
 	if (reviveDisabled < 3) then {
-		[_unit, _unitOld] call rev_addReviveToUnit;
+		[_unit, _unitOld] call DRO_fnc_addReviveToUnit;
 	};
 
 	deleteVehicle (_this select 0);
@@ -49,7 +49,7 @@ if (count _respawnPos > 0) then {
 
 	diag_log format ["DRO: respawn - unit %1 given var name %2", _unit, _varName];
 
-	[_unit, _firstName, _lastName, _speaker, _face] remoteExec ['sun_setNameMP', 0, true];
+	[_unit, _firstName, _lastName, _speaker, _face] remoteExec ['DRO_fnc_setNameMP', 0, true];
 
 	diag_log "DRO: respawn - names set";
 

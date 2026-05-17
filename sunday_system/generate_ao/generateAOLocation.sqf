@@ -15,7 +15,7 @@ if ("ROADNEAR" in _types) then {
 	_maxRoads = round(_size*0.02);
 	if (count _roads > _maxRoads) then {	
 		for "_i" from 1 to _maxRoads do {
-			_randRoad = [_roads] call sun_selectRemove;
+			_randRoad = [_roads] call DRO_fnc_selectRemove;
 			if (_randRoad isEqualType objNull) then {
 				_AO_roadPosArray pushBack (getPos _randRoad);
 			};
@@ -45,7 +45,7 @@ if ("ROADFAR" in _types) then {
 	_maxRoads = round(_size*0.02);
 	if (count _allRoadPosValid > 0) then {
 		for "_i" from 1 to (_maxRoads min (count _allRoadPosValid)) do {
-			_randRoad = [_allRoadPosValid] call sun_selectRemove;
+			_randRoad = [_allRoadPosValid] call DRO_fnc_selectRemove;
 			if (_randRoad isEqualType objNull) then {
 				_roadblockPosArray pushBack (getPos _randRoad);
 			};
@@ -209,7 +209,7 @@ if ("BUILDINGS" in _types) then {
 		for "_b" from 1 to ((_size*0.02) min (count _buildings)) step 1 do {
 			if ((count _buildings) > 0) then {
 				_continue = true;
-				_building = [_buildings] call sun_selectRemove;
+				_building = [_buildings] call DRO_fnc_selectRemove;
 				_buildingClass = typeOf _building;
 				_buildingDestrType = ((configFile >> "CfgVehicles" >> _buildingClass >> "destrType") call BIS_fnc_GetCfgData);
 				if !(_buildingDestrType isEqualType "") then {_buildingDestrType = "DestructNo"};				
@@ -237,7 +237,7 @@ if ("BUILDINGS" in _types) then {
 							} forEach _cBuildings;
 							if (count _validCBuildings > 2) then {
 								_buildings = _buildings - _validCBuildings;
-								_avgPos = [_validCBuildings] call sun_avgPos;
+								_avgPos = [_validCBuildings] call DRO_fnc_avgPos;
 								_AO_compounds pushBack _validCBuildings;
 							};
 						};

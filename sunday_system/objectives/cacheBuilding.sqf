@@ -6,7 +6,7 @@ _taskName = format ["task%1", floor(random 100000)];
 _intelSubTaskName = format ["subtask%1", floor(random 100000)];
 
 // Find a random building in the area
-_building = [(((AOLocations select _AOIndex) select 2) select 7)] call sun_selectRemove;
+_building = [(((AOLocations select _AOIndex) select 2) select 7)] call DRO_fnc_selectRemove;
 _buildingClass = typeOf _building;		
 _buildingPos = getPos _building;
 	
@@ -27,14 +27,14 @@ _totalInf = round (5 * aiMultiplier);
 	if ((count _spawnedObjects) < 3) then {
 		_thisTarget = selectRandom _targetArray;
 		_object = createVehicle [_thisTarget, _x, [], 0, "CAN_COLLIDE"];		
-		_object = [_object] call sun_checkVehicleSpawn;
+		_object = [_object] call DRO_fnc_checkVehicleSpawn;
 		if (!isNull _object) then {		
 			_spawnedObjects pushBack _object;
 			_object setDir (selectRandom [_buildingDir, _buildingDir+90]);
 		};
 	} else {	
 		if (_infCount < _totalInf) then {
-			_group = [_x, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;
+			_group = [_x, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
 			_unit = ((units _group) select 0);									
 			if (!isNil "_unit") then {
 				_unit setUnitPos "UP";
@@ -46,13 +46,13 @@ _totalInf = round (5 * aiMultiplier);
 
 if (count _spawnedObjects == 0) exitWith {
 	diag_log "DRO: No valid building cache object positions found";
-	[(AOLocations call BIS_fnc_randomIndex)] call fnc_selectObjective
+	[(AOLocations call BIS_fnc_randomIndex)] call DRO_fnc_selectObjective
 };
 
 // Spawn enemies to guard the building
 _minAI = round (2 * aiMultiplier);
 _maxAI = round (5 * aiMultiplier);
-_spawnedSquad2 = [getPos _building, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;				
+_spawnedSquad2 = [getPos _building, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;				
 if (!isNil "_spawnedSquad2") then {
 	[_spawnedSquad2, getPos _building, 100] call bis_fnc_taskPatrol;
 };
@@ -79,7 +79,7 @@ _subTaskTitle = "Optional: Collect Intel";
 _subTasks pushBack [_intelSubTaskName, _subTaskDesc, _subTaskTitle, "documents"];
 missionNamespace setVariable [(format ["%1_taskType", _intelSubTaskName]), "documents", true];
 
-[_spawnedObjects, _taskName] call dro_addSabotageAction;
+[_spawnedObjects, _taskName] call DRO_fnc_addSabotageAction;
 
 // Create trigger				
 _trgComplete = createTrigger ["EmptyDetector", _buildingPos, true];

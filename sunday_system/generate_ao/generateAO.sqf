@@ -22,7 +22,7 @@ if (getMarkerColor "aoSelectMkr" == "") then {
 	_size = worldSize;
 	_worldCenter = (_size/2);
 	_firstLocList = nearestLocations [[_worldCenter, _worldCenter], ["NameLocal","NameVillage","NameCity", "NameCityCapital","Airport","Strategic","StrongpointArea"], _size];
-	_randomLoc = [_firstLocList] call sun_selectRemove;
+	_randomLoc = [_firstLocList] call DRO_fnc_selectRemove;
 		
 	while {		
 		(((getPos _randomLoc) select 0) < aoSize) ||
@@ -32,7 +32,7 @@ if (getMarkerColor "aoSelectMkr" == "") then {
 		(((getPos _randomLoc) distance logicStartPos) < 700)
 		
 	} do {
-		_randomLoc = [_firstLocList] call sun_selectRemove;
+		_randomLoc = [_firstLocList] call DRO_fnc_selectRemove;
 	};
 	aoName = text _randomLoc;
 	if (isNil aoName) then { aoName = text ((nearestLocations [(getPos _randomLoc), ["NameLocal", "NameVillage", "NameCity", "NameCityCapital", "Airport"], 2000]) select 0) + " " + "Strongpoint" };
@@ -58,7 +58,7 @@ if (aoOptionSelect == 0) then {
 	// Add 1 to 5 secondary locations to the pool
 	if (count _secondaryLocList > 0) then {
 		for "_i" from 1 to (([1, count _secondaryLocList] call BIS_fnc_randomInt) min 5) step 1 do {
-			_thisLoc = [_secondaryLocList] call sun_selectRemove;
+			_thisLoc = [_secondaryLocList] call DRO_fnc_selectRemove;
 			if (((getPos _thisLoc) distance logicStartPos) < 1000) then {
 				_secondaryLocList pushBack _thisLoc;
 			} else {				
@@ -95,7 +95,7 @@ _markerCenter setMarkerType "EmptyIcon";
 AO_POITypes = [];
 _aoDataAll = [];
 {
-	_aoData = [(_x select 0), "ALL", (_x select 1)] call fnc_generateAOLoc;	
+	_aoData = [(_x select 0), "ALL", (_x select 1)] call DRO_fnc_generateAOLoc;	
 	_aoDataAll pushBack _aoData;
 } forEach AOLocations;
 {
@@ -110,7 +110,7 @@ travelPosPOIMil = [];
 if (count AO_POITypes > 0) then {
 	AO_POIs = [];
 	for "_p" from 1 to (([2,4] call BIS_fnc_randomInt) min (count AO_POITypes)) step 1 do {
-		AO_POIs pushBack ([AO_POITypes] call sun_selectRemove);
+		AO_POIs pushBack ([AO_POITypes] call DRO_fnc_selectRemove);
 	};	
 	{
 		switch (_x) do {
@@ -126,7 +126,7 @@ if (count AO_POITypes > 0) then {
 					{
 						if (_numMarkets > 0) then {
 							if (count ((_x select 2) select 0) > 0) then {
-								_marketPos = [((_x select 2) select 0)] call sun_selectRemove;
+								_marketPos = [((_x select 2) select 0)] call DRO_fnc_selectRemove;
 								_thisMarketPositions = ([_marketPos] call fnc_generateMarket);
 								if (count _thisMarketPositions > 0) then {				
 									_markerName = format["marketMkr%1", floor(random 10000)];
@@ -163,7 +163,7 @@ if (count AO_POITypes > 0) then {
 						_thisIndex = ([0, ((count _validAOIndexes) - 1)] call BIS_fnc_randomInt);
 						_thisIndex = _validAOIndexes select _thisIndex;
 						if ((count (((AOLocations select _thisIndex) select 2) select 7)) > 0) then {
-							travelPosPOICiv pushBack ([(((AOLocations select _thisIndex) select 2) select 7)] call sun_selectRemove);
+							travelPosPOICiv pushBack ([(((AOLocations select _thisIndex) select 2) select 7)] call DRO_fnc_selectRemove);
 						} else {
 							_validAOIndexes deleteAt _thisIndex;
 							_i = _i + 1;
@@ -213,10 +213,10 @@ trgAOC = createTrigger ["EmptyDetector", _centerTrue];
 trgAOC setTriggerArea [_xDist/1.5, _yDist/1.5, 0, true];
 if (isMultiplayer) then {	
 	trgAOC setTriggerActivation ["ANY", "PRESENT", false];
-	trgAOC setTriggerStatements ["(vehicle player in thisList)", "if (count hostileCivilians > 0) then {['HOSTILECIVS'] spawn dro_sendProgressMessage}", ""];	
+	trgAOC setTriggerStatements ["(vehicle player in thisList)", "if (count hostileCivilians > 0) then {['HOSTILECIVS'] spawn DRO_fnc_sendProgressMessage}", ""];	
 } else {
 	trgAOC setTriggerActivation ["ANY", "PRESENT", false];
-	trgAOC setTriggerStatements ["(vehicle player in thisList)", "saveGame; if (count hostileCivilians > 0) then {['HOSTILECIVS'] spawn dro_sendProgressMessage}", ""];	
+	trgAOC setTriggerStatements ["(vehicle player in thisList)", "saveGame; if (count hostileCivilians > 0) then {['HOSTILECIVS'] spawn DRO_fnc_sendProgressMessage}", ""];	
 };
 
 AOTrigs = [];
@@ -239,7 +239,7 @@ _neutralChance = if (neutralTasksChosen) then {
 	_otherAOLocations = AOLocations - [_x];
 	_returns = [];
 	{		
-		_return = [_thisAOPos, _x select 0, true] call sun_checkRouteWater;
+		_return = [_thisAOPos, _x select 0, true] call DRO_fnc_checkRouteWater;
 		diag_log format ["DRO: Water on route? Checked %2 against %1: %3", _thisAOPos,  _x select 0, _return];
 		_returns pushBack _return;
 	} forEach _otherAOLocations;
@@ -305,10 +305,10 @@ if (_destroyChance > 0.85) then {
 		_randomPos = [[_destroyAOTrg], ["water"]] call BIS_fnc_randomPos;
 		_source = "#particlesource" createVehicle _randomPos;
 		_source setParticleClass "BigDestructionSmoke";	
-		_obj = [(selectRandom ["Crater", "CraterLong", "CraterLong_small"]), _randomPos, (random 360)] call dro_createSimpleObject;
+		_obj = [(selectRandom ["Crater", "CraterLong", "CraterLong_small"]), _randomPos, (random 360)] call DRO_fnc_createSimpleObject;
 		_obj setDir (random 360);
 		if (random 1 > 0.4) then {
-			_obj = [(selectRandom ["Land_Wreck_HMMWV_F", "Land_Wreck_Skodovka_F", "Land_Wreck_Truck_F", "Land_Wreck_Car_F", "Land_Wreck_Car2_F", "Land_Wreck_Hunter_F", "Land_Wreck_Offroad_F", "Land_Wreck_UAZ_F", "Land_Wreck_Ural_F", "Land_Wreck_BMP2_F", "Land_Wreck_BRDM2_F", "Land_Wreck_Heli_Attack_02_F", "Land_Wreck_T72_hull_F", "Land_Wreck_Slammer_F"]), _randomPos, (random 360)] call dro_createSimpleObject;
+			_obj = [(selectRandom ["Land_Wreck_HMMWV_F", "Land_Wreck_Skodovka_F", "Land_Wreck_Truck_F", "Land_Wreck_Car_F", "Land_Wreck_Car2_F", "Land_Wreck_Hunter_F", "Land_Wreck_Offroad_F", "Land_Wreck_UAZ_F", "Land_Wreck_Ural_F", "Land_Wreck_BMP2_F", "Land_Wreck_BRDM2_F", "Land_Wreck_Heli_Attack_02_F", "Land_Wreck_T72_hull_F", "Land_Wreck_Slammer_F"]), _randomPos, (random 360)] call DRO_fnc_createSimpleObject;
 			//_obj = createSimpleObject [(selectRandom ["Land_Wreck_HMMWV_F", "Land_Wreck_Skodovka_F", "Land_Wreck_Truck_F", "Land_Wreck_Car_F", "Land_Wreck_Car2_F", "Land_Wreck_Hunter_F", "Land_Wreck_Offroad_F", "Land_Wreck_UAZ_F", "Land_Wreck_Ural_F", "Land_Wreck_BMP2_F", "Land_Wreck_BRDM2_F", "Land_Wreck_Heli_Attack_02_F", "Land_Wreck_T72_hull_F", "Land_Wreck_Slammer_F"]), (AGLToASL _randomPos)];
 			//_obj setDir (random 360);
 			(nearestBuilding _randomPos) setDamage 1;
@@ -318,7 +318,7 @@ if (_destroyChance > 0.85) then {
 
 	for "_i" from 0 to 9 do {
 		_randomPos = [[_destroyAOTrg], ["water"]] call BIS_fnc_randomPos;	
-		_obj = [(selectRandom ["Crater", "CraterLong", "CraterLong_small"]), _randomPos, (random 360)] call dro_createSimpleObject;
+		_obj = [(selectRandom ["Crater", "CraterLong", "CraterLong_small"]), _randomPos, (random 360)] call DRO_fnc_createSimpleObject;
 		//_obj = createSimpleObject [(selectRandom ["Crater", "CraterLong", "CraterLong_small"]), (AGLToASL _randomPos)];
 		//_obj setDir (random 360);
 	};	

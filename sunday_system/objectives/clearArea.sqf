@@ -18,13 +18,13 @@ if (count (((AOLocations select _AOIndex) select 2) select 6) > 0) then {
 _posSelect = selectRandom _posArr;
 switch (_posSelect) do {
 	case "AO_flatPositions": {
-		_thisPos = [(((AOLocations select _AOIndex) select 2) select 4)] call sun_selectRemove;
+		_thisPos = [(((AOLocations select _AOIndex) select 2) select 4)] call DRO_fnc_selectRemove;
 	};
 	case "AO_forestPositions": {
-		_thisPos = [(((AOLocations select _AOIndex) select 2) select 6)] call sun_selectRemove;
+		_thisPos = [(((AOLocations select _AOIndex) select 2) select 6)] call DRO_fnc_selectRemove;
 	};
 	case "AO_groundPosClose": {
-		_thisPos = [(((AOLocations select _AOIndex) select 2) select 2)] call sun_selectRemove;
+		_thisPos = [(((AOLocations select _AOIndex) select 2) select 2)] call DRO_fnc_selectRemove;
 	};
 };
 
@@ -45,13 +45,13 @@ _markerArea setMarkerAlpha 0;
 for "_i" from 0 to 1 do {
 	_minAI = round (2 * aiMultiplier);
 	_maxAI = round (4 * aiMultiplier);
-	_spawnedSquad = [_thisPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;				
+	_spawnedSquad = [_thisPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;				
 	if (!isNil "_spawnedSquad") then {
 		diag_log "spawned";
 		[_spawnedSquad, _thisPos, [0, 120], "LIMITED"] execVM "sunday_system\orders\patrolArea.sqf";
 		_dist = 10;
-		while {([leader _spawnedSquad] call sun_checkIntersect) && (_dist < 100)} do {
-			[_spawnedSquad, (_thisPos getPos [_dist, (random 360)])] call sun_moveGroup;
+		while {([leader _spawnedSquad] call DRO_fnc_checkIntersect) && (_dist < 100)} do {
+			[_spawnedSquad, (_thisPos getPos [_dist, (random 360)])] call DRO_fnc_moveGroup;
 			_dist = _dist + 5;
 		};
 	};

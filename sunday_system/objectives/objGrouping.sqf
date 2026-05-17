@@ -70,7 +70,7 @@ if (count powJoinTasks > 0) then {
 		// Spawn ground based extraction group
 		_extractPos = {
 			if (count ((_x select 2) select 5) > 0) exitWith {
-				[((_x select 2) select 5)] call sun_selectRemove;
+				[((_x select 2) select 5)] call DRO_fnc_selectRemove;
 			}; 
 		} forEach AOLocations;
 		_extractPos = [
@@ -93,7 +93,7 @@ if (count powJoinTasks > 0) then {
 			_markerExtract setMarkerColor markerColorPlayers;
 			_markerExtract setMarkerType "mil_pickup";
 			_markerExtract setMarkerText "Extraction Team";
-			_extractGroup = [_extractPos, playersSide, pInfClassesForWeights, pInfClassWeights, [4, 6]] call dro_spawnGroupWeighted;
+			_extractGroup = [_extractPos, playersSide, pInfClassesForWeights, pInfClassWeights, [4, 6]] call DRO_fnc_spawnGroupWeighted;
 			waitUntil {!isNil "_extractGroup"};
 			_dir = [_extractPos, trgAOC] call BIS_fnc_dirTo;
 			{
@@ -151,7 +151,7 @@ if (count _powTaskIndexes > 1) then {
 	{
 		_allPOWNames pushBack (name ((objData select _x) select 8));		
 	} forEach _powTaskIndexes;
-	_namesCommaList = [_allPOWNames] call sun_stringCommaList;
+	_namesCommaList = [_allPOWNames] call DRO_fnc_stringCommaList;
 	
 	_downedHeliClass = if (powType == "HELICREW") then {
 		(selectRandom pHeliClasses)
@@ -331,7 +331,7 @@ if (count _hvtTaskIndexes > 0) then {
 	{
 		_allHVTNames pushBack (((objData select _x) select 8) getVariable "codename");		
 	} forEach _hvtTaskIndexes;
-	_namesCommaList = [_allHVTNames] call sun_stringCommaList;
+	_namesCommaList = [_allHVTNames] call DRO_fnc_stringCommaList;
 
 	_hvtString1 = selectRandom [
 		(format ["Recent intelligence has placed %3 important targets in the %2 region.", enemyFactionName, aoLocationName, (count _hvtTaskIndexes), playersFactionName, _namesCommaList]),			
@@ -443,8 +443,8 @@ if (count _intelTaskIndexes > 0) then {
 		{
 			_allHVTNames pushBack (((objData select _x) select 8) getVariable "codename");		
 		} forEach _hvtTaskIndexes;
-		_namesCommaList = [_allHVTNames] call sun_stringCommaList;
-		_stringIntro = [_stringIntros] call sun_selectRemove;
+		_namesCommaList = [_allHVTNames] call DRO_fnc_stringCommaList;
+		_stringIntro = [_stringIntros] call DRO_fnc_selectRemove;
 		_intelStrings pushBack (format ["%1 this intel package will contain information about the location of %2 as well as possible identifying information.", _stringIntro, _namesCommaList]);
 	};
 	if (count _powTaskIndexes > 0) then {
@@ -452,12 +452,12 @@ if (count _intelTaskIndexes > 0) then {
 		{
 			_allPOWNames pushBack (name ((objData select _x) select 8));		
 		} forEach _powTaskIndexes;
-		_namesCommaList = [_allPOWNames] call sun_stringCommaList;
-		_stringIntro = [_stringIntros] call sun_selectRemove;
+		_namesCommaList = [_allPOWNames] call DRO_fnc_stringCommaList;
+		_stringIntro = [_stringIntros] call DRO_fnc_selectRemove;
 		_intelStrings pushBack (format ["%1 this intel package will contain information about the location of %2 as well as possible identifying information.", _stringIntro, _namesCommaList]);
 	};
 	if (count _cacheTaskIndexes > 0) then {
-		_stringIntro = [_stringIntros] call sun_selectRemove;
+		_stringIntro = [_stringIntros] call DRO_fnc_selectRemove;
 		if (count _cacheTaskIndexes > 1) then {
 			_intelStrings pushBack (format ["%1 this intel package will contain information about the location of the %2 caches.", _stringIntro, count _cacheTaskIndexes]);
 		} else {
@@ -465,7 +465,7 @@ if (count _intelTaskIndexes > 0) then {
 		};
 	};
 	if (count _intelStrings > 0) then {	
-		_intelString = [_intelStrings] call sun_stringCommaList;
+		_intelString = [_intelStrings] call DRO_fnc_stringCommaList;
 		{
 			if (_forEachIndex in _intelTaskIndexes) then {		
 				_x set [1, (format ["%1 %2", (_x select 1), _intelString])];

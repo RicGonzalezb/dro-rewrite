@@ -70,7 +70,7 @@ if (_ambFriendlyChance > 0.75) then {
 	_weights = [0.1];
 	if (count pCarClasses > 0) then {
 		{
-			if (([_x] call sun_getTrueCargo) >= 3) exitWith {			
+			if (([_x] call DRO_fnc_getTrueCargo) >= 3) exitWith {			
 				_cars pushBack _x;			 
 			};
 		} forEach pCarClasses;		
@@ -81,7 +81,7 @@ if (_ambFriendlyChance > 0.75) then {
 	if (missionPreset == 3) then {
 		if (count pAPCClasses > 0) then {
 			{
-				if (([_x] call sun_getTrueCargo) >= 3) exitWith {			
+				if (([_x] call DRO_fnc_getTrueCargo) >= 3) exitWith {			
 					_APCs pushBack _x;
 				};
 			} forEach pAPCClasses;		
@@ -102,7 +102,7 @@ if (_ambFriendlyChance > 0.75) then {
 	} forEach [_cars, _APCs];
 	
 	for "_i" from 1 to _numSquads step 1 do {	
-		_thisCallsign = [callsigns] call sun_selectRemove;		
+		_thisCallsign = [callsigns] call DRO_fnc_selectRemove;		
 		_centerDir = (getMarkerPos "mkrAOC") getDir (holdAO select 0);
 		_startPos = (holdAO select 0) getPos [900, _centerDir];
 		_spawnPos = [_startPos, 0, 1800, 1, 0, 0.7, 0, _blacklist, [[0,0,0], [0,0,0]]] call BIS_fnc_findSafePos;
@@ -116,7 +116,7 @@ if (_ambFriendlyChance > 0.75) then {
 					// Create friendly squad
 					_minAI = (round (6 * aiMultiplier) min 6);
 					_maxAI = (round (8 * aiMultiplier) min 8);
-					_thisSquad = [_spawnPos, playersSide, pInfClassesForWeights, pInfClassWeights, [_minAI, _maxAI], false] call dro_spawnGroupWeighted;					
+					_thisSquad = [_spawnPos, playersSide, pInfClassesForWeights, pInfClassWeights, [_minAI, _maxAI], false] call DRO_fnc_spawnGroupWeighted;					
 					waitUntil {!isNil "_thisSquad"};
 					_iconSide = switch (playersSide) do {
 						case west: {"b_inf"};
@@ -138,12 +138,12 @@ if (_ambFriendlyChance > 0.75) then {
 					};
 					_thisCarClass = selectRandom _cars;
 					_thisCar = createVehicle [_thisCarClass, _spawnPos, [], 0, "NONE"];
-					//_slots = [_thisCarClass] call sun_getTrueCargo; //((configFile >> "CfgVehicles" >> _thisCarClass >> "transportSoldier") call BIS_fnc_GetCfgData);							
+					//_slots = [_thisCarClass] call DRO_fnc_getTrueCargo; //((configFile >> "CfgVehicles" >> _thisCarClass >> "transportSoldier") call BIS_fnc_GetCfgData);							
 					_roles = [_thisCarClass] call BIS_fnc_vehicleRoles;
 					_slots = count _roles;
 					_thisSquad = createGroup playersSide;
 					if (_slots > 0) then {
-						_thisSquad = [_spawnPos, playersSide, pInfClassesForWeights, pInfClassWeights, [_slots, _slots], false] call dro_spawnGroupWeighted;
+						_thisSquad = [_spawnPos, playersSide, pInfClassesForWeights, pInfClassWeights, [_slots, _slots], false] call DRO_fnc_spawnGroupWeighted;
 						waitUntil {(count (units _thisSquad)) > 0};
 					};
 					
@@ -159,10 +159,10 @@ if (_ambFriendlyChance > 0.75) then {
 					} forEach _roles;
 					(units _thisSquad) orderGetIn true;
 					
-					//[_thisCar, playersSide, false] call sun_createVehicleCrew;			
+					//[_thisCar, playersSide, false] call DRO_fnc_createVehicleCrew;			
 					//waitUntil {!isNull (driver _thisCar)};				
 					//(crew _thisCar) joinSilent _thisSquad;
-					//[_thisSquad, _thisCar, true] spawn sun_groupToVehicle;
+					//[_thisSquad, _thisCar, true] spawn DRO_fnc_groupToVehicle;
 					_iconSide = switch (playersSide) do {
 						case west: {"b_motor_inf"};
 						case east: {"o_motor_inf"};
@@ -185,12 +185,12 @@ if (_ambFriendlyChance > 0.75) then {
 					};
 					_thisCarClass = selectRandom _APCs;
 					_thisCar = createVehicle [_thisCarClass, _spawnPos, [], 0, "NONE"];
-					//_slots = [_thisCarClass] call sun_getTrueCargo; //((configFile >> "CfgVehicles" >> _thisCarClass >> "transportSoldier") call BIS_fnc_GetCfgData);
+					//_slots = [_thisCarClass] call DRO_fnc_getTrueCargo; //((configFile >> "CfgVehicles" >> _thisCarClass >> "transportSoldier") call BIS_fnc_GetCfgData);
 					_roles = [_thisCarClass] call BIS_fnc_vehicleRoles;
 					_slots = count _roles;
 					_thisSquad = createGroup playersSide;
 					if (_slots > 0) then {
-						_thisSquad = [_spawnPos, playersSide, pInfClassesForWeights, pInfClassWeights, [_slots, _slots], false] call dro_spawnGroupWeighted;
+						_thisSquad = [_spawnPos, playersSide, pInfClassesForWeights, pInfClassWeights, [_slots, _slots], false] call DRO_fnc_spawnGroupWeighted;
 						waitUntil {(count (units _thisSquad)) > 0};
 					};
 					
@@ -209,10 +209,10 @@ if (_ambFriendlyChance > 0.75) then {
 					//_thisSquad addVehicle _thisCar;
 					
 					
-					//[_thisCar, playersSide, false] call sun_createVehicleCrew;
+					//[_thisCar, playersSide, false] call DRO_fnc_createVehicleCrew;
 					//waitUntil {!isNull (driver _thisCar)};				
 					//(crew _thisCar) joinSilent _thisSquad;
-					//[_thisSquad, _thisCar, true] spawn sun_groupToVehicle;
+					//[_thisSquad, _thisCar, true] spawn DRO_fnc_groupToVehicle;
 					_iconSide = switch (playersSide) do {
 						case west: {"b_mech_inf"};
 						case east: {"o_mech_inf"};
@@ -235,12 +235,12 @@ if (_ambFriendlyChance > 0.75) then {
 					};
 					_thisCarClass = selectRandom _tanks;
 					_thisCar = createVehicle [_thisCarClass, _spawnPos, [], 0, "NONE"];
-					//_slots = [_thisCarClass] call sun_getTrueCargo; //((configFile >> "CfgVehicles" >> _thisCarClass >> "transportSoldier") call BIS_fnc_GetCfgData);
+					//_slots = [_thisCarClass] call DRO_fnc_getTrueCargo; //((configFile >> "CfgVehicles" >> _thisCarClass >> "transportSoldier") call BIS_fnc_GetCfgData);
 					_roles = [_thisCarClass] call BIS_fnc_vehicleRoles;
 					_slots = count _roles;
 					_thisSquad = createGroup playersSide;
 					if (_slots > 0) then {
-						_thisSquad = [_spawnPos, playersSide, pInfClassesForWeights, pInfClassWeights, [_slots, _slots], false] call dro_spawnGroupWeighted;
+						_thisSquad = [_spawnPos, playersSide, pInfClassesForWeights, pInfClassWeights, [_slots, _slots], false] call DRO_fnc_spawnGroupWeighted;
 						waitUntil {(count (units _thisSquad)) > 0};
 					};
 					
@@ -259,10 +259,10 @@ if (_ambFriendlyChance > 0.75) then {
 					//_thisSquad addVehicle _thisCar;
 					
 					
-					//[_thisCar, playersSide, false] call sun_createVehicleCrew;
+					//[_thisCar, playersSide, false] call DRO_fnc_createVehicleCrew;
 					//waitUntil {!isNull (driver _thisCar)};				
 					//(crew _thisCar) joinSilent _thisSquad;
-					//[_thisSquad, _thisCar, true] spawn sun_groupToVehicle;
+					//[_thisSquad, _thisCar, true] spawn DRO_fnc_groupToVehicle;
 					_iconSide = switch (playersSide) do {
 						case west: {"b_armor"};
 						case east: {"o_armor"};
@@ -306,7 +306,7 @@ if (_ambFriendlyChance > 0.75) then {
 						_waypoints pushBack [_randomPos, 0];
 					};
 
-					[_thisSquad, _waypoints] spawn sun_waypointCheck;
+					[_thisSquad, _waypoints] spawn DRO_fnc_waypointCheck;
 				},
 				[_thisSquad]
 			] call CBA_fnc_waitUntilAndExecute;
@@ -335,7 +335,7 @@ if (_friendlyChance > 0.75) then {
 		if !(_spawnPos isEqualTo [0,0,0]) then {
 			_distance = 9999999;
 			{	
-				if (!([_spawnPos, (_x select 0)] call sun_checkRouteWater)) then {
+				if (!([_spawnPos, (_x select 0)] call DRO_fnc_checkRouteWater)) then {
 					_thisDist = _spawnPos distance (_x select 0);
 					if (_thisDist < _distance) then {
 						_distance = _thisDist;
@@ -351,11 +351,11 @@ if (_friendlyChance > 0.75) then {
 	};
 
 	if !(_rendezvousPos isEqualTo [0,0,0]) then {
-		_thisCallsign = [callsigns] call sun_selectRemove;
+		_thisCallsign = [callsigns] call DRO_fnc_selectRemove;
 		// Create friendly squad
 		_minAI = (round (4 * aiMultiplier) min 6);
 		_maxAI = (round (6 * aiMultiplier) min 8);
-		friendlySquad = [_spawnPos, playersSide, pInfClassesForWeights, pInfClassWeights, [_minAI, _maxAI], false] call dro_spawnGroupWeighted;					
+		friendlySquad = [_spawnPos, playersSide, pInfClassesForWeights, pInfClassWeights, [_minAI, _maxAI], false] call DRO_fnc_spawnGroupWeighted;					
 		waitUntil {!isNil "friendlySquad"};
 		_iconSide = switch (side friendlySquad) do {
 			case west: {"b_inf"};
@@ -377,7 +377,7 @@ if (_friendlyChance > 0.75) then {
 		} forEach (units friendlySquad);
 
 		// Create visual markers		
-		_markerMidPos = [[_spawnPos, _thisTrg]] call sun_avgPos;		
+		_markerMidPos = [[_spawnPos, _thisTrg]] call DRO_fnc_avgPos;		
 		_mkrMid = createMarker ["mkrRendezvousMid1", _markerMidPos];
 		_mkrMid setMarkerShape "ICON";
 		_mkrMid setMarkerType "mil_ambush_noShadow";
@@ -387,7 +387,7 @@ if (_friendlyChance > 0.75) then {
 		_mkrMid setMarkerDir ((_spawnPos getDir _thisTrg) - 90);
 		
 		if (_ambFriendlyChance <= 0.75) then {
-			_markerMid2Pos = [[_thisTrg, _rendezvousPos]] call sun_avgPos;		
+			_markerMid2Pos = [[_thisTrg, _rendezvousPos]] call DRO_fnc_avgPos;		
 			_mkrMid2 = createMarker ["mkrRendezvousMid2", _markerMid2Pos];
 			_mkrMid2 setMarkerShape "ICON";
 			_mkrMid2 setMarkerType "mil_arrow2_noShadow";
@@ -408,7 +408,7 @@ if (_friendlyChance > 0.75) then {
 			{ DRO_beginFriendlyAssault },
 			{
 				params ["_thisTrg", "_rendezvousPos"];
-				["FRIENDLY_START", groupId friendlySquad] spawn dro_sendProgressMessage;
+				["FRIENDLY_START", groupId friendlySquad] spawn DRO_fnc_sendProgressMessage;
 				{
 					_x setCaptive false;
 					_x setUnitPos "UP";
@@ -433,7 +433,7 @@ if (_friendlyChance > 0.75) then {
 				_wpEnd setWaypointType "MOVE";
 				_waypoints pushBack [_rendezvousPos, 0];
 
-				[friendlySquad, _waypoints] spawn sun_waypointCheck;
+				[friendlySquad, _waypoints] spawn DRO_fnc_waypointCheck;
 			},
 			[_thisTrg, _rendezvousPos]
 		] call CBA_fnc_waitUntilAndExecute;
@@ -450,7 +450,7 @@ if (count _squads > 0) then {
 	{
 		_groupIDs pushBack (groupId _x);
 	} forEach _squads;
-	_squadCommaList = [_groupIDs] call sun_stringCommaList;
+	_squadCommaList = [_groupIDs] call DRO_fnc_stringCommaList;
 	
 	if (!isNil "friendlySquad") then {
 		// Rendezvous squad and ambient squads - Rendezvous then hold

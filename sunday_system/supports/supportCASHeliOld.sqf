@@ -79,7 +79,7 @@ DRO_CASCommit = {
 	// Create CAS vehicle
 	_provider = createVehicle [_CASClass, _spawnPos, [], 0, "FLY"];
 	_provider setPos _spawnPos;
-	[_provider, playersSide, false] call sun_createVehicleCrew;	
+	[_provider, playersSide, false] call DRO_fnc_createVehicleCrew;	
 	_provider flyInHeight _height;
 	//_provider setCaptive true;
 	player setVariable ["DRO_SUPP_CASVeh", _provider];

@@ -75,7 +75,7 @@ if (count AOLocations > 1) then {
 		};
 	} forEach AOLocations;
 	if (count _aoNames > 0) then {
-		_aoNamesFull = [_aoNames] call sun_stringCommaList;			
+		_aoNamesFull = [_aoNames] call DRO_fnc_stringCommaList;			
 		_reportText = selectRandom ["received reports of", "detected", "been made aware of"];
 		if (count _aoNames > 1) then {		
 			_textSecondaryLocs = format ["We have also %3 %1 occupying forces in %2.", enemyFactionName, _aoNamesFull, _reportText];
@@ -129,9 +129,9 @@ publicVariable "briefingString";
 } forEach allPlayers;
 */
 
-//[_briefingString] remoteExec ["sun_briefingJIP", 0, true];
+//[_briefingString] remoteExec ["DRO_fnc_briefingJIP", 0, true];
 
 //player createDiaryRecord ["Diary", ["Briefing", _briefingString]];
 [briefingString, {player createDiaryRecord ["Diary", ["Briefing", _this]]}] remoteExec ["call", 0, true];
 
-["BRIEFING"] spawn dro_sendProgressMessage;
+["BRIEFING"] spawn DRO_fnc_sendProgressMessage;

@@ -25,7 +25,7 @@ _vehicleList = if (count eCarNoTurretClasses > 0) then {
 // Get transport slot bounds
 _cargoRange = [100, 0];
 {
-	_transportSlots = ([_x] call sun_getTrueCargo);
+	_transportSlots = ([_x] call DRO_fnc_getTrueCargo);
 	if (_forEachIndex == 0) then {
 		_cargoRange set [0, _transportSlots];
 		_cargoRange set [1, _transportSlots];
@@ -41,7 +41,7 @@ _cargoRange = [100, 0];
 // Get vehicle slot weights
 _cargoWeights = [];
 {
-	_transportSlots = ([_x] call sun_getTrueCargo);
+	_transportSlots = ([_x] call DRO_fnc_getTrueCargo);
 	_thisWeight = linearConversion [(_cargoRange select 0)-1, (_cargoRange select 1)+1, _transportSlots, 0, 1, true]; 
 	_cargoWeights pushBack _thisWeight;
 } forEach _vehicleList;
@@ -65,11 +65,11 @@ diag_log _cargoWeights;
 
 _vehicleType = [_vehicleList, _cargoWeights] call BIS_fnc_selectRandomWeighted;
 //_vehicleType = selectRandom _vehicleList;		
-_thisPos = [(((AOLocations select _AOIndex) select 2) select 0)] call sun_selectRemove;
+_thisPos = [(((AOLocations select _AOIndex) select 2) select 0)] call DRO_fnc_selectRemove;
 
 _thisVeh = _vehicleType createVehicle _thisPos;
-_thisVeh = [_thisVeh] call sun_checkVehicleSpawn;
-if (isNull _thisVeh) exitWith {[(AOLocations call BIS_fnc_randomIndex), false] call fnc_selectObjective};
+_thisVeh = [_thisVeh] call DRO_fnc_checkVehicleSpawn;
+if (isNull _thisVeh) exitWith {[(AOLocations call BIS_fnc_randomIndex), false] call DRO_fnc_selectObjective};
 
 _roads = _thisVeh nearRoads 50;
 _dir = 0;
@@ -104,12 +104,12 @@ if (_possibleLocsMaxIndex > 0) then {
 		if (count _possibleLocTypes > 0) then {
 			if (_i == 0) then {
 				_selectedPosArray = ((((AOLocations select _i) select 2) select (selectRandom _possibleLocTypes)));					
-				_selectedPos = [_selectedPosArray] call sun_selectRemove;					
+				_selectedPos = [_selectedPosArray] call DRO_fnc_selectRemove;					
 				_travelPositions pushBack _selectedPos;
 			} else {
 				if (random 1 > 0.5) then {
 					_selectedPosArray = ((((AOLocations select _i) select 2) select (selectRandom _possibleLocTypes)));					
-					_selectedPos = [_selectedPosArray] call sun_selectRemove;					
+					_selectedPos = [_selectedPosArray] call DRO_fnc_selectRemove;					
 					_travelPositions pushBack _selectedPos;
 				};
 			};
@@ -145,15 +145,15 @@ switch (_vehStyle) do {
 				"Land_Pallets_F",
 				"Land_Pallet_F"					
 			];
-			_item1Pos = [getPos _thisVeh, 5, (_dir - 155)] call dro_extendPos;
-			_item2Pos = [_item1Pos, 1.5, (_dir - 180)] call dro_extendPos;
+			_item1Pos = [getPos _thisVeh, 5, (_dir - 155)] call DRO_fnc_extendPos;
+			_item2Pos = [_item1Pos, 1.5, (_dir - 180)] call DRO_fnc_extendPos;
 			_item1 = selectRandom _itemsArray;
 			_item2 = selectRandom _itemsArray;
-			[_item1, _item1Pos, _dir] call dro_createSimpleObject;
-			[_item2, _item2Pos, _dir] call dro_createSimpleObject;	
+			[_item1, _item1Pos, _dir] call DRO_fnc_createSimpleObject;
+			[_item2, _item2Pos, _dir] call DRO_fnc_createSimpleObject;	
 
-			_guardPos = [getPos _thisVeh, 3, (_dir - 180)] call dro_extendPos;		
-			_group = [_guardPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;
+			_guardPos = [getPos _thisVeh, 3, (_dir - 180)] call DRO_fnc_extendPos;		
+			_group = [_guardPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
 		
 		} else {
 			_wheels = [];
@@ -173,39 +173,39 @@ switch (_vehStyle) do {
 				"Land_CanisterFuel_F",
 				"Land_Wrench_F"								
 			];
-			_item1Pos = [getPos _thisVeh, 2.5, (_dir - 85)] call dro_extendPos;
-			_item2Pos = [_item1Pos, 1, _dir] call dro_extendPos;			
+			_item1Pos = [getPos _thisVeh, 2.5, (_dir - 85)] call DRO_fnc_extendPos;
+			_item2Pos = [_item1Pos, 1, _dir] call DRO_fnc_extendPos;			
 			_item1 = selectRandom _itemsArray;
 			_item2 = selectRandom _itemsArray;
-			[_item1, _item1Pos, (random 360)] call dro_createSimpleObject;
-			[_item2, _item2Pos, (random 360)] call dro_createSimpleObject;
-			_toolkit = "Item_ToolKit" createVehicle ([getPos _thisVeh, 2.5, (_dir - 140)] call dro_extendPos);
+			[_item1, _item1Pos, (random 360)] call DRO_fnc_createSimpleObject;
+			[_item2, _item2Pos, (random 360)] call DRO_fnc_createSimpleObject;
+			_toolkit = "Item_ToolKit" createVehicle ([getPos _thisVeh, 2.5, (_dir - 140)] call DRO_fnc_extendPos);
 			
-			_guardPos = [getPos _thisVeh, 3, (_dir - 90)] call dro_extendPos;		
-			_group = [_guardPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;
+			_guardPos = [getPos _thisVeh, 3, (_dir - 90)] call DRO_fnc_extendPos;		
+			_group = [_guardPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
 			_unit = ((units _group) select 0);
 			_unit setUnitPos "MIDDLE";
 			_unit setFormDir (_dir + 90);
 			_unit setDir (_dir + 90);
 		};		
 		
-		_spawnPos = [_thisPos, 6, (random 360)] call dro_extendPos;
+		_spawnPos = [_thisPos, 6, (random 360)] call DRO_fnc_extendPos;
 		_minAI = round (3 * aiMultiplier);
 		_maxAI = round (5 * aiMultiplier);
-		_spawnedSquad = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;			
+		_spawnedSquad = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;			
 		if (!isNil "_spawnedSquad") then {
 			[_spawnedSquad, _thisPos, [10, 30], "limited"] execVM "sunday_system\orders\patrolArea.sqf";	
 		};		
 	};
 	case "WAITING": {
-		[_thisVeh] call sun_createVehicleCrew;
+		[_thisVeh] call DRO_fnc_createVehicleCrew;
 		//createVehicleCrew _thisVeh;
 		_thisVeh engineOn true;
 		
-		_spawnPos = [_thisPos, 6, (random 360)] call dro_extendPos;
+		_spawnPos = [_thisPos, 6, (random 360)] call DRO_fnc_extendPos;
 		_minAI = round (3 * aiMultiplier);
 		_maxAI = round (5 * aiMultiplier);
-		_spawnedSquad = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;			
+		_spawnedSquad = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;			
 		if (!isNil "_spawnedSquad") then {
 			[_spawnedSquad, _thisPos, [10, 30], "limited"] execVM "sunday_system\orders\patrolArea.sqf";	
 		};	
@@ -213,7 +213,7 @@ switch (_vehStyle) do {
 	};
 	case "DRIVING": {
 		//createVehicleCrew _thisVeh;
-		[_thisVeh] call sun_createVehicleCrew;
+		[_thisVeh] call DRO_fnc_createVehicleCrew;
 		waitUntil {!isNull (driver _thisVeh)};
 		_vehGroup = group (driver _thisVeh);
 		// Initialise route waypoints
@@ -255,7 +255,7 @@ missionNamespace setVariable [format ["%1Completed", _taskName], 0, true];
 missionNamespace setVariable [(format ["%1_taskType", _taskName]), _taskType, true];
 _thisVeh setVariable ["thisTask", _taskName, true];
 
-[_thisVeh] call dro_addSabotageAction;
+[_thisVeh] call DRO_fnc_addSabotageAction;
 _thisVeh setVehicleLock "LOCKED";
 
 // Add destruction event handler

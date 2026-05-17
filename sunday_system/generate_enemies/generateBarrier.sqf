@@ -56,16 +56,16 @@ for "_i" from 1 to 6 do {
 					if ((_x distance _nBuilding) > 10) then {
 						_checkPos = (_x isFlatEmpty [-1, -1, 1, 10, 0, false]);
 						if (count _checkPos > 0) then {
-							[_barrierClass1, _checkPos, _thisDir] call dro_createSimpleObject;																
+							[_barrierClass1, _checkPos, _thisDir] call DRO_fnc_createSimpleObject;																
 							_barrier2Pos = [_x, 8, (_thisDir-90)] call BIS_fnc_relPos;	
 							_checkPos = (_barrier2Pos isFlatEmpty [0.5, -1, -1, 1, -1, false]);
 							if (count _checkPos > 0) then {																
-								[_barrierClass2, _checkPos, _thisDir] call dro_createSimpleObject;									
+								[_barrierClass2, _checkPos, _thisDir] call DRO_fnc_createSimpleObject;									
 							};
 							_barrier3Pos = [_x, 8, (_thisDir+90)] call BIS_fnc_relPos;
 							_checkPos = (_barrier3Pos isFlatEmpty [0.5, -1, -1, 1, -1, false]);
 							if (count _checkPos > 0) then {	
-								[_barrierClass2, _checkPos, _thisDir] call dro_createSimpleObject;									
+								[_barrierClass2, _checkPos, _thisDir] call DRO_fnc_createSimpleObject;									
 							};
 						};						
 					};			
@@ -101,7 +101,7 @@ for "_k" from 1 to 6 step 1 do {
 // Populate guardposts
 {
 	_buildingPosition = (_x buildingPos 1);
-	_group = [_buildingPosition, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call dro_spawnGroupWeighted;
+	_group = [_buildingPosition, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
 	if (!isNil "_group") then {
 		_unit = ((units _group) select 0);
 		_unit setFormDir ((getDir _x)+180);
@@ -120,7 +120,7 @@ for "_infIndex" from 1 to _numBarrierInf step 1 do {
 			_spawnedSquad = nil;
 			_minAI = round (2 * aiMultiplier);
 			_maxAI = round (3 * aiMultiplier);				
-			_spawnedSquad = [_infBarrierSpawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;				
+			_spawnedSquad = [_infBarrierSpawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;				
 			if (!isNil "_spawnedSquad") then {
 				[_spawnedSquad, _infBarrierSpawnPos, 50] call BIS_fnc_taskPatrol;
 				enemyAlertableGroups pushBack _spawnedSquad;
@@ -137,7 +137,7 @@ for "_infIndex" from 1 to _numBarrierInf step 1 do {
 		_spawnedSquad = nil;
 		_minAI = round (2 * aiMultiplier);
 		_maxAI = round (4 * aiMultiplier);
-		_spawnedSquad = [_infBarrierSpawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;	
+		_spawnedSquad = [_infBarrierSpawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;	
 		if (!isNil "_spawnedSquad") then {				
 			_wp0 = _spawnedSquad addWaypoint[_infBarrierSpawnPos, 10];
 			_wp0 setWaypointBehaviour "SAFE";

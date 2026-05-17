@@ -27,7 +27,7 @@ _campObjects = [
 
 // Central fire
 if (random 1 > 0.3) then {
-	[(selectRandom _fires), _center, random 360] call dro_createSimpleObject;
+	[(selectRandom _fires), _center, random 360] call DRO_fnc_createSimpleObject;
 };
 
 _tentType = selectRandom _tents;

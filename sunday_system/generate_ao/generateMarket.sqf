@@ -64,7 +64,7 @@ if (count _allRoads > 0) then {
 			};
 		};
 		if (count (roadsConnectedTo _thisRoad) <= 2 && _continue) then {
-			_dir = [_thisRoad] call sun_getRoadDir;
+			_dir = [_thisRoad] call DRO_fnc_getRoadDir;
 			for "_roadSide" from 0 to 180 step 180 do {	
 				_stallPositions = [];
 				_shelters = [];		
@@ -80,7 +80,7 @@ if (count _allRoads > 0) then {
 						_object = createVehicle [(_shelter select 0), _spawnPos, [], 0, "NONE"];		
 						_object setDir _dir + (_shelter select 1) + _roadSide;
 						_shelters pushBack _object;
-						//_shelters pushBack ([(_shelter select 0), _spawnPos, _dir + (_shelter select 1) + _roadSide, "NONE"] call dro_createSimpleObject);						
+						//_shelters pushBack ([(_shelter select 0), _spawnPos, _dir + (_shelter select 1) + _roadSide, "NONE"] call DRO_fnc_createSimpleObject);						
 						_numStalls = ([3,4] call BIS_fnc_randomInt) * 2;
 						for "_i" from -_numStalls to _numStalls step 4 do {
 							_stallPos = [_spawnPos, _i, _dir] call BIS_fnc_relPos;
@@ -96,12 +96,12 @@ if (count _allRoads > 0) then {
 								_object = createVehicle [(_shelter select 0), _spawnPosNew, [], 0, "NONE"];		
 								_object setDir _dir + (_shelter select 1) + _roadSide;
 								_shelters pushBack _object;
-								//_shelters pushBack ([(_shelter select 0), _spawnPosNew, _dir + (_shelter select 1) + _roadSide, "NONE"] call dro_createSimpleObject);						
+								//_shelters pushBack ([(_shelter select 0), _spawnPosNew, _dir + (_shelter select 1) + _roadSide, "NONE"] call DRO_fnc_createSimpleObject);						
 							} else {						
 								_object = createVehicle [(_shelter select 0), _spawnPosNew, [], 0, "NONE"];		
 								_object setDir _dir + (_shelter select 1) + _roadSide;
 								_shelters pushBack _object;
-								//_shelters pushBack ([(_shelter select 0), _spawnPosNew, _dir + (_shelter select 1) + _roadSide, "NONE"] call dro_createSimpleObject);							 						
+								//_shelters pushBack ([(_shelter select 0), _spawnPosNew, _dir + (_shelter select 1) + _roadSide, "NONE"] call DRO_fnc_createSimpleObject);							 						
 							};
 							_stallPositions pushBack _spawnPosNew;					
 						};				
@@ -118,19 +118,19 @@ if (count _allRoads > 0) then {
 				{			
 					if (random 1 > 0.25) then {					
 						_thisStall = selectRandom _marketStalls;
-						[(_thisStall select 0), _x, _dir + (_thisStall select 1) + _roadSide] call dro_createSimpleObject;
+						[(_thisStall select 0), _x, _dir + (_thisStall select 1) + _roadSide] call DRO_fnc_createSimpleObject;
 						if (random 1 > 0.4) then {
 							_spawnPos = [_x, 2, (_dir + (selectRandom [0, 180]))] call BIS_fnc_relPos;					
-							[selectRandom _marketObjects, _spawnPos, random 360] call dro_createSimpleObject;
+							[selectRandom _marketObjects, _spawnPos, random 360] call DRO_fnc_createSimpleObject;
 						};
 					} else {
 						_numObjects = [0,2] call BIS_fnc_randomInt;
 						for "_i" from 0 to _numObjects step 1 do {		
 							_spawnPos = [_x, _i*2, (_dir + _roadSide)] call BIS_fnc_relPos;
 							if (_numObjects == 0) then {
-								[selectRandom _marketObjectsLarge, _spawnPos, random 360] call dro_createSimpleObject;
+								[selectRandom _marketObjectsLarge, _spawnPos, random 360] call DRO_fnc_createSimpleObject;
 							} else {
-								[selectRandom _marketObjects, _spawnPos, random 360] call dro_createSimpleObject;
+								[selectRandom _marketObjects, _spawnPos, random 360] call DRO_fnc_createSimpleObject;
 							};
 							
 						};				

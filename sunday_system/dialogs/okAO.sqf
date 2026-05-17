@@ -60,7 +60,7 @@ if (('FORTIFY' in preferredObjectives) || ('DISARM' in preferredObjectives) || (
 
 hintSilent  "";
 closeDialog 1;				
-[toUpper "Please wait while mission is generated", "objectivesSpawned", 1, ""] call sun_callLoadScreen;					
+[toUpper "Please wait while mission is generated", "objectivesSpawned", 1, ""] call DRO_fnc_callLoadScreen;					
 	
 
 

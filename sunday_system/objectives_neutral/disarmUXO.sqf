@@ -16,9 +16,9 @@ if (count (((AOLocations select _AOIndex) select 2) select 2) > 0) then {
 _style = selectRandom _styles;
 
 _thisPos = if (_style == "ROAD") then {
-	[(((AOLocations select _AOIndex) select 2) select 0)] call sun_selectRemove;
+	[(((AOLocations select _AOIndex) select 2) select 0)] call DRO_fnc_selectRemove;
 } else {
-	[(((AOLocations select _AOIndex) select 2) select 2)] call sun_selectRemove;	
+	[(((AOLocations select _AOIndex) select 2) select 2)] call DRO_fnc_selectRemove;	
 };
 
 // Create disarm targets
@@ -38,7 +38,7 @@ for "_i" from 0 to (floor (random [3, 6, 7])) do {
 UXOUsed = true;
 
 // Get marker size
-_avgPos = [_disarmTargetsUXO] call sun_avgPos;
+_avgPos = [_disarmTargetsUXO] call DRO_fnc_avgPos;
 _thisPos = _avgPos;
 
 _minX = 9999999;
@@ -77,7 +77,7 @@ _markerDisarm setMarkerAlpha 0.5;
 			_trgArea setTriggerArea [_boundX, _boundY, 0, false];
 			_trgArea setTriggerActivation ["ANY", "PRESENT", false];
 			// Trigger statement migrated: spawn+sleep → CBA_fnc_waitAndExecute (random 30–60s delay).
-			_trgArea setTriggerStatements ["(({(group _x) == (grpNetId call BIS_fnc_groupFromNetId)} count thisList) > 0)", "[{[getPos (_this select 0)] call dro_triggerAmbushSpawn}, [thisTrigger], (random [30, 45, 60])] call CBA_fnc_waitAndExecute", ""];
+			_trgArea setTriggerStatements ["(({(group _x) == (grpNetId call BIS_fnc_groupFromNetId)} count thisList) > 0)", "[{[getPos (_this select 0)] call DRO_fnc_triggerAmbushSpawn}, [thisTrigger], (random [30, 45, 60])] call CBA_fnc_waitAndExecute", ""];
 		};
 	},
 	[_thisPos, _boundX, _boundY]

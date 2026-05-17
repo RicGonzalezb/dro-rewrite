@@ -33,7 +33,7 @@ _mapOpen = openMap [true, false];
 		publicVariableServer "aoName";
 		publicVariableServer "selectedLocMarker";		
 		{
-			[52525, 2010, (format ["AO location: %1", aoName])] remoteExec ["sun_lobbyChangeLabel", _x];	
+			[52525, 2010, (format ["AO location: %1", aoName])] remoteExec ["DRO_fnc_lobbyChangeLabel", _x];	
 		} forEach allPlayers;		
 	},
 	[]

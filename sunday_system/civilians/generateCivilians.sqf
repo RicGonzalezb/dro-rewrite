@@ -16,7 +16,7 @@ _createCivUnit = {
 	_unit setBehaviour "CARELESS";
 	_unit execFSM "A3\Modules_F_Tacops\Ambient\CivilianPresence\FSM\behavior.fsm";
 	_module setVariable ["#units", ((_module getVariable ["#units", []]) + [_unit])];
-	[_unit] call dro_civDeathHandler;	
+	[_unit] call DRO_fnc_civDeathHandler;	
 	// Currently civilians don't always exit dynamic simulation correctly
 	//_group enableDynamicSimulation true;
 	_group
@@ -181,7 +181,7 @@ diag_log format ["DRO: %2 Civilian custom classes = %1", _customClasses, text ((
 private _keyClass = (_customClasses select 0);
 // Identities
 
-private _identities = [_keyClass, civilian] call sun_extractIdentities;
+private _identities = [_keyClass, civilian] call DRO_fnc_extractIdentities;
 _C_firstNames = (_identities select 0);
 _C_lastNames = (_identities select 1);
 _C_speakers = (_identities select 2);
@@ -214,7 +214,7 @@ if (_numHouses < 9) then {_percentToFill = 0.5};
 _numHousesToFill = _numHouses * _percentToFill;
 if (_numHousesToFill > 10) then {_numHousesToFill = 10};
 for "_i" from 1 to _numHousesToFill do {
-	private _thisHouse = [_filteredHouses] call sun_selectRemove;
+	private _thisHouse = [_filteredHouses] call DRO_fnc_selectRemove;
 	(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", (getPos _thisHouse), [], 0, "FORM"];
 	private _buildingPositions = [_thisHouse] call BIS_fnc_buildingPositions;	
 	{ 
@@ -347,7 +347,7 @@ if (count civCarClasses > 0) then {
 		_numCivVehicles = [1,3] call BIS_fnc_randomInt;
 		for "_i" from 1 to _numCivVehicles do {							
 			if (count (((AOLocations select _AOIndex) select 2) select 0) > 0) then {
-				_pos = [(((AOLocations select _AOIndex) select 2) select 0)] call sun_selectRemove;
+				_pos = [(((AOLocations select _AOIndex) select 2) select 0)] call DRO_fnc_selectRemove;
 				_class = (selectRandom civCarClasses);
 				_pos = _pos findEmptyPosition [0, 20, _class];
 				if (count _pos > 0) then {				
@@ -356,7 +356,7 @@ if (count civCarClasses > 0) then {
 					_roadList = _pos nearRoads 10;
 					if (count _roadList > 0) then {
 						_thisRoad = _roadList select 0;
-						_direction = [_thisRoad] call sun_getRoadDir;
+						_direction = [_thisRoad] call DRO_fnc_getRoadDir;
 						_veh setDir _direction;
 						_newPos = [_pos, 4, (_direction + 90)] call BIS_fnc_relPos;
 						if (!(_newPos isFlatEmpty [5, -1, -1, -1, 0, false] isEqualTo [])) then {
@@ -370,7 +370,7 @@ if (count civCarClasses > 0) then {
 							patrolGroups pushBack (group driver _veh);
 						};
 						{
-							[_x] call dro_civDeathHandler;
+							[_x] call DRO_fnc_civDeathHandler;
 						} forEach units (group driver _veh);
 						
 					};
@@ -383,7 +383,7 @@ if (count civCarClasses > 0) then {
 private _modCivs = (createGroup centerSide) createUnit ["ModuleCivilianPresence_F", _AOPos, [], 0, "FORM"];
 _modCivs setVariable ["#unitCount", 0, true];
 _modCivs setVariable ["objectarea", [(_AOSize / 2), (_AOSize / 2), 0, false, -1], true];
-_modCivs setVariable ["#onCreated", {[_this] call dro_civDeathHandler}, true];
+_modCivs setVariable ["#onCreated", {[_this] call DRO_fnc_civDeathHandler}, true];
 _modCivs setVariable ["#useAgents", true, true];
 _modCivs setVariable ["#usePanicMode", true, true];
 _modCivs setVariable ["DRO_uniformList", _C_uniformList];
@@ -399,11 +399,11 @@ _modCivs setVariable ["#onCreated", {
 	removeHeadgear _this;
 	removeUniform _this;
 	_module = (_this getVariable "#core");
-	[_this, (selectRandom (_module getVariable "DRO_firstNames")), (selectRandom (_module getVariable "DRO_lastNames")), (selectRandom (_module getVariable "DRO_speakers")), (selectRandom (_module getVariable "DRO_faces"))] remoteExec ["sun_setNameMP", 0, true];		
+	[_this, (selectRandom (_module getVariable "DRO_firstNames")), (selectRandom (_module getVariable "DRO_lastNames")), (selectRandom (_module getVariable "DRO_speakers")), (selectRandom (_module getVariable "DRO_faces"))] remoteExec ["DRO_fnc_setNameMP", 0, true];		
 	_this addUniform (selectRandom (_module getVariable "DRO_uniformList"));
 	if (random 1 > 0.6) then {_this addHeadgear (selectRandom (_module getVariable "DRO_headgearList"))};
 	if (random 1 > 0.3) then {_this addVest (selectRandom (_module getVariable "DRO_vestList"))};
-	[_this] call dro_civDeathHandler;
+	[_this] call DRO_fnc_civDeathHandler;
 }, true];
 ["init", [_modCivs]] call bis_fnc_moduleCivilianPresence;
 

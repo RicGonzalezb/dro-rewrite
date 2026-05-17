@@ -6,7 +6,7 @@ _intelSubTaskName = format ["subtask%1", floor(random 100000)];
 
 diag_log format["DRO: Task seeking a position in: %1", str (((AOLocations select _AOIndex) select 2) select 0)];
 
-_thisPos = [(((AOLocations select _AOIndex) select 2) select 0)] call sun_selectRemove;
+_thisPos = [(((AOLocations select _AOIndex) select 2) select 0)] call DRO_fnc_selectRemove;
 
 // Create objects
 _offsetPos = _thisPos getPos [2.5, random 360];
@@ -38,7 +38,7 @@ _taskType = "use";
 missionNamespace setVariable [format ["%1Completed", _taskName], 0, true];
 missionNamespace setVariable [(format ["%1_taskType", _taskName]), _taskType, true];
 
-[_mainObj, _otherObjs, _thisPos, ([_thisPos] call sun_getRoadDir), _taskName] call dro_addConstructAction;
+[_mainObj, _otherObjs, _thisPos, ([_thisPos] call DRO_fnc_getRoadDir), _taskName] call DRO_fnc_addConstructAction;
 
 allObjectives pushBack _taskName;
 objData pushBack [

@@ -10,7 +10,7 @@ _taskName = format ["task%1", floor(random 100000)];
 _intelSubTaskName = format ["subtask%1", floor(random 100000)];
 
 // Destroy Artillery emplacement
-_thisPos = [(((AOLocations select _AOIndex) select 2) select 4)] call sun_selectRemove;
+_thisPos = [(((AOLocations select _AOIndex) select 2) select 4)] call DRO_fnc_selectRemove;
 
 _tempPos = [(_thisPos select 0), (_thisPos select 1), 0];
 _thisPos = _tempPos;
@@ -53,18 +53,18 @@ missionNamespace setVariable [format ["%1Completed", _taskName], 0, true];
 missionNamespace setVariable [(format ["%1_taskType", _taskName]), _taskType, true];
 
 _thisVeh = _vehicleType createVehicle _thisPos;
-_thisVeh = [_thisVeh] call sun_checkVehicleSpawn;
-if (isNull _thisVeh) exitWith {[(AOLocations call BIS_fnc_randomIndex), false] call fnc_selectObjective};		
+_thisVeh = [_thisVeh] call DRO_fnc_checkVehicleSpawn;
+if (isNull _thisVeh) exitWith {[(AOLocations call BIS_fnc_randomIndex), false] call DRO_fnc_selectObjective};		
 _thisVeh setVariable ["thisTask", _taskName, true];
 _thisVeh setVehicleLock "LOCKED";
 
 // Have artillery fire periodically
 if (random 1 > 0.35) then {
-	[_thisVeh] call sun_createVehicleCrew;
+	[_thisVeh] call DRO_fnc_createVehicleCrew;
 	//createVehicleCrew _thisVeh;
 	[_artyType, _thisVeh] spawn {
 		if ((_this select 0) == "ARTY") then {
-			_ranges = [(_this select 1)] call dro_getArtilleryRanges;
+			_ranges = [(_this select 1)] call DRO_fnc_getArtilleryRanges;
 			_targetPos = [(getPos (_this select 1)), (_ranges select 0), (_ranges select 1), 0, 1, 0, 0, [trgAOC]] call BIS_fnc_findSafePos;
 			while {alive (_this select 1)} do {																
 				sleep 60;
@@ -75,7 +75,7 @@ if (random 1 > 0.35) then {
 	};	
 };
 
-[_thisVeh] call dro_addSabotageAction;
+[_thisVeh] call DRO_fnc_addSabotageAction;
 
 // Add destruction event handler
 _thisVeh addEventHandler ["Killed", {
@@ -100,8 +100,8 @@ _thisVeh addEventHandler ["Killed", {
 _dir = direction _thisVeh;
 _rotation = (_dir - 45);
 for "_i" from 1 to 4 do {
-	_cornerPos = [getPos _thisVeh, 16, _dir] call dro_extendPos;
-	_corner = ["Land_HBarrierWall_corner_F", _cornerPos, _rotation] call dro_createSimpleObject;
+	_cornerPos = [getPos _thisVeh, 16, _dir] call DRO_fnc_extendPos;
+	_corner = ["Land_HBarrierWall_corner_F", _cornerPos, _rotation] call DRO_fnc_createSimpleObject;
 	_dir = _dir + 90;
 	_rotation = _rotation + 90;
 };
@@ -124,7 +124,7 @@ _itemsArray = [
 for "_i" from 1 to _randItems do {
 	_itemPos = [_thisPos, 8, 20, 1, 0, 1, 0] call BIS_fnc_findSafePos;
 	_thisItem = selectRandom _itemsArray;
-	[_thisItem, _itemPos, (random 360)] call dro_createSimpleObject;
+	[_thisItem, _itemPos, (random 360)] call DRO_fnc_createSimpleObject;
 };
 _boxPos = [getPos _thisVeh, 4, (random 360)] call BIS_fnc_relPos;
 "Box_NATO_AmmoVeh_F" createVehicle _boxPos;
@@ -136,7 +136,7 @@ _net = "CamoNet_INDP_big_F" createVehicle _netPos;
 _net setDir (random 360);
 _minAI = round (3 * aiMultiplier);
 _maxAI = round (5 * aiMultiplier);
-_spawnedSquad = [_netPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call dro_spawnGroupWeighted;		
+_spawnedSquad = [_netPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;		
 if (!isNil "_spawnedSquad") then {
 	[_spawnedSquad, _netPos] call bis_fnc_taskDefend;
 };
