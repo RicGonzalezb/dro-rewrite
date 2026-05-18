@@ -595,6 +595,17 @@ TAREFA: Auditoria final e cleanup de dead code.
 
 6. **Arquivos lib stub:** `sundayFunctions.sqf`, `droFunctions.sqf`, `menuFunctions.sqf`, `reviveFunctions.sqf`, `generateEnemiesFunctions.sqf` foram convertidos em stubs de deprecação no M3 (originais em `_archive/fnc_lib_backup_M3/`). Decidir se: (a) manter stubs vazios pra retrocompat, (b) deletar, (c) restaurar do archive (não recomendado).
 
+7. **Macros `#define` em fn_*.sqf:** verificar que toda função em `functions/` que usa um macro (e.g. `aliveVeh`) tem o `#define` correspondente no próprio arquivo. Grep:
+```
+grep -rE "aliveVeh\(" functions/
+grep -rE "^#define" functions/
+```
+Cada uso de macro deve ter um `#define` correspondente no MESMO arquivo. Caso contrário, o macro não é expandido em runtime (CfgFunctions compila isolado).
+
+Hotfix do M3 (Opus, pós-rpt) já cobriu `fn_checkVehicleSpawn.sqf` e `fn_helicopterCanFly.sqf` — verificar se M5 (ao extrair mais funções) ou outros caminhos introduziram problema similar.
+
+8. **Latent bug em `fn_checkVehicleSpawn.sqf`:** linha 6 usa `_vehicleType` não declarado em params. Só dispara se vehicle hitHull damage >= 0.7 (não acontece em spawn fresco). Adicionar `params [["_vehicle", objNull], ["_vehicleType", ""]]` OU remover a lógica de recreate se for confirmadamente dead-path.
+
 ### Audit pass
 
 1. **Grep por antipadrões remanescentes:**

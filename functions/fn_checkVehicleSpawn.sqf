@@ -1,4 +1,7 @@
 // Migrated from DRO_fnc_checkVehicleSpawn — M3 CfgFunctions migration
+// Hotfix: macro `aliveVeh` precisa estar definido no escopo desta função
+// (CfgFunctions compila o arquivo isolado, sem ver #defines do caller).
+#define aliveVeh(none) (none getHitPointDamage "hitHull") < 0.7
 params [["_vehicle", objNull]];
 	if (!isNull _vehicle) then {
 		//if (!aliveVeh(_vehicle)) then { //#LordShadeAceVeh

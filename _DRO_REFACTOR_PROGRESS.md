@@ -341,3 +341,35 @@ Exemplos:
    - `DRO_fnc_civDeathHandler`
 
 9. **`generateCompound.sqf`** mapeado para `DRO_fnc_spawnEnemyCompound` — nome do arquivo não corresponde ao nome da função. Documentado na CfgFunctions com `file = ` explícito. OK.
+
+---
+
+## M3 hotfix — macro `aliveVeh` ausente em fn_*.sqf — 2026-05-17 (Opus)
+
+### Sintoma
+
+Boot da missão gerou ~60 erros no .rpt:
+- `fn_checkVehicleSpawn.sqf:5 — Error Missing )`
+- `fn_helicopterCanFly.sqf:5 — Error Missing )`
+- Cascata de runtime errors em cache.sqf:26 etc.: `Undefined variable in expression: _object`
+
+### Causa raiz
+
+`#define aliveVeh(none) (none getHitPointDamage "hitHull") < 0.7` estava definido no topo de `sundayFunctions.sqf` (lib original). M3 extraiu o body de `sun_checkVehicleSpawn` e `sun_helicopterCanFly` para `functions/fn_*.sqf` mas NÃO copiou o `#define`. CfgFunctions usa `preprocessFileLineNumbers` que processa cada arquivo isoladamente — o macro fica indefinido, o texto literal `aliveVeh(_vehicle)` chega no compilador, e o parser falha com "Missing )".
+
+Quando a função não compila, calls retornam sem assignment, e variáveis dependentes (como `_object` no cache.sqf) ficam undefined.
+
+### Fix aplicado
+
+Adicionado `#define aliveVeh(none) (none getHitPointDamage "hitHull") < 0.7` no topo de:
+- `functions/fn_checkVehicleSpawn.sqf`
+- `functions/fn_helicopterCanFly.sqf`
+
+### Lição aprendida (relevante para M5/M6)
+
+Quando extrair funções pra CfgFunctions, sempre verificar se o body usa macros (`#define` no topo da lib original). Copiar os `#define` relevantes pro novo arquivo, OU substituir o uso de macro por código inline.
+
+### Latent bug não corrigido
+
+`fn_checkVehicleSpawn.sqf` linha 6 referencia `_vehicleType` que não está em params nem declarado na função. Era escopo herdado do caller via `#include`. Com CfgFunctions a variável é undefined. **Mas só dispara se `aliveVeh` retornar false** (vehicle hitHull damage >= 0.7), o que não acontece em spawn fresco. Latent — anotar pra M6.
+

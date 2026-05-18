@@ -1,4 +1,7 @@
 // Migrated from DRO_fnc_helicopterCanFly — M3 CfgFunctions migration
+// Hotfix: macro `aliveVeh` precisa estar definido no escopo desta função
+// (CfgFunctions compila o arquivo isolado, sem ver #defines do caller).
+#define aliveVeh(none) (none getHitPointDamage "hitHull") < 0.7
 params ["_heli", "_return"];
 	_return = true;
 	//if (alive _heli && alive (driver _heli)) then { //#LordShadeAceVeh
