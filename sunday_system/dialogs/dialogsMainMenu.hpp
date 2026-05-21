@@ -452,9 +452,35 @@ class sundayDialog {
 						};
 					};		
 				};
+				class CivsAgentSwitchButton: RscControlsGroupNoScrollbars {
+					idc = 2065;
+					y = "34.5 * pixelGridNoUIScale * pixelH";
+					class Controls {
+						class SwitchPic: sundaySelButtonPic
+						{
+							idc = 2066;
+							text = "\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa";
+						};
+						class SwitchTitle: sundaySelButtonTitle
+						{
+							idc = 2067;
+							text = "CIVILIANS AS AGENTS";
+						};
+						class SwitchText: sundaySelButtonSelect
+						{
+							idc = 2068;
+							text = "";
+						};
+						class SwitchButton: sundaySelButton {
+							idc = 2069;
+							action = "['MAIN', 2065] call DRO_fnc_switchButton";
+							tooltip = "When enabled, non-hostile civilians are spawned as lightweight agents instead of full AI units. Improves performance with no gameplay impact on friendly civilians.";
+						};
+					};
+				};
 				class StealthSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 2070;
-					y = "34.5 * pixelGridNoUIScale * pixelH";					
+					y = "38 * pixelGridNoUIScale * pixelH";					
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			
@@ -480,7 +506,7 @@ class sundayDialog {
 				};
 				class ReviveSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 2080;
-					y = "38 * pixelGridNoUIScale * pixelH";
+					y = "41.5 * pixelGridNoUIScale * pixelH";
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			
@@ -506,7 +532,7 @@ class sundayDialog {
 				};
 				class StaminaSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 3040;
-					y = "41.5 * pixelGridNoUIScale * pixelH";
+					y = "45 * pixelGridNoUIScale * pixelH";
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			
@@ -532,7 +558,7 @@ class sundayDialog {
 				};
 				class DynSimSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 2400;
-					y = "45 * pixelGridNoUIScale * pixelH";
+					y = "48.5 * pixelGridNoUIScale * pixelH";
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			

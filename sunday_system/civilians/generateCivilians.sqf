@@ -6,17 +6,24 @@ private _AOIndex = _this select 0;
 private _debug = 0;
 patrolGroups = [];
 
+// civiliansAsAgents: 0 = ENABLED (agents, melhor performance), 1 = DISABLED (units completas)
+private _useAgents = (civiliansAsAgents == 0);
+diag_log format ["DRO: Civilians as Agents = %1", _useAgents];
+
 _createCivUnit = {
 	params ["_pos", "_module", ["_customClasses", civClasses]];
-	_civType = selectRandom _customClasses;	
+	_civType = selectRandom _customClasses;
 	_group = createGroup civilian;
-	_unit = createAgent [_civType, _pos, [], 0, "NONE"];
-	//_unit = _group createUnit [_civType, _pos, [], 0, "NONE"];
+	if (_useAgents) then {
+		_unit = createAgent [_civType, _pos, [], 0, "NONE"];
+	} else {
+		_unit = _group createUnit [_civType, _pos, [], 0, "NONE"];
+	};
 	_unit setVariable ["#core", _module];
 	_unit setBehaviour "CARELESS";
 	_unit execFSM "A3\Modules_F_Tacops\Ambient\CivilianPresence\FSM\behavior.fsm";
 	_module setVariable ["#units", ((_module getVariable ["#units", []]) + [_unit])];
-	[_unit] call DRO_fnc_civDeathHandler;	
+	[_unit] call DRO_fnc_civDeathHandler;
 	// Currently civilians don't always exit dynamic simulation correctly
 	//_group enableDynamicSimulation true;
 	_group
@@ -411,7 +418,7 @@ _modCivs setVariable ["#unitCount", 0, true];
 // M7 fix: área aumentada de AOSize/2 para AOSize*0.75 — civis se espalham mais
 _modCivs setVariable ["objectarea", [(_AOSize * 0.75), (_AOSize * 0.75), 0, false, -1], true];
 _modCivs setVariable ["#onCreated", {[_this] call DRO_fnc_civDeathHandler}, true];
-_modCivs setVariable ["#useAgents", true, true];
+_modCivs setVariable ["#useAgents", _useAgents, true];
 _modCivs setVariable ["#usePanicMode", true, true];
 _modCivs setVariable ["DRO_uniformList", _C_uniformList];
 _modCivs setVariable ["DRO_firstNames", _C_firstNames];

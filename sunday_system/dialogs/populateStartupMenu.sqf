@@ -58,6 +58,7 @@ _index = lbAdd [2106, "3"];
 ["MAIN", 2030, false] call DRO_fnc_switchButton;
 ["MAIN", 2050, false] call DRO_fnc_switchButton;
 ["MAIN", 2060, false] call DRO_fnc_switchButton;
+["MAIN", 2065, false] call DRO_fnc_switchButton;
 ["MAIN", 2070, false] call DRO_fnc_switchButton;
 ["MAIN", 2080, false] call DRO_fnc_switchButton;
 ["MAIN", 2090, false] call DRO_fnc_switchButton;

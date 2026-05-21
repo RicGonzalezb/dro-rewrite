@@ -22,6 +22,8 @@ minesEnabled = profileNamespace getVariable ["DRO_minesEnabled", 0];
 publicVariable "minesEnabled";
 civiliansEnabled = profileNamespace getVariable ["DRO_civiliansEnabled", 0];
 publicVariable "civiliansEnabled";
+civiliansAsAgents = profileNamespace getVariable ["DRO_civiliansAsAgents", 0];
+publicVariable "civiliansAsAgents";
 stealthEnabled = profileNamespace getVariable ["DRO_stealthEnabled", 0];
 publicVariable "stealthEnabled";
 
