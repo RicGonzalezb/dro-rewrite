@@ -25,6 +25,7 @@ if (_AOIndex == 0) then {
 		if (_chance > 0.3) then {
 			[_x] call DRO_fnc_spawnEnemyGarrison;
 		};
+		uiSleep 0; // frame budget: yield entre spawns de garrison em milBuildings
 	} forEach milBuildings;
 };
 
@@ -39,6 +40,7 @@ if (_numGarrisons > 0) then {
 	for "_g" from 1 to _numGarrisons step 1 do {		
 		[([_tempBuildings] call DRO_fnc_selectRemove)] call DRO_fnc_spawnEnemyGarrison;
 		//[(selectRandom (((AOLocations select _AOIndex) select 2) select 7))] call DRO_fnc_spawnEnemyGarrison;
+		uiSleep 0; // frame budget: yield entre spawns de garrison do AO
 	};
 };
 /*
@@ -72,6 +74,7 @@ if (_numInf > 0) then {
 			_patrolGroups pushBack _spawnedSquad;				
 			enemyAlertableGroups pushBack _spawnedSquad;	
 		};
+		uiSleep 0; // frame budget: yield entre spawns de patrulha de infantaria
 	};
 };
 
@@ -166,6 +169,7 @@ if (count eCarClasses > 0) then {
 			if (_numRoadblocks > 0) then {
 				for "_x" from 1 to _numRoadblocks step 1 do {
 					[_AOIndex] call DRO_fnc_generateRoadblock;
+					uiSleep 0; // frame budget: yield entre spawns de roadblock
 				};
 			};		
 		};
@@ -175,6 +179,7 @@ if (count eCarClasses > 0) then {
 			if (_numBunkers > 0) then {
 				for "_x" from 1 to _numBunkers step 1 do {	
 					[_AOIndex] call DRO_fnc_generateBunker;
+					uiSleep 0; // frame budget: yield entre spawns de bunker
 				};
 			};
 		};		
@@ -203,6 +208,7 @@ if (count eCarClasses > 0) then {
 					_markerCamp setMarkerColor markerColorEnemy;
 					_markerCamp setMarkerAlpha 0;				
 					travelPosPOIMil pushBack _campPos;	
+					uiSleep 0; // frame budget: yield entre spawns de camp
 				};
 			};
 		};		
@@ -212,6 +218,7 @@ if (count eCarClasses > 0) then {
 			if (_numEmplacements > 0) then {
 				for "_x" from 1 to _numEmplacements step 1 do {	
 					[_AOIndex] call DRO_fnc_generateEmplacement;
+					uiSleep 0; // frame budget: yield entre spawns de emplacement
 				};
 			};			
 		};

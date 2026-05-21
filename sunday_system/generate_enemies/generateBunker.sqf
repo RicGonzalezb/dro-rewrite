@@ -33,10 +33,11 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 		};		
 		{
 			_guardGroup = [(_x select 0), enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
-			waitUntil {!isNil "_guardGroup"};
-			_guardUnit = ((units _guardGroup) select 0);					
+			// M7 fix: guard contra grpNull/nil de spawnGroupWeighted
+			if (isNil "_guardGroup" || {isNull _guardGroup} || {count (units _guardGroup) == 0}) then { continue };
+			private _guardUnit = ((units _guardGroup) select 0);
 			_guardUnit setFormDir (_x select 1);
-			_guardUnit setDir (_x select 1);				
+			_guardUnit setDir (_x select 1);
 			[_guardUnit] joinSilent _bunkerGroup;
 			if (random 1 > 0.6) then {
 				[_guardUnit, (selectRandom ["STAND", "STAND_IA", "KNEEL", "WATCH", "WATCH1", "WATCH2"]), "ASIS"] call BIS_fnc_ambientAnimCombat;
@@ -53,7 +54,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 					_dir = random 360;
 					_spawnPos = [_bunkerPos, 4, _dir] call DRO_fnc_extendPos;
 					_bunkerGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;												
-					if (!isNil "_bunkerGroup") then {
+					if (!isNil "_bunkerGroup" && {!isNull _bunkerGroup} && {count (units _bunkerGroup) > 0}) then {
 						_unit = ((units _bunkerGroup) select 0);
 						_unit setFormDir _dir;
 						_unit setDir _dir;							
@@ -78,7 +79,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 					_dir = random 360;						
 					_spawnPos = _bunkerPos findEmptyPosition [0,20];
 					_bunkerGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;						
-					if (!isNil "_bunkerGroup") then {
+					if (!isNil "_bunkerGroup" && {!isNull _bunkerGroup} && {count (units _bunkerGroup) > 0}) then {
 						_unit = ((units _bunkerGroup) select 0);
 						_unit setFormDir _dir;
 						_unit setDir _dir;

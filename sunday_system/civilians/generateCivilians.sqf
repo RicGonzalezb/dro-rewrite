@@ -215,6 +215,7 @@ _numHousesToFill = _numHouses * _percentToFill;
 if (_numHousesToFill > 10) then {_numHousesToFill = 10};
 for "_i" from 1 to _numHousesToFill do {
 	private _thisHouse = [_filteredHouses] call DRO_fnc_selectRemove;
+	if (isNull _thisHouse) then { continue };
 	(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", (getPos _thisHouse), [], 0, "FORM"];
 	private _buildingPositions = [_thisHouse] call BIS_fnc_buildingPositions;	
 	{ 

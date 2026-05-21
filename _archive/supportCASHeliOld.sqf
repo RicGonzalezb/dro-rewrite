@@ -1,5 +1,4 @@
-// ARCHIVED — não está em uso. Cópia em _archive/supportCASHeliOld.sqf (M6 final audit, 2026-05-20).
-// Arquivo original mantido para rollback (sem callers ativos).
+// ARCHIVED — não está em uso. Movido em 2026-05-20 durante M6 final audit.
 params ["_supportCoords"];
 
 

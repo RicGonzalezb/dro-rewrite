@@ -112,105 +112,8 @@ publicVariable "musicIntroSting";
 
 diag_log "DRO: Music sting chosen";
 
-// *****
-// EXTRACT FACTION DATA
-// *****
-
-// Check for factions that have units
-_availableFactions = [];
-availableFactionsData = [];
-availableFactionsDataNoInf = [];
-_unavailableFactions = [];
-//_factionsWithUnits = [];
-_factionsWithNoInf = [];
-_factionsWithUnitsFiltered = [];
-// Record all factions with valid vehicles
-{
-	if (isNumber (configFile >> "CfgVehicles" >> (configName _x) >> "scope")) then {
-		if (((configFile >> "CfgVehicles" >> (configName _x) >> "scope") call BIS_fnc_GetCfgData) == 2) then {
-			_factionClass = ((configFile >> "CfgVehicles" >> (configName _x) >> "faction") call BIS_fnc_GetCfgData);
-			//_factionsWithUnits pushBackUnique _factionClass;		
-			if ((configName _x) isKindOf "Man") then {
-				_index = ([_factionsWithUnitsFiltered, _factionClass] call BIS_fnc_findInPairs);
-				if (_index == -1) then {
-					_factionsWithUnitsFiltered pushBack [_factionClass, 1];
-				} else {
-					_factionsWithUnitsFiltered set [_index, [((_factionsWithUnitsFiltered select _index) select 0), ((_factionsWithUnitsFiltered select _index) select 1)+1]];
-				}; 
-			};		
-		};
-	};
-} forEach ("(configName _x) isKindOf 'AllVehicles'" configClasses (configFile / "CfgVehicles"));
-// Filter factions with 1 or less infantry units
-/*
-{
-	_factionsWithUnitsFiltered pushBack [_x, 0];
-} forEach _factionsWithUnits;
-{		
-	_index = [_factionsWithUnitsFiltered, ((configFile >> "CfgVehicles" >> (configName _x) >> "faction") call BIS_fnc_GetCfgData)] call BIS_fnc_findInPairs; 
-	if (_index > -1) then {		
-		_factionsWithUnitsFiltered set [_index, [((_factionsWithUnitsFiltered select _index) select 0), ((_factionsWithUnitsFiltered select _index) select 1)+1]];
-	};
-} forEach ("(configName _x) isKindOf 'Man'" configClasses (configFile / "CfgVehicles"));
-*/
-diag_log format ["DRO: _factionsWithUnitsFiltered = %1", _factionsWithUnitsFiltered];
-
-// Filter out factions that have no vehicles
-{
-	_thisFaction = (_x select 0);
-	_thisSideNum = ((configFile >> "CfgFactionClasses" >> _thisFaction >> "side") call BIS_fnc_GetCfgData);
-	//diag_log format ["DRO: Fetching faction info for %1", _thisFaction];	
-	//diag_log format ["DRO: faction sideNum = %1", _thisSideNum];
-	if (!isNil "_thisSideNum") then {
-		if (typeName _thisSideNum == "TEXT") then {
-			if ((["west", _thisSideNum, false] call BIS_fnc_inString)) then {
-				_thisSideNum = 1;
-			};
-			if ((["east", _thisSideNum, false] call BIS_fnc_inString)) then {
-				_thisSideNum = 0;
-			};
-			if ((["guer", _thisSideNum, false] call BIS_fnc_inString) || (["ind", _thisSideNum, false] call BIS_fnc_inString)) then {
-				_thisSideNum = 2;
-			};
-		};	
-		
-		if (typeName _thisSideNum == "SCALAR") then {
-			if (_thisSideNum <= 3 && _thisSideNum > -1) then {
-					
-				_thisFactionName = ((configFile >> "CfgFactionClasses" >> _thisFaction >> "displayName") call BIS_fnc_GetCfgData);			
-				_thisFactionFlag = ((configfile >> "CfgFactionClasses" >> _thisFaction >> "flag") call BIS_fnc_GetCfgData);
-				
-				if ((_x select 1) <= 1) then {
-					if (!isNil "_thisFactionFlag") then {
-						availableFactionsDataNoInf pushBack [_thisFaction, _thisFactionName, _thisFactionFlag, _thisSideNum];
-					} else {
-						availableFactionsDataNoInf pushBack [_thisFaction, _thisFactionName, "", _thisSideNum];
-					};
-				} else {				
-					if (!isNil "_thisFactionFlag") then {
-						availableFactionsData pushBack [_thisFaction, _thisFactionName, _thisFactionFlag, _thisSideNum];
-					} else {
-						availableFactionsData pushBack [_thisFaction, _thisFactionName, "", _thisSideNum];
-					};
-				};
-						
-			};	
-		};
-	};
-} forEach _factionsWithUnitsFiltered;
-
-publicVariable "availableFactionsData";
-publicVariable "availableFactionsDataNoInf";
-
-{
-	diag_log format ["DRO: availableFactionsData %2: %1", _x, _forEachIndex];
-} forEach availableFactionsData;
-{
-	diag_log format ["DRO: availableFactionsDataNoInf %2: %1", _x, _forEachIndex];
-} forEach availableFactionsDataNoInf;
-
-missionNameSpace setVariable ["factionDataReady", 1, true];
-diag_log "DRO: factionDataReady set";
+// --- Faction data extraction ---
+call DRO_fnc_extractFactionData;
 
 // Initialise potential AO markers
 [] execVM "sunday_system\generate_ao\initAO.sqf";
@@ -510,86 +413,11 @@ diag_log format ["DRO: Player side extraction scripts run time = %1", time - _sc
 
 // Get enemy faction
 enemyFactionName = (configFile >> "CfgFactionClasses" >> enemyFaction >> "displayName") call BIS_fnc_GetCfgData;
-_enemySideNum = (configFile >> "CfgFactionClasses" >> enemyFaction >> "side") call BIS_fnc_GetCfgData;
-sleep 0.01;
-enemySide = [_enemySideNum] call DRO_fnc_getCfgSide;
+// --- Enemy side setup ---
+call DRO_fnc_setupEnemySides;
 
-if (playersSide == enemySide) then {
-	enemySide = switch (enemySide) do {
-		case east: {resistance};
-		default {east};				
-	};
-	publicVariable "enemySide";	
-};
-
-_enemySides = [];
-{
-	if (count _x > 0) then {
-		_thisSide = switch ((configFile >> "CfgFactionClasses" >> _x >> "side") call BIS_fnc_GetCfgData) do {
-			case 0: {east};
-			case 1: {west};
-			case 2: {resistance};
-			case 3: {civilian};
-		};
-		_enemySides pushBack _thisSide;
-	};
-} forEach [enemyFaction] + enemyFactionAdv;
-
-{
-	_thisSide = _x;
-	if (_thisSide != playersSide) then {
-		{
-			if (_thisSide != _x) then {
-				if (_x != playersSide) then {
-					_thisSide setFriend [_x, 1];
-				};
-			};
-		} forEach _enemySides;
-	};
-} forEach _enemySides;
-
-publicVariable "enemySide";
-diag_log format ["DRO: Enemy side detected as %1", enemySide];
-
-// *****
-// DEFINE MARKER COLORS
-// *****
-
-markerColorPlayers = "colorBLUFOR";
-colorPlayers = [(profilenamespace getvariable ['Map_BLUFOR_R',0]),(profilenamespace getvariable ['Map_BLUFOR_G',1]),(profilenamespace getvariable ['Map_BLUFOR_B',1]),(profilenamespace getvariable ['Map_BLUFOR_A',0.8])];
-switch (playersSide) do {
-	case west: {		
-		markerColorPlayers = "colorBLUFOR";
-		colorPlayers = [(profilenamespace getvariable ['Map_BLUFOR_R',0]),(profilenamespace getvariable ['Map_BLUFOR_G',1]),(profilenamespace getvariable ['Map_BLUFOR_B',1]),(profilenamespace getvariable ['Map_BLUFOR_A',0.8])];
-	};
-	case east: {		
-		markerColorPlayers = "colorOPFOR";
-		colorPlayers = [(profilenamespace getvariable ['Map_OPFOR_R',0]),(profilenamespace getvariable ['Map_OPFOR_G',1]),(profilenamespace getvariable ['Map_OPFOR_B',1]),(profilenamespace getvariable ['Map_OPFOR_A',0.8])];
-	};
-	case resistance: {		
-		markerColorPlayers = "colorIndependent";
-		colorPlayers = [(profilenamespace getvariable ['Map_Independent_R',0]),(profilenamespace getvariable ['Map_Independent_G',1]),(profilenamespace getvariable ['Map_Independent_B',1]),(profilenamespace getvariable ['Map_Independent_A',0.8])];
-	};	
-};
-publicVariable "markerColorPlayers";
-
-markerColorEnemy = "colorOPFOR";
-colorEnemy = [(profilenamespace getvariable ['Map_OPFOR_R',0]),(profilenamespace getvariable ['Map_OPFOR_G',1]),(profilenamespace getvariable ['Map_OPFOR_B',1]),(profilenamespace getvariable ['Map_OPFOR_A',0.8])];
-switch (enemySide) do {
-	case west: {		
-		markerColorEnemy = "colorBLUFOR";
-		colorEnemy = [(profilenamespace getvariable ['Map_BLUFOR_R',0]),(profilenamespace getvariable ['Map_BLUFOR_G',1]),(profilenamespace getvariable ['Map_BLUFOR_B',1]),(profilenamespace getvariable ['Map_BLUFOR_A',0.8])];
-	};
-	case east: {		
-		markerColorEnemy = "colorOPFOR";
-		colorEnemy = [(profilenamespace getvariable ['Map_OPFOR_R',0]),(profilenamespace getvariable ['Map_OPFOR_G',1]),(profilenamespace getvariable ['Map_OPFOR_B',1]),(profilenamespace getvariable ['Map_OPFOR_A',0.8])];
-	};
-	case resistance: {		
-		markerColorEnemy = "colorIndependent";
-		colorEnemy = [(profilenamespace getvariable ['Map_Independent_R',0]),(profilenamespace getvariable ['Map_Independent_G',1]),(profilenamespace getvariable ['Map_Independent_B',1]),(profilenamespace getvariable ['Map_Independent_A',0.8])];
-	};	
-};
-publicVariable "markerColorEnemy";
+// --- Marker colors ---
+call DRO_fnc_defineMarkerColors;
 
 // *****
 // AO SETUP
@@ -665,85 +493,8 @@ if (aoOptionSelect == 0) then {
 // INTRO SETUP
 // *****
 
-// Intro Music
-_musicArrayDay = [
-	"LeadTrack02_F_EXP",
-	"AmbientTrack03_F",
-	"LeadTrack02_F_EPA",
-	"LeadTrack01_F_EPA",
-	"LeadTrack03_F_EPA",
-	"LeadTrack01_F_EPB",
-	"LeadTrack06_F",
-	"BackgroundTrack02_F_EPC",
-	"LeadTrack03_F_Mark",
-	"LeadTrack02_F_EPB"	
-];
-_musicArrayNight = [
-	"AmbientTrack04_F",
-	"AmbientTrack04a_F",
-	"AmbientTrack01_F_EPB",
-	"AmbientTrack01b_F",
-	"AmbientTrack01_F_EXP",
-	"LeadTrack03_F_EPA",
-	"LeadTrack03_F_EPC",
-	"BackgroundTrack04_F_EPC",
-	"EventTrack03_F_EPC"
-];
-_musicArrayExtract = [
-	"LeadTrack02_F_Mark",
-	"LeadTrack05_F_Tank",
-	"LeadTrack02_F_EPC",
-	"LeadTrack02_F_EPA"
-];
-musicMain = nil;
-if (timeOfDay <= 2) then {
-	musicMain = selectRandom _musicArrayDay;
-} else {
-	musicMain = selectRandom _musicArrayNight;
-};
-musicExtract = selectRandom _musicArrayExtract;
-//added for VN missions
-_musicArrayVNHeli = [
-	"vn_dont_cry_baby",
-	"vn_there_it_is",
-	"vn_voodoo_girl",
-	"vn_trippin",
-	"vn_drafted"
-];
-_musicArrayVNDay = [
-	"vn_another_life",
-	"vn_unsung_heroes",
-	"vn_cover_blown",
-	"vn_prairie_fire",
-	"vn_prayer_for_the_fallen",
-	"vn_the_village",
-	"vn_deadly_jungle"
-];
-_musicArrayVNNight = [
-	"vn_calm_before_the_storm",
-	"vn_behind_enemy_lines",
-	"vn_enemy_territory",
-	"vn_stealth_mode",
-	"vn_shadows_of_the_forest",
-	"vn_deadly_jungle"
-];
-_musicArrayVNExtract = [
-	"vn_contact",
-	"vn_time_to_leave",
-	"vn_imminent_attack",
-	"vn_hell_on_earth"
-];
-musicMainVNHeli = nil;
-musicVNExtract = nil;
-if (worldName in ["Cam_Lao_Nam","vn_khe_sanh","vn_the_bra"]) then {
-	musicMainVNHeli = selectRandom _musicArrayVNHeli;
-	musicVNExtract = selectRandom _musicArrayVNExtract;
-	if (timeOfDay <= 2) then {
-		musicMain = selectRandom _musicArrayVNDay;
-	} else {
-		musicMain = selectRandom _musicArrayVNNight;
-	};
-};
+// --- Mission music selection ---
+call DRO_fnc_chooseMissionMusic;
 
 // Mission Name
 FOBNames = ["Partisan", "Shepherd", "Warden", "Stone", "Gullion", "Beech", "Elm", "Ash", "Cedar", "Hammer", "Axe", "Stanford", "Yale", "Oxford", "Cambridge", "Farmstead", "Temple", "Humboldt", "Herringbone", "Dogtooth", "Underhill", "Matterhorn", "Snowdon", "Coniston", "Windermere", "Victoria", "Ontario", "Como", "Bear", "Eiger"];
@@ -755,112 +506,8 @@ missionNameSpace setVariable ["weatherChanged", 1, true];
 // PLAYERS SETUP
 // *****
 
-// Setup player identities
-_firstNameClass = (configFile >> "CfgWorlds" >> "GenericNames" >> pGenericNames >> "FirstNames");
-_firstNames = [];
-for "_i" from 0 to count _firstNameClass - 1 do {
-	_firstNames pushBack (getText (_firstNameClass select _i));
-};
-_lastNameClass = (configFile >> "CfgWorlds" >> "GenericNames" >> pGenericNames >> "LastNames");
-_lastNames = [];
-for "_i" from 0 to count _lastNameClass - 1 do {
-	_lastNames pushBack (getText (_lastNameClass select _i));
-};
-
-// Extract voice data
-_speakersArray = [];
-{
-	_thisVoice = (configName _x);	
-	_scopeVar = typeName ((configFile >> "CfgVoice" >> _thisVoice >> "scope") call BIS_fnc_GetCfgData);
-	switch (_scopeVar) do {
-		case "STRING": {
-			if ( ((configFile >> "CfgVoice" >> _thisVoice >> "scope") call BIS_fnc_GetCfgData) == "public") then {		
-				{
-					if (typeName _x == "STRING") then {
-						_thisVoiceID = _x;
-						{
-							if ([_x, _thisVoiceID, false] call BIS_fnc_inString) then {						
-								_speakersArray pushBack _thisVoice;
-							};
-						} forEach pIdentityTypes;						
-					};
-				} forEach ((configFile >> "CfgVoice" >> _thisVoice >> "identityTypes") call BIS_fnc_GetCfgData);
-			};	
-		};		
-		case "SCALAR": {
-			if ( ((configFile >> "CfgVoice" >> _thisVoice >> "scope") call BIS_fnc_GetCfgData) == 2) then {		
-				{			
-					if (typeName _x == "STRING") then {
-						_thisVoiceID = _x;
-						{
-							if ([_x, _thisVoiceID, false] call BIS_fnc_inString) then {						
-								_speakersArray pushBack _thisVoice;
-							};
-						} forEach pIdentityTypes;
-					};
-				} forEach ((configFile >> "CfgVoice" >> _thisVoice >> "identityTypes") call BIS_fnc_GetCfgData);
-			};	
-		};		
-	};	
-} forEach ("true" configClasses (configFile / "CfgVoice"));
-
-if (count _speakersArray == 0) then {	
-	switch (playersSide) do {
-		case west: {_speakersArray = ["Male01ENG", "Male02ENG", "Male03ENG", "Male04ENG", "Male05ENG", "Male06ENG", "Male07ENG", "Male08ENG", "Male10ENG", "Male11ENG", "Male12ENG", "Male01ENGB", "Male02ENGB", "Male03ENGB", "Male04ENGB", "Male05ENGB"]};
-		case east: {_speakersArray = ["Male01PER", "Male02PER", "Male03PER"]};
-		case resistance: {_speakersArray = ["Male01GRE", "Male02GRE", "Male03GRE", "Male04GRE", "Male05GRE", "Male06GRE"]};
-	};	
-};
-
-diag_log format ["DRO: Available voices: %1", _speakersArray];
-
-// Extract face data
-pFacesArray = [];
-eFacesArray = [];
-{
-	{		
-		_thisFace = (configName _x);
-		{
-			_thisIDType = _x;
-			{
-				if ([_thisIDType, _x, false] call BIS_fnc_inString) then {						
-					pFacesArray pushBack _thisFace;
-				};
-			} forEach pIdentityTypes;
-			{
-				if ([_thisIDType, _x, false] call BIS_fnc_inString) then {						
-					eFacesArray pushBack _thisFace;
-				};
-			} forEach eIdentityTypes;
-		} forEach ((_x >> "identityTypes") call BIS_fnc_GetCfgData);
-	} forEach ([(configFile >> "CfgFaces" >> (configName _x)), 0, false] call BIS_fnc_returnChildren);
-} forEach ("true" configClasses (configFile / "CfgFaces"));
-
-diag_log format ["DRO: Available player faces: %1", pFacesArray];
-diag_log format ["DRO: Available enemy faces: %1", eFacesArray];
-
-// Change units to correct ethnicity and voices
-nameLookup = [];
-// Generate 24 identities
-if (count _speakersArray > 0) then {
-	for "_p" from 0 to 23 do {		
-		_firstName = selectRandom _firstNames;
-		_lastName = selectRandom _lastNames;
-		_speaker = selectRandom _speakersArray;
-		_face = selectRandom pFacesArray;		
-		nameLookup pushBack [_firstName, _lastName, _speaker, _face];					
-	};
-};
-// Assign identities to players
-{		
-	_identity = (nameLookup select _forEachIndex);
-	[_x, (_identity select 0), (_identity select 1), (_identity select 2), (_identity select 3)] remoteExec ["DRO_fnc_setNameMP", 0, true];
-	_x setVariable ["respawnIdentity", [_x, (_identity select 0), (_identity select 1), (_identity select 2), (_identity select 3)], true];	
-} forEach playerGroup;
-publicVariable "nameLookup";
-
-missionNameSpace setVariable ["initArsenal", 1];
-publicVariable "initArsenal";
+// --- Player identity generation ---
+call DRO_fnc_generatePlayerIdentities;
 /*
 if (month == 0 || day == 0) then {
 	[timeOfDay] remoteExec ['DRO_fnc_randomTime', 0, true];
@@ -891,58 +538,8 @@ baseReconChance = 0.8;
 publicVariable "baseReconChance";
 hvtCodenames = ["Condor", "Vulture", "Scorpion", "Einstein", "Pascal", "Loner", "Spearhead", "Dalton", "Damocles", "Paris", "Huxley", "Ghost", "Gaunt", "Goblin", "Reptile"];
 powJoinTasks = [];
-powClass = "";
-powType = "";
-UXOUsed = false;
-
-if (random 1 > 0.4) then {
-	_soldierType = [0,2] call BIS_fnc_randomInt;
-	if (_soldierType < 2) then {
-		switch (_soldierType) do {
-			case 0: {
-				// Helicopter crew
-				_heliCrewClasses = [];
-				{
-					if (["heli", _x, false] call BIS_fnc_inString) then {
-						_heliCrewClasses pushBack _x;
-					};
-				} forEach pInfClasses;
-				if (count _heliCrewClasses > 0) then {
-					powClass = selectRandom _heliCrewClasses;
-					powType = "HELICREW";
-				} else {
-					powClass = selectRandom pInfClasses;
-					powType = "INFANTRY";
-				};				
-			};
-			case 1: {
-				// Engineers
-				_engineerClasses = [];
-				{
-					if (["engineer", _x, false] call BIS_fnc_inString OR ["repair", _x, false] call BIS_fnc_inString) then {
-						_engineerClasses pushBack _x;
-					};
-				} forEach pInfClasses;
-				if (count _engineerClasses > 0) then {
-					powClass = selectRandom _engineerClasses;
-					powType = "ENGINEERS";
-				} else {
-					powClass = selectRandom pInfClasses;
-					powType = "INFANTRY";
-				};		
-			};				
-		};
-	} else {
-		powClass = selectRandom pInfClasses;
-		powType = "INFANTRY";
-	};		
-} else {
-	powClass = selectRandom ["C_journalist_F", "C_scientist_F"];
-	powType	= switch (powClass) do {
-		case "C_journalist_F": {"JOURNALISTS"};
-		case "C_scientist_F": {"SCIENTISTS"};
-	};
-};
+// --- POW class selection ---
+call DRO_fnc_chooseObjectivesPOWClass;
 reconPatrolUnused = true;
 for "_i" from 1 to (_numObjs) do {
 	[((findDisplay 888888) displayCtrl 8889), (format ["GENERATING OBJECTIVE %1", _i])] remoteExecCall ["ctrlSetText", 0];
@@ -1297,18 +894,8 @@ if ((["SOGPFRadioSupportTrait", 0] call BIS_fnc_getParamValue) == 1) then {
 // SEQUENCING
 // *****
 
-// Reinforcement trigger
-if (((AOLocations select 0) select 4) == 0) then {
-	_trgReinf = createTrigger ["EmptyDetector", centerPos, true];
-	_trgReinf setTriggerArea [400, 400, 0, false];
-	_trgReinf setTriggerActivation ["ANY", "PRESENT", false];
-	_trgReinf setTriggerStatements ["
-		(({alive _x && side _x == enemySide} count thisList) < (({alive _x && group _x == (grpNetId call BIS_fnc_groupFromNetId)} count thisList)*4.5)) &&
-		enemyCommsActive &&
-		!stealthActive
-		
-	", "diag_log 'DRO: Reinforcing due to player incursion'; [getPos thisTrigger, [1,2]] execVM 'sunday_system\reinforce.sqf';", ""];	
-};
+// --- Reinforcement trigger ---
+call DRO_fnc_setupReinforcementTrigger;
 
 // Wait until all assigned tasks are confirmed complete (stable for 6s),
 // then bump reinforceChance and dispatch the extract task.

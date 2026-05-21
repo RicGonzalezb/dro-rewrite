@@ -21,8 +21,12 @@ params ["_pos", ["_spawnPosOverride", []]];
 		_spawnedSquad = nil;	
 		_minAI = (round ((4 * aiMultiplier) / (0.4 * _numInf)) min 6);
 		_maxAI = (round ((6 * aiMultiplier) / (0.4 * _numInf)) min 8);
-		_spawnedSquad = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI], false] call DRO_fnc_spawnGroupWeighted;					
-		waitUntil {!isNil "_spawnedSquad"};	
+		_spawnedSquad = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI], false] call DRO_fnc_spawnGroupWeighted;
+		// M6: spawnGroupWeighted é síncrono — waitUntil era relic. Substituído por guard direto.
+		//     !isNil não captura grpNull; adicionado !isNull explícito.
+		if (isNil "_spawnedSquad" || {isNull _spawnedSquad}) exitWith {
+			diag_log "DRO: triggerAmbushSpawn — spawnGroupWeighted retornou nil/grpNull, abortando ambush.";
+		};
 		_spawnedSquad setBehaviour "AWARE";
 		_spawnedSquad setSpeedMode "FULL";
 		{_x doMove (_pos getPos [10, (random 360)])} forEach (units _spawnedSquad);		

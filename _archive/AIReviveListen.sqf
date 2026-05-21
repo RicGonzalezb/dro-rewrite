@@ -1,0 +1,78 @@
+// ARCHIVED — não está em uso. Movido em 2026-05-20 durante M6 final audit.
+// ============================================================================
+// DEPRECATED — preserved for archival reference only.
+//
+// The logic in this file was inlined into sunday_revive/initRevive.sqf as a
+// CBA per-frame handler (DRO_aiReviveListenPFH). The only execVM reference
+// (initRevive.sqf:120) is commented out, so this file is never executed by
+// the live mission and is NOT part of the CBA migration.
+//
+// Do not re-enable without first disabling the equivalent PFH in initRevive.
+// ============================================================================
+
+while {true} do {
+	sleep 5;
+	
+	_aiUnits = [];
+	{
+		if (!isPlayer _x) then {_aiUnits pushBack _x};
+	} forEach reviveUnits;	
+	
+	{
+		//diag_log reviveUnits;
+		//diag_log format ["%5 - rev_downed: %1, rev_beingAssisted: %2, rev_dragged: %3, rev_beingRevived: %4", (_x getVariable ["rev_downed", false]), (_x getVariable ["rev_beingAssisted", false]), (_x getVariable ["rev_dragged", false]), (_x getVariable ["rev_beingRevived", false]), _x];
+		if ((_x getVariable ["rev_downed", false]) && !(_x getVariable ["rev_beingAssisted", false]) && !(_x getVariable ["rev_dragged", false]) && !(_x getVariable ["rev_beingRevived", false]) && (side _x != sideEnemy)) then {			
+			_downedUnit = _x;
+			_medikitMedics = [];
+			_fakMedics = [];
+			{
+				_unit = _x;
+				if (alive _unit && !(_unit getVariable ["rev_downed", false]) && !(_unit getVariable ["rev_revivingUnit", false])) then {
+					if ("Medikit" in (items _unit)) then {
+						_medikitMedics pushBackUnique _unit;
+					};
+					if ("FirstAidKit" in (items _unit)) then {
+						_fakMedics pushBackUnique _unit;
+					};
+					if ("gm_ge_army_burnBandage" in (items _unit)) then {
+						_fakMedics pushBackUnique _unit;
+					};
+					if ("gm_gc_army_gauzeBandage" in (items _unit)) then {
+						_fakMedics pushBackUnique _unit;
+					};
+					if ("gm_ge_army_gauzeBandage" in (items _unit)) then {
+						_fakMedics pushBackUnique _unit;
+					};
+					if ("gm_gc_army_gauzeCompress" in (items _unit)) then {
+						_fakMedics pushBackUnique _unit;
+					};
+					if ("gm_gc_army_medkit" in (items _unit)) then {
+						_fakMedics pushBackUnique _unit;
+					};
+					if ("gm_ge_army_medkit_80" in (items _unit)) then {
+						_fakMedics pushBackUnique _unit;
+					};
+				};				
+			} forEach _aiUnits;			
+			if (count _medikitMedics > 0) then {
+				if (count _medikitMedics > 1) then {
+					_closestMedics = [_medikitMedics, [_downedUnit], {_x distance _input0}, "ASCEND"] call BIS_fnc_sortBy;					
+					[(_closestMedics select 0), _downedUnit] remoteExec ["DRO_fnc_AIHeal", (_closestMedics select 0)];
+				} else {					
+					[(_medikitMedics select 0), _downedUnit] remoteExec ["DRO_fnc_AIHeal", (_medikitMedics select 0)];
+				};				
+			} else {
+				if (count _fakMedics > 0) then {
+					if (count _fakMedics > 1) then {
+						_closestMedics = [_fakMedics, [_downedUnit], {_x distance _input0}, "ASCEND"] call BIS_fnc_sortBy;						
+						[(_closestMedics select 0), _downedUnit] remoteExec ["DRO_fnc_AIHeal", (_closestMedics select 0)];
+					} else {						
+						[(_fakMedics select 0), _downedUnit] remoteExec ["DRO_fnc_AIHeal", (_fakMedics select 0)];
+					};					
+				};				
+			};
+			
+		};
+	} forEach reviveUnits;
+	
+};

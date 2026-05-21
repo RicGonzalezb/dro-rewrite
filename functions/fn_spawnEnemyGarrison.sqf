@@ -13,9 +13,11 @@ _thisBuilding = _this select 0;
 	_leader = nil;
 	{
 		if (_garrisonCounter <= _totalGarrison) then {
-			_group = [_x, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;			
-			if (!isNil "_group") then {
-				_unit = ((units _group) select 0);
+			_group = [_x, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
+			// Hotfix: spawnGroupWeighted pode retornar grpNull (não nil) quando falha — adicionar
+			// guards extras para evitar undefined _unit. Bug latente do código original.
+			if (!isNil "_group" && {!isNull _group} && {count (units _group) > 0}) then {
+				private _unit = ((units _group) select 0);
 				_unit setUnitPos "UP";
 				if (_garrisonCounter == 0) then {
 					_leader = _unit;

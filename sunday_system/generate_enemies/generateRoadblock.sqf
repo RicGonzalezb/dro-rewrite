@@ -35,10 +35,11 @@ if (count (((AOLocations select _AOIndex) select 2) select 1) > 0) then {
 		if (count _spawnPos > 0) then {
 			if (_roadInfCount < _totalRoadInf) then {
 				_guardGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
-				waitUntil {!isNil "_guardGroup"};
-				_guardUnit = ((units _guardGroup) select 0);					
+				// M7 fix: guard contra grpNull/nil de spawnGroupWeighted
+				if (isNil "_guardGroup" || {isNull _guardGroup} || {count (units _guardGroup) == 0}) then { continue };
+				private _guardUnit = ((units _guardGroup) select 0);
 				_guardUnit setFormDir (_x select 1);
-				_guardUnit setDir (_x select 1);				
+				_guardUnit setDir (_x select 1);
 				if (_leaderChosen == 0) then {
 					_leader = _guardUnit;
 					_leaderChosen = 1;

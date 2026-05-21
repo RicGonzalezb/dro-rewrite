@@ -1,5 +1,9 @@
-// Migrated from DRO_fnc_selectRemove / DRO_fnc_selectRemove (identical) — M3 CfgFunctions migration
-_index = [0, (count (_this select 0) -1)] call BIS_fnc_randomInt;	
-	private _return = (_this select 0) select _index;
-	(_this select 0) deleteAt _index;
-	_return;
+// DRO_fnc_selectRemove — selects and removes a random element from the passed array (mutates it)
+// Usage: [_array] call DRO_fnc_selectRemove → returns removed element, or objNull if empty
+// Migrated from sun_selectRemove / dro_selectRemove (identical) — M3 CfgFunctions migration
+params [["_arr", []]];
+if (_arr isEqualTo []) exitWith { objNull };
+private _index = [0, (count _arr) - 1] call BIS_fnc_randomInt;
+private _return = _arr select _index;
+_arr deleteAt _index;
+_return

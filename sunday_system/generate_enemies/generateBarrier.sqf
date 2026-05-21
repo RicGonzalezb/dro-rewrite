@@ -102,7 +102,8 @@ for "_k" from 1 to 6 step 1 do {
 {
 	_buildingPosition = (_x buildingPos 1);
 	_group = [_buildingPosition, enemySide, eInfClassesForWeights, eInfClassWeights, [1,1]] call DRO_fnc_spawnGroupWeighted;
-	if (!isNil "_group") then {
+	// M7 fix: guard reforçado contra grpNull
+	if (!isNil "_group" && {!isNull _group} && {count (units _group) > 0}) then {
 		_unit = ((units _group) select 0);
 		_unit setFormDir ((getDir _x)+180);
 		_unit setDir ((getDir _x)+180);	
@@ -121,7 +122,7 @@ for "_infIndex" from 1 to _numBarrierInf step 1 do {
 			_minAI = round (2 * aiMultiplier);
 			_maxAI = round (3 * aiMultiplier);				
 			_spawnedSquad = [_infBarrierSpawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI, _maxAI]] call DRO_fnc_spawnGroupWeighted;				
-			if (!isNil "_spawnedSquad") then {
+			if (!isNil "_spawnedSquad" && {!isNull _spawnedSquad}) then {
 				[_spawnedSquad, _infBarrierSpawnPos, 50] call BIS_fnc_taskPatrol;
 				enemyAlertableGroups pushBack _spawnedSquad;
 			};

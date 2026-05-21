@@ -1,8 +1,71 @@
 # DRO ACE Livonia — Refactor Plan & Handoff
 
-**Owner (gerente):** Opus 4.7 session (esta).
+---
+
+## 0. Cold Start — Leia isto primeiro
+
+**Se você está chegando agora como novo Master (contexto zerado), siga estes passos:**
+
+1. Você é o prompt-mestre (gerente) de um projeto de rewrite/refactor de uma missão scriptada de Arma 3 (SQF). Seu trabalho é: entender o estado atual, planejar os próximos módulos, gerar prompts contextualizados para sessões Sonnet executarem, e validar os resultados.
+2. **Leia `_DRO_REFACTOR_PROGRESS.md`** (mesmo diretório deste arquivo). Ele contém o log detalhado de TUDO que foi feito, módulo por módulo, incluindo hotfixes. O status real do projeto está lá — este PLAN.md contém a visão original, que pode estar desatualizada em relação ao progresso.
+3. **Tabela rápida de status** (atualize aqui ao completar módulos):
+
+| Módulo | Descrição | Status |
+|--------|-----------|--------|
+| Fase 1 | CBA migration (spawn/waitUntil → PFH/waitAndExecute) | ✅ DONE |
+| M1 | Smoke test manual | ✅ DONE |
+| M2 | Bug fixes deferidos (initServer + revive EH leak) | ✅ DONE |
+| M3 | CfgFunctions migration (67 funcs, 695 call sites) | ✅ DONE |
+| M3 hotfix #1 | Macro `aliveVeh` ausente em fn_*.sqf | ✅ DONE |
+| M3 hotfix #2 | fn_spawnEnemyGarrison undefined `_unit` | ✅ DONE |
+| M3 hotfix #3 | fn_selectRemove empty array crash + audit 84 callers | ✅ DONE |
+| M3 hotfix #4 | selectReactiveTask sleep em unscheduled context | ✅ DONE |
+| M4 | Higiene de geradores IA (dynamicSim, uiSleep, skill cap) | ✅ DONE |
+| M5 | start.sqf decomposition (1352→939 linhas, 7 funções) | ✅ DONE |
+| M6 | Final audit + dead code cleanup + bug fixes | ✅ DONE |
+
+4. **Fluxo de trabalho:** você NÃO executa os módulos diretamente — você gera prompts autocontidos para sessões Sonnet, que têm acesso aos arquivos da missão. O prompt deve conter todo o contexto necessário (caminho, regras, o que não tocar, formato de relatório). Após o Sonnet executar, o usuário (Gonza) traz o resultado pra você validar.
+5. **O usuário fala português (BR).** Comunique-se em português.
+
+**Caminho da missão:**
+`C:\Users\SujoG\Documents\Arma 3 - Other Profiles\R%2e%20Gonzalez\mpmissions\Dynamic Recon Ops ACE - Livonia.Enoch\`
+
+**Arquivos-chave:**
+- `_DRO_REFACTOR_PLAN.md` — este arquivo (plano geral + prompts dos módulos)
+- `_DRO_REFACTOR_PROGRESS.md` — log de progresso (fonte de verdade do que foi feito)
+- `functions/` — 98 arquivos fn_*.sqf (migrados no M3)
+- `init.sqf` — 110 aliases temporários (nomes legados → DRO_fnc_*)
+- `description.ext` — CfgFunctions definido no final
+- `start.sqf` — orquestrador master (~1341 linhas, alvo do M5)
+- `_archive/fnc_lib_backup_M3/` — backups das libs originais
+
+**Regras universais (todos os módulos):**
+- Não toque em código marcado `// Migrated from ...` (Fase 1, estabilizada)
+- Prefixo `DRO_` para globais novas, `DRO_fnc_*` para funções CfgFunctions
+- Guard contra double-init: `if (!isNil "DRO_xxx") exitWith { ... }`
+- Qualquer módulo deve reportar em `_DRO_REFACTOR_PROGRESS.md`
+- **Padrões CBA obrigatórios** — o projeto migrou de scheduled spawn/sleep/waitUntil pra CBA. Se encontrar código novo ou código antigo não-migrado, usar:
+
+| Antipadrão (NÃO usar) | Padrão CBA (usar) |
+|---|---|
+| `[] spawn { while {true} do { sleep N; ... } }` | `[{ ... }, N, args] call CBA_fnc_addPerFrameHandler` |
+| `[] spawn { sleep N; oneshot }` | `[code, args, N] call CBA_fnc_waitAndExecute` |
+| `waitUntil { sleep N; cond }` | PFH com `if (!cond) exitWith {}` + `removePerFrameHandler` |
+| `waitUntil { cond }` curto | `[cond, code, args] call CBA_fnc_waitUntilAndExecute` |
+| `sleep` em unscheduled context | `CBA_fnc_waitAndExecute` com delay |
+
+- Ver Seção 5 deste documento para templates completos com exemplos de código.
+
+**Procedimento de trabalho:**
+- **Módulos planejados (M4, M5, M6...):** o prompt pro Sonnet fica NESTE arquivo, na seção do módulo. O Master atualiza o prompt aqui conforme o projeto evolui. O Gonza copia daqui e cola no Sonnet. Após execução, o Sonnet appenda o relatório em `_DRO_REFACTOR_PROGRESS.md`.
+- **Fixes cirúrgicos (hotfixes avulsos):** o Master gera o prompt direto no chat (NÃO atualiza este arquivo). O Sonnet aplica o fix e appenda o relatório em `_DRO_REFACTOR_PROGRESS.md`. O Master depois atualiza a tabela de status acima se necessário.
+- Resumindo: este PLAN.md contém os prompts "vivos" dos módulos pendentes. O PROGRESS.md contém o log de tudo que foi feito.
+
+---
+
+**Owner (gerente):** sessão Master atual (Opus).
 **Executores:** sessões Sonnet separadas, uma por módulo.
-**Status do projeto:** Fase 1 (CBA migration) substancialmente completa; restam 5 módulos de polimento + 1 etapa de teste manual.
+**Status do projeto:** veja tabela acima.
 
 ---
 
@@ -368,7 +431,7 @@ init.sqf — aliases temporários pros nomes legados (lista)
 
 ### M4 — Higiene de geradores de IA (Fase 4)
 
-**Copia tudo abaixo num novo prompt Sonnet:**
+**Cola tudo entre as marcas ```````` num novo prompt Sonnet:**
 
 ````
 Você está trabalhando na missão Dynamic Recon Ops ACE - Livonia para Arma 3.
@@ -376,27 +439,14 @@ Você está trabalhando na missão Dynamic Recon Ops ACE - Livonia para Arma 3.
 CAMINHO DA MISSÃO:
 C:\Users\SujoG\Documents\Arma 3 - Other Profiles\R%2e%20Gonzalez\mpmissions\Dynamic Recon Ops ACE - Livonia.Enoch\
 
-CONTEXTO: Uma Fase 1 (CBA migration) foi feita antes — código migrado tem comentário "// Migrated from ..." e usa CBA_fnc_addPerFrameHandler / waitAndExecute / waitUntilAndExecute. Não toque nesses trechos.
+CONTEXTO:
+- Fase 1 (CBA migration) e M3 (CfgFunctions migration) já estão concluídas e estabilizadas.
+- Código marcado "// Migrated from ..." NÃO deve ser tocado — é da Fase 1.
+- Todas as funções agora usam nomes `DRO_fnc_*` (ex: `DRO_fnc_spawnGroupWeighted`, `DRO_fnc_setSkillAction`). Aliases legados existem em `init.sqf` mas estão depreciados — use SEMPRE o nome `DRO_fnc_*`.
+- O arquivo `sunday_system/generate_enemies/generateEnemiesFunctions.sqf` é um STUB de deprecação — NÃO mexa nele. Funções reais estão em `functions/fn_*.sqf`.
+- Padrão CBA: `CBA_fnc_waitAndExecute` em vez de `sleep` em unscheduled context; `CBA_fnc_addPerFrameHandler` em vez de `while {true} do { sleep N }`.
 
-TAREFA: Otimizar os scripts de geração de inimigos pra reduzir frame hitches durante o spawn da missão e durante o gameplay.
-
-ATENÇÃO — mudanças do M3 que afetam este módulo:
-- Funções de geração de IA foram migradas pra CfgFunctions. Use os NOMES NOVOS:
-  - `DRO_fnc_spawnGroupWeighted` (era `dro_spawnGroupWeighted`)
-  - `DRO_fnc_unitTaskObjective` (era `dro_unitTaskObjective`)
-  - `DRO_fnc_triggerAmbushSpawn` (era `dro_triggerAmbushSpawn`)
-  - `DRO_fnc_localBuildingPatrol` (era `dro_localBuildingPatrol`)
-  - `DRO_fnc_spawnEnemyGarrison` (era `dro_spawnEnemyGarrison`)
-  - `DRO_fnc_spawnEnemyCompound` (era `fnc_spawnEnemyCompound`)
-  - `DRO_fnc_generateBunker`, `DRO_fnc_generateRoadblock`, `DRO_fnc_generateBarrier`, `DRO_fnc_generateEmplacement`
-- O arquivo `sunday_system/generate_enemies/generateEnemiesFunctions.sqf` agora é um STUB (lib original arquivada). NÃO mexa nele — todas as funções estão em `functions/fn_*.sqf` agora.
-- Aliases legados (sun_*, dro_*, fnc_*) ainda funcionam via init.sqf mas estão depreciados — sempre prefira o nome `DRO_fnc_*`.
-
-### Problema
-
-Os arquivos em `sunday_system/generate_enemies/` spawnam dezenas de unidades em forEach loops síncronos. Cada `createUnit` é caro. Quando o forEach tem 50+ unidades, a engine engasga.
-
-Adicionalmente, depois de spawnar, as unidades ficam ATIVAS em todo o mapa — mesmo as que estão a 2km dos jogadores. `enableDynamicSimulation` pode reduzir CPU dessas unidades distantes.
+TAREFA: Otimizar os scripts de geração de inimigos pra reduzir frame hitches durante o spawn e durante o gameplay.
 
 ### Arquivos alvo
 
@@ -408,57 +458,73 @@ Adicionalmente, depois de spawnar, as unidades ficam ATIVAS em todo o mapa — m
 - `sunday_system/generate_enemies/generateEmplacement.sqf`
 - `sunday_system/generate_enemies/staggeredAttack.sqf`
 
+Também auditar: `functions/fn_spawnGroupWeighted.sqf`, `functions/fn_spawnEnemyGarrison.sqf`, `functions/fn_spawnEnemyCompound.sqf` — esses são as funções CfgFunctions que os geradores chamam. Não alterar a lógica deles, apenas verificar se o grupo retornado já recebe dynamicSim (provavelmente não).
+
 ### Mudanças a aplicar
 
 **1. Dynamic Simulation per grupo**
 
-Em cada lugar onde um grupo é criado (`createGroup` ou `dro_spawnGroupWeighted` retorna grupo), adicionar logo após:
+Em cada lugar onde um grupo é criado (via `createGroup` + `createUnit`, ou via `DRO_fnc_spawnGroupWeighted` que retorna grupo), adicionar logo após:
 ```sqf
 if (dynamicSim != 1) then {
     _spawnedSquad enableDynamicSimulation true;
 };
 ```
 
-A condição checa a global `dynamicSim` (set em start.sqf:228) — se for 1 significa que dynamicSim system foi DESABILITADO globalmente, e não devemos forçar per-group. Se for 0 (default), aplicamos.
+A global `dynamicSim` é setada em `start.sqf` via parâmetros da missão:
+- `dynamicSim == 0` → sistema LIGADO (default) → aplicar per-group
+- `dynamicSim == 1` → sistema DESLIGADO pelo jogador → NÃO aplicar
 
-OBS: confirmar o nome real da global. Em start.sqf:228 tem `if (dynamicSim == 1) then { enableDynamicSimulationSystem false; };` — então se dynamicSim==1 = disabled, dynamicSim==0 = enabled.
+Aplique em TODOS os grupos sem exceção (infantaria, veículos, AA, artilharia — tudo). O jogador controla o toggle e assume a responsabilidade.
+
+**ONDE aplicar:** o melhor ponto é DENTRO de `fn_spawnGroupWeighted.sqf`, logo antes do return, pois ~74 call sites passam por ali. Se o grupo é criado por `fn_spawnGroupWeighted`, marcar lá centraliza a lógica. Para grupos criados FORA dessa função (direto com `createGroup`), marcar no local.
+
+Verificar também `fn_spawnEnemyGarrison.sqf` e `fn_spawnEnemyCompound.sqf` — esses criam grupos internamente e podem não passar por `spawnGroupWeighted`.
 
 **2. Frame budgeting em forEach loops grandes**
 
-Em `generateEnemies.sqf`, dentro de loops `forEach AOLocations` ou similar onde muitas unidades são spawnadas, adicionar `uiSleep 0` (ou `sleep 0.001`) entre iterações pra liberar o frame:
+Nos arquivos `generate*.sqf`, dentro de loops onde muitas unidades/grupos são spawnados em sequência, adicionar `uiSleep 0` (ou `sleep 0.001`) entre iterações pra liberar o frame:
 
 ```sqf
 {
     // spawn one group
     _group = ...;
-    // ...
+    // ...setup...
 
-    uiSleep 0; // liberar frame
+    uiSleep 0; // liberar frame entre iterações
 } forEach _spawnPoints;
 ```
 
-CUIDADO: o script onde aplicar precisa estar em scheduled context (ou seja, dentro de spawn/execVM). Não funciona dentro de PFH.
+CUIDADO — `uiSleep`/`sleep` SÓ funciona em scheduled context (dentro de `spawn` ou `execVM`). ANTES de adicionar, verificar se o script roda em scheduled context:
+- Se é chamado via `execVM` ou `spawn` → OK, pode usar `uiSleep 0`
+- Se é chamado via `call` → NÃO pode usar sleep. Nesse caso, NÃO adicionar — anotar no relatório.
 
-**3. setGroupId + setVariable cleanup**
+Para verificar: grep por quem chama o arquivo (ex: `grep -rn "generateEnemies" --include="*.sqf"`) e ver se usa `execVM`/`spawn` ou `call`.
 
-Pra ajudar a debugging, em cada grupo criado, setar um ID identificável:
+**3. setGroupId pra debugging**
+
+Em cada grupo criado nos geradores, adicionar ID pra rastreamento no .rpt:
 ```sqf
-_spawnedSquad setGroupId [format ["DRO_enemy_%1", floor random 10000]];
+_spawnedSquad setGroupIdGlobal [format ["DRO_enemy_%1", floor random 10000]];
 ```
 
-Não obrigatório, mas útil pra rastrear grupos no .rpt.
+Isso é OPCIONAL e de baixa prioridade. Se complicar demais, skip e anote.
 
-**4. Skill cap**
+**4. Skill audit**
 
-Verificar se algum gerador seta `setSkill` muito alto. AI muito skilled em IA distante consome mais CPU. Cap em 0.6-0.8 pra equilibrar.
+Verificar se algum gerador seta `setSkill` acima de 0.8. Se encontrar, NÃO alterar — apenas listar no relatório com o valor atual. A decisão de cap é do gerente.
+
+Verificar também se `DRO_fnc_setSkillAction` (em `functions/fn_setSkillAction.sqf`) já faz cap de skill. Se sim, documentar.
 
 ### REGRAS
 
-- Não toque em código marcado "// Migrated from ..." (Fase 1).
-- Não toque em start.sqf (orquestrador master).
-- Não toque em generateEnemiesFunctions.sqf — esse já foi tocado na Fase 1 e tem PFH delicado.
-- Antes de mudar, ABRA o arquivo, leia inteiro pra entender o flow. Não aplique cegamente.
-- Teste mental: spawn 60 unidades, qual o tempo total antes/depois?
+- NÃO toque em código marcado "// Migrated from ..." (Fase 1).
+- NÃO toque em `start.sqf` (orquestrador master).
+- NÃO toque em `generateEnemiesFunctions.sqf` (stub de deprecação, tem PFH da Fase 1).
+- NÃO toque em `bleedout.sqf`, `fortify.sqf`, `protectCiv.sqf`, `heliExtract.sqf`, `setupPlayersFaction.sqf`.
+- ABRA cada arquivo alvo e leia inteiro antes de aplicar mudanças. Entenda o flow.
+- Use `DRO_fnc_*` para nomes de funções, NUNCA os nomes legados.
+- Se encontrar `sleep` em contexto que pareça unscheduled, NÃO corrija neste módulo — apenas anote no relatório.
 
 ### REPORTE DE VOLTA (append em _DRO_REFACTOR_PROGRESS.md):
 
@@ -466,18 +532,31 @@ Verificar se algum gerador seta `setSkill` muito alto. AI muito skilled em IA di
 ## M4 — Higiene de geradores IA — [DATA]
 
 ### Arquivos modificados
-- generateEnemies.sqf: +dynamicSim per group, +uiSleep entre forEach iters
-- generateCompound.sqf: ...
-- (etc)
+- generateEnemies.sqf: <mudanças>
+- generateCompound.sqf: <mudanças>
+- generateBunker.sqf: <mudanças>
+- generateRoadblock.sqf: <mudanças>
+- generateBarrier.sqf: <mudanças>
+- generateEmplacement.sqf: <mudanças>
+- staggeredAttack.sqf: <mudanças>
+- fn_spawnGroupWeighted.sqf: <mudanças, se aplicável>
+- fn_spawnEnemyGarrison.sqf: <mudanças, se aplicável>
+- fn_spawnEnemyCompound.sqf: <mudanças, se aplicável>
 
 ### Mudanças por categoria
-- enableDynamicSimulation true: N grupos cobertos
-- uiSleep 0 em forEach: N loops cobertos
-- setGroupId: N grupos
+- enableDynamicSimulation true: N grupos cobertos (N centralizado em spawnGroupWeighted + N direto nos geradores)
+- uiSleep 0 em forEach: N loops cobertos (listar quais)
+- Loops onde NÃO aplicou uiSleep (unscheduled context): <lista>
+- setGroupId: N grupos (ou SKIPPED)
 
-### Pontos de atenção
-- <qualquer grupo onde dynSim pode quebrar IA (ex: AA stations precisam disparar de longe)>
-- <qualquer alteração de skill cap>
+### Skill audit
+- fn_setSkillAction.sqf: <faz cap? qual valor?>
+- Valores de setSkill encontrados nos geradores: <lista com arquivo:linha:valor>
+
+### Descobertas inesperadas
+- <sleeps em unscheduled context encontrados>
+- <qualquer outro antipadrão>
+- <qualquer bug latente encontrado>
 ```
 ````
 
@@ -485,7 +564,7 @@ Verificar se algum gerador seta `setSkill` muito alto. AI muito skilled em IA di
 
 ### M5 — start.sqf decomposition (Fase 6 parcial)
 
-**Copia tudo abaixo num novo prompt Sonnet:**
+**Cola tudo entre as marcas ```````` num novo prompt Sonnet:**
 
 ````
 Você está trabalhando na missão Dynamic Recon Ops ACE - Livonia para Arma 3.
@@ -493,69 +572,116 @@ Você está trabalhando na missão Dynamic Recon Ops ACE - Livonia para Arma 3.
 CAMINHO DA MISSÃO:
 C:\Users\SujoG\Documents\Arma 3 - Other Profiles\R%2e%20Gonzalez\mpmissions\Dynamic Recon Ops ACE - Livonia.Enoch\
 
-CONTEXTO: Uma Fase 1 (CBA migration) foi feita antes — código migrado tem comentário "// Migrated from ..." e usa CBA_fnc_addPerFrameHandler / waitAndExecute / waitUntilAndExecute. Não toque nesses trechos. Se M3 (CfgFunctions migration) já tiver sido feito, use os nomes `DRO_fnc_*`; senão use os nomes legados (`sun_*`, `dro_*`, `rev_*`). Pra saber qual: grepar pelo nome legado — se ainda aparecer em call sites, M3 ainda não rolou.
+CONTEXTO:
+- Fase 1 (CBA migration), M3 (CfgFunctions migration) e M4 (AI gen hygiene) já estão concluídas.
+- Código marcado "// Migrated from ..." NÃO deve ser tocado — é da Fase 1.
+- Todas as funções usam nomes `DRO_fnc_*`. Aliases legados existem em `init.sqf` mas estão depreciados.
+- CfgFunctions está definido no final de `description.ext` — novas funções extraídas devem ser adicionadas lá.
+- Funções ficam em `functions/fn_<name>.sqf` e são registradas como `class <name> {};` dentro de `class core { file = "functions"; ... }` no CfgFunctions.
 
-TAREFA: Decompor o `start.sqf` (1341 linhas) em funções separadas pra reduzir tamanho e melhorar legibilidade.
+TAREFA: Decompor o `start.sqf` (1352 linhas) em funções separadas pra reduzir tamanho e melhorar legibilidade. Apenas reorganizar — NÃO mudar comportamento.
 
 ### Estado atual
 
-`start.sqf` é o orquestrador master da missão. Faz tudo: extração de facções, escolha de AO, geração de objetivos, civis, inimigos, clima, briefing, trigger de reforços, etc. É difícil de navegar.
+`start.sqf` é o orquestrador master da missão. Faz tudo: extração de facções, escolha de AO, geração de objetivos, civis, inimigos, clima, briefing, trigger de reforços, etc. É monolítico e difícil de navegar.
 
 ### Seções a extrair
 
-Identificar as seções e extrair pra funções separadas (em `functions/` ou no padrão CfgFunctions de M3):
+As linhas abaixo foram verificadas no arquivo atual (pós-M3/M4). Leia o `start.sqf` inteiro antes de começar — confirme que as linhas batem.
 
-1. **`fn_extractFactionData`** — linhas ~115-213. Coleta facções com unidades, filtra, popula `availableFactionsData` e `availableFactionsDataNoInf`.
+1. **`fn_extractFactionData`** — linhas ~115-210. Coleta facções com unidades via CfgFactionClasses, filtra, popula `availableFactionsData` e `availableFactionsDataNoInf`, faz `publicVariable` de ambas.
+   - Globals que seta: `availableFactionsData`, `availableFactionsDataNoInf`
+   - Globals que lê: nenhuma (usa configFile)
 
-2. **`fn_setupEnemySides`** — linhas ~511-552. Determina `enemySide`, configura sideFriend entre enemy sides.
+2. **`fn_setupEnemySides`** — linhas ~513-552. Determina `enemySide` a partir de `enemyFaction`, resolve conflito se `playersSide == enemySide`, configura `sideFriendship` entre enemy sides.
+   - Globals que seta: `enemySide` (publicVariable)
+   - Globals que lê: `enemyFaction`, `playersSide`
 
-3. **`fn_defineMarkerColors`** — linhas ~554-592. Setup de `markerColorPlayers`/`Enemy` e `colorPlayers`/`Enemy` baseado nas sides.
+3. **`fn_defineMarkerColors`** — linhas ~554-592. Setup de `markerColorPlayers`/`markerColorEnemy` e `colorPlayers`/`colorEnemy` baseado nas sides.
+   - Globals que seta: `markerColorPlayers`, `markerColorEnemy`, `colorPlayers`, `colorEnemy` (todas publicVariable)
+   - Globals que lê: `playersSide`, `enemySide`
 
-4. **`fn_chooseMissionMusic`** — linhas ~665-746. Escolhe playlist de música (day/night/extract + variantes VN).
+4. **`fn_chooseMissionMusic`** — linhas ~668-746. Define arrays de música (day/night/extract + variantes VN), escolhe tracks baseado em timeOfDay e worldName.
+   - Globals que seta: `musicMain`, `musicExtract`, `musicMainVNHeli`, `musicVNExtract`
+   - Globals que lê: `timeOfDay`, `worldName`
 
-5. **`fn_generatePlayerIdentities`** — linhas ~756-863. Setup de faces, voices, names pros players.
+5. **`fn_generatePlayerIdentities`** — linhas ~758-863. Extrai nomes/voices/faces de CfgWorlds/CfgVoice/CfgFaces, gera 24 identidades, aplica via remoteExec `DRO_fnc_setNameMP`.
+   - Globals que seta: `nameLookup` (publicVariable), `pFacesArray`, `eFacesArray`, `initArsenal`
+   - Globals que lê: `pGenericNames`, `pIdentityTypes`, `eIdentityTypes`, `playersSide`, `playerGroup`
+   - CUIDADO: usa `_speakersArray` e `_firstNames`/`_lastNames` como locais — manter dentro da função.
 
-6. **`fn_chooseObjectivesPOWClass`** — linhas ~895-945. Escolhe classe de POW (helicrew, engineers, journalists, etc).
+6. **`fn_chooseObjectivesPOWClass`** — linhas ~894-945. Escolhe classe de POW (helicrew, engineers, journalists, etc) baseado em facção.
+   - Globals que seta: `powClass`, `powType`
+   - Globals que lê: `pFaction`, `pInfClasses`, config classes
 
-7. **`fn_setupReinforcementTrigger`** — linhas ~1299-1311. Cria o trigger de reforço.
+7. **`fn_setupReinforcementTrigger`** — linhas ~1300-1311. Cria trigger de reforço baseado em presença de jogadores vs inimigos.
+   - Globals que seta: nenhuma (trigger é local)
+   - Globals que lê: `AOLocations`, `centerPos`, `enemySide`, `enemyCommsActive`, `stealthActive`, `grpNetId`
 
-Cada uma vira uma função separada chamada de start.sqf:
+### Como extrair
+
+Para CADA seção:
+
+1. Criar `functions/fn_<name>.sqf` com o body extraído do start.sqf
+2. Adicionar `class <name> {};` no bloco `class core { file = "functions"; ... }` do CfgFunctions em `description.ext`
+3. No `start.sqf`, substituir o bloco extraído por `call DRO_fnc_<name>;` com um comentário indicando o que faz
+4. NÃO adicionar aliases em `init.sqf` — essas funções são novas, não têm nomes legados
+
+Exemplo de como o start.sqf deve ficar após extração:
 ```sqf
+// --- Faction data extraction ---
 call DRO_fnc_extractFactionData;
+
+// ... código intermediário que NÃO foi extraído ...
+
+// --- Enemy side setup ---
 call DRO_fnc_setupEnemySides;
+
+// --- Marker colors ---
 call DRO_fnc_defineMarkerColors;
-// etc
 ```
 
 ### Restrições
 
-- Variáveis usadas pelas seções extraídas viram globais missionNamespace (já são, na maioria) OU retornadas pela função.
-- Não mudar o comportamento — apenas reorganizar.
-- Não toque em código marcado "// Migrated from ..." (Fase 1 / CBA).
-- Manter o ordem de execução exata.
+- NÃO mudar o comportamento — apenas reorganizar.
+- NÃO toque em código marcado "// Migrated from ..." (Fase 1 / CBA).
+- Manter a ORDEM DE EXECUÇÃO exata. A posição do `call` no start.sqf deve ser onde o bloco original estava.
+- Variáveis que eram locais (`_var`) e são usadas APÓS a seção extraída precisam virar globais ou ser retornadas pela função. Documentar cada caso.
+- Variáveis que eram locais e só eram usadas DENTRO da seção extraída continuam locais na nova função — sem mudança.
+- Se uma seção usa `#define` macros do topo do start.sqf, copiar o `#define` pro novo arquivo (lição do M3 hotfix #1).
+- ABRA o start.sqf inteiro e leia antes de extrair. As linhas indicadas acima são aproximadas — confirme visualmente.
 
 ### Objetivo final
 
-`start.sqf` deve ter ~400-600 linhas após decomposição, fácil de ler como uma sequência de chamadas.
+`start.sqf` deve ficar significativamente menor e legível como uma sequência de chamadas de alto nível. Meta: ~400-700 linhas (de 1352).
 
-### REPORTE DE VOLTA:
+### REPORTE DE VOLTA (append em _DRO_REFACTOR_PROGRESS.md):
 
 ```
 ## M5 — start.sqf decomposition — [DATA]
 
 ### Funções extraídas
 - DRO_fnc_extractFactionData (linhas X-Y → fn_extractFactionData.sqf)
-- (etc)
+- DRO_fnc_setupEnemySides (linhas X-Y → fn_setupEnemySides.sqf)
+- (etc, uma por linha)
+
+### CfgFunctions
+- N classes adicionadas ao bloco `class core` em description.ext
 
 ### start.sqf antes/depois
-- Antes: 1341 linhas
+- Antes: 1352 linhas
 - Depois: N linhas
 
-### Variáveis globais expostas (publicVariable)
-<lista — qualquer que era local antes da extração e virou global>
+### Variáveis que mudaram de escopo
+- `_var` era local, agora global porque: <motivo>
+- (listar TODAS — mesmo que zero)
+
+### Macros copiados
+- <macro> copiado para fn_<name>.sqf (ou: nenhum macro necessário)
 
 ### Pontos de atenção
-<qualquer função que tem dependência implícita não-óbvia em globals>
+- <qualquer função que tem dependência implícita não-óbvia em globals>
+- <qualquer trecho que NÃO foi extraído e o motivo>
 ```
 ````
 
@@ -563,7 +689,7 @@ call DRO_fnc_defineMarkerColors;
 
 ### M6 — Final audit + cleanup
 
-**Copia tudo abaixo num novo prompt Sonnet:**
+**Cola tudo entre as marcas ```````` num novo prompt Sonnet:**
 
 ````
 Você está trabalhando na missão Dynamic Recon Ops ACE - Livonia para Arma 3.
@@ -571,145 +697,202 @@ Você está trabalhando na missão Dynamic Recon Ops ACE - Livonia para Arma 3.
 CAMINHO DA MISSÃO:
 C:\Users\SujoG\Documents\Arma 3 - Other Profiles\R%2e%20Gonzalez\mpmissions\Dynamic Recon Ops ACE - Livonia.Enoch\
 
-CONTEXTO: Vários módulos de refactor foram feitos antes (CBA migration + bug fixes + CfgFunctions + AI gen hygiene + start.sqf decomp). Código migrado tem comentário "// Migrated from ...". Para ver o histórico do que foi feito por outras sessões, leia `_DRO_REFACTOR_PROGRESS.md` na raiz da missão (esse SIM pode/deve ser lido — é o log de progresso).
+CONTEXTO:
+- Todo o refactor foi feito em módulos anteriores: Fase 1 (CBA migration), M2 (bug fixes), M3 (CfgFunctions — 67 funções, 695 call sites), M3 hotfixes #1-#4, M4 (AI gen hygiene), M5 (start.sqf decomposition — 7 funções extraídas, 1352→939 linhas).
+- Código marcado "// Migrated from ..." NÃO deve ser tocado — é da Fase 1.
+- Todas as funções usam nomes `DRO_fnc_*`. Aliases legados em `init.sqf`.
+- CfgFunctions no final de `description.ext`. Funções em `functions/fn_*.sqf`.
+- Para contexto completo do que foi feito, leia `_DRO_REFACTOR_PROGRESS.md` na raiz da missão.
 
-TAREFA: Auditoria final e cleanup de dead code.
+TAREFA: Auditoria final, cleanup de dead code, e correção de bugs pendentes. Este é o ÚLTIMO módulo do refactor.
 
-### Verificações herdadas do M3 (CfgFunctions)
+---
 
-1. **Smoke test de boot:** confirmar que missão inicia sem `Error undefined variable` — lobby, faction picker, AO gen, intro, briefing devem rodar limpo.
+### PARTE 1 — Verificações de integridade
 
-2. **EH handlers do revive:** verificar que `addEventHandler ["HandleDamage", DRO_fnc_handleDamage]` e `["Killed", DRO_fnc_handleKilled]` em `fn_addReviveToUnit.sqf` apontam pros nomes novos (não pros legados `rev_*`).
+**1.1. EH handlers do revive**
+Verificar que `addEventHandler ["HandleDamage", ...]` e `["Killed", ...]` em `functions/fn_addReviveToUnit.sqf` apontam para os nomes CfgFunctions (`DRO_fnc_handleDamage`, `DRO_fnc_handleKilled`), NÃO para os nomes legados (`rev_handleDamage`, `rev_handleKilled`).
 
-3. **`briefingJIP`:** a linha `remoteExec ["sun_briefingJIP", 0, true]` em `briefing.sqf` foi comentada anteriormente. Verificar se algum JIP briefing path foi quebrado pelo M3 (deve estar OK porque o alias existe, mas confirmar).
+**1.2. briefingJIP**
+Em `briefing.sqf`, verificar se a linha `remoteExec ["sun_briefingJIP", 0, true]` está comentada E se o path de JIP briefing ainda funciona (o alias `sun_briefingJIP = DRO_fnc_briefingJIP` em init.sqf cobre, mas confirmar que a chamada ativa usa o nome novo ou o alias).
 
-4. **CfgRemoteExec whitelist (se aplicável):** se a missão tem `class CfgRemoteExec` em `description.ext` com `mode = 2`, adicionar à whitelist:
-   - `DRO_fnc_setNameMP`
-   - `DRO_fnc_randomTime`
-   - `DRO_fnc_briefingJIP`
-   - `DRO_fnc_changeLocal`
-   - `DRO_fnc_civDeathHandler`
-   Hoje a missão NÃO tem `CfgRemoteExec` definido em `description.ext` — usa default (tudo permitido). Mas se um dia adicionar restrição, precisa whitelistar.
+**1.3. CfgRemoteExec**
+Verificar se `description.ext` contém `class CfgRemoteExec` com `mode = 2`. Se SIM, adicionar à whitelist:
+- `DRO_fnc_setNameMP`, `DRO_fnc_randomTime`, `DRO_fnc_briefingJIP`, `DRO_fnc_changeLocal`, `DRO_fnc_civDeathHandler`
+Se NÃO tem CfgRemoteExec (esperado) → anotar no relatório que usa default (tudo permitido).
 
-5. **Aliases em `init.sqf`:** decidir se mantém os 110 aliases (`sun_x = DRO_fnc_x` etc.) ou remove. Recomendado MANTER até confirmar que nenhum scripts/mod externo usa nomes legados. Se mantiver, adicionar header explicando o porquê.
-
-6. **Arquivos lib stub:** `sundayFunctions.sqf`, `droFunctions.sqf`, `menuFunctions.sqf`, `reviveFunctions.sqf`, `generateEnemiesFunctions.sqf` foram convertidos em stubs de deprecação no M3 (originais em `_archive/fnc_lib_backup_M3/`). Decidir se: (a) manter stubs vazios pra retrocompat, (b) deletar, (c) restaurar do archive (não recomendado).
-
-7. **Macros `#define` em fn_*.sqf:** verificar que toda função em `functions/` que usa um macro (e.g. `aliveVeh`) tem o `#define` correspondente no próprio arquivo. Grep:
+**1.4. Macros em fn_*.sqf**
+Verificar que toda função em `functions/` que usa um macro tem o `#define` no próprio arquivo:
+```bash
+grep -rn "aliveVeh\(" functions/
+grep -rn "^#define" functions/
 ```
-grep -rE "aliveVeh\(" functions/
-grep -rE "^#define" functions/
+M3 hotfix #1 já cobriu `fn_checkVehicleSpawn.sqf` e `fn_helicopterCanFly.sqf`. Verificar se M5 (7 funções novas) introduziu problema similar. Também grepar por QUALQUER outro macro usado sem `#define` local.
+
+**1.5. Latent bug em fn_checkVehicleSpawn.sqf**
+Linha 6 usa `_vehicleType` não declarado em params. Só dispara se hitHull >= 0.7 (raro em spawn fresco). Fix: adicionar `params [["_vehicle", objNull], ["_vehicleType", ""]]` no topo. Se a lógica de recreate for confirmadamente dead-path, remover o bloco inteiro.
+
+**1.6. Guards de DRO_fnc_spawnGroupWeighted**
+A função retorna `grpNull` em falha (não nil). M3 hotfix #2 corrigiu `fn_spawnEnemyGarrison.sqf`. Auditar os outros call sites:
+```bash
+grep -rn "DRO_fnc_spawnGroupWeighted" --include="*.sqf"
 ```
-Cada uso de macro deve ter um `#define` correspondente no MESMO arquivo. Caso contrário, o macro não é expandido em runtime (CfgFunctions compila isolado).
+Cada call site que usa `units _group` na sequência DEVE ter guard: `if (!isNull _group && {count (units _group) > 0}) then { ... }`. Listar no relatório os que precisam de guard e corrigir os mais críticos (geradores de inimigos, objetivos). Call sites em código comentado ou archive → ignorar.
 
-Hotfix do M3 (Opus, pós-rpt) já cobriu `fn_checkVehicleSpawn.sqf` e `fn_helicopterCanFly.sqf` — verificar se M5 (ao extrair mais funções) ou outros caminhos introduziram problema similar.
+**1.7. Guards de DRO_fnc_selectRemove**
+M3 hotfix #3 identificou 3 call sites em `reinforce.sqf` (linhas ~115, ~155, ~194) que precisam de guard contra array vazio (retorno `objNull`). Corrigir: adicionar `if (isNull _vehType) exitWith {}` ou similar após cada chamada. Também verificar `generateAO.sqf:25,35` (risco baixo mas flagged).
 
-8. **Latent bug em `fn_checkVehicleSpawn.sqf`:** linha 6 usa `_vehicleType` não declarado em params. Só dispara se vehicle hitHull damage >= 0.7 (não acontece em spawn fresco). Adicionar `params [["_vehicle", objNull], ["_vehicleType", ""]]` OU remover a lógica de recreate se for confirmadamente dead-path.
+---
 
-### Audit pass
+### PARTE 2 — Audit de antipadrões
 
-1. **Grep por antipadrões remanescentes:**
+**2.1. Antipadrões remanescentes**
+```bash
+grep -rn "while {true}" --include="*.sqf"
+grep -rn "spawn {" --include="*.sqf" | grep -i "sleep"
+grep -rnE "waitUntil\s*\{[^}]*sleep" --include="*.sqf"
 ```
-grep -r "while {true}" --include="*.sqf"
-grep -r "spawn { sleep" --include="*.sqf"
-grep -rE "waitUntil\s*\{[^}]*sleep" --include="*.sqf"
+Para cada match, classificar:
+- Dentro de comentário `//` ou `/* */` → OK, ignorar
+- Dentro de `_archive/` → OK, ignorar
+- Código ativo real → FLAG pra revisão (listar no relatório)
+
+**2.2. PFH guards (double-init)**
+```bash
+grep -rn "DRO_.*PFH" --include="*.sqf"
+grep -rn 'if (!isNil "DRO_' --include="*.sqf"
 ```
-Para cada match, verificar se é:
-- Documentação de migração (comentário) → OK, deixar
-- Dentro de `/* */` → OK, deixar
-- Código real → flag pra revisão
+Cada PFH (`DRO_xxxPFH`) deve ter guard `if (!isNil "DRO_xxxPFH") exitWith { ... }` antes da criação. Listar os que NÃO têm.
 
-2. **Verificar duplicate PFH guards.** Greps:
+**2.3. removePerFrameHandler em PFHs auto-removentes**
+```bash
+grep -rn "addPerFrameHandler" --include="*.sqf"
 ```
-grep -r "DRO_.*PFH" --include="*.sqf"
-grep -r "if (!isNil \"DRO_" --include="*.sqf"
-```
-Confirmar que cada PFH tem o guard contra double-init.
+Cada PFH deve ter `removePerFrameHandler` no body (auto-removente) OU ser forever (sem exit). Listar possíveis leaks.
 
-3. **Verificar que removePerFrameHandler está em todos os PFHs auto-removentes.** Grep:
-```
-grep -r "addPerFrameHandler" --include="*.sqf"
-```
-Cada match deve ter um `removePerFrameHandler` correspondente no body OU ser um PFH que roda forever (sem condição de exit).
+---
 
-### Dead code cleanup
+### PARTE 3 — Dead code cleanup
 
-Confirmar que estes arquivos podem ser deletados ou movidos pra _archive/:
+**3.1. Mover para `_archive/`** (NÃO deletar — manter rollback possível):
 
-1. **`sunday_revive/AIReviveListen.sqf`** — confirmado dead na Fase 1 (única referência está comentada em initRevive.sqf:120).
-   Decisão: deletar OU mover pra `_archive/`.
+- `sunday_revive/AIReviveListen.sqf` — dead code confirmado na Fase 1 (única referência comentada em initRevive.sqf:120)
+- `sunday_system/supports/supportCASHeliOld.sqf` — dead code confirmado na Fase 1 (sem callers)
 
-2. **`sunday_system/supports/supportCASHeliOld.sqf`** — confirmado dead na Fase 1 (sem callers).
-   Mesma decisão.
-
-### Bug pendente herdado do M2
-
-**`rev_changeLocal` em `sunday_revive/reviveFunctions.sqf` (linhas ~257-286) tem Respawn EH leak.**
-
-Padrão: cada vez que a localidade de uma unidade AI muda, `rev_changeLocal` adiciona um novo `addEventHandler ["Respawn", ...]` via remoteExec SEM remover o handler anterior. N mudanças de localidade = N handlers acumulados. Cada handler interno também adiciona HandleDamage + Killed sem `removeAllEventHandlers`, então leak duplo.
-
-Estratégia recomendada (análoga ao que M2 fez em `rev_addReviveToUnit`):
-- Adicionar `removeAllEventHandlers "Respawn"` (ou tracking via setVariable como `DRO_revRespawnHandlerId`) antes de re-adicionar o Respawn EH em `rev_changeLocal`.
-- Cuidado de locality: `removeAllEventHandlers "Respawn"` em `rev_changeLocal` não conflita com o Respawn EH adicionado por `rev_addReviveToUnit` apenas se ambos foram adicionados na mesma máquina via mesmo padrão de remoteExec. Verificar antes de aplicar.
-
-### Validação do M2 (revive action leak) — pendente
-
-Não foi testado em editor. Plano: rodar smoke test rápido:
-1. Spawnar teammate AI próximo do player
-2. Matar player + respawn 3-4 vezes
-3. Aproximar do AI ferido e abrir menu de ação
-4. Confirmar: só 1 "Revive" (hold action) e 1 "Drag" (addAction), sem stack
-
-Se aparecer stack, o fix do M2 falhou — voltar pra Opus.
-
-Se mover pra `_archive/`, criar a pasta na raiz e adicionar header em cada arquivo:
-```
-// ARCHIVED — não está em uso. Movido em [data] por [motivo].
+Adicionar header em cada arquivo movido:
+```sqf
+// ARCHIVED — não está em uso. Movido em [DATA] durante M6 final audit.
 ```
 
-### Cleanup de TODO/FIXME comments
+**3.2. Lib stubs**
+Os 5 stubs de deprecação (`sundayFunctions.sqf`, `droFunctions.sqf`, `menuFunctions.sqf`, `reviveFunctions.sqf`, `generateEnemiesFunctions.sqf`) — MANTER como estão. São inofensivos e servem de documentação do que existia ali. NÃO deletar.
 
-Grep:
+**3.3. Aliases em init.sqf**
+MANTER os 110 aliases. Adicionar header explicativo no topo do bloco de aliases:
+```sqf
+// =====================================================================
+// LEGACY ALIASES — mantidos para retrocompatibilidade com eventuais
+// scripts externos ou mods que referenciem os nomes antigos (sun_*, 
+// dro_*, rev_*, fnc_*, chz_*). Todas as funções reais estão em 
+// CfgFunctions como DRO_fnc_*. Remover estes aliases somente após
+// confirmar que nenhum código externo depende dos nomes legados.
+// Criados no M3 (CfgFunctions migration) — 2026-05-17
+// =====================================================================
 ```
-grep -rE "TODO|FIXME|XXX|HACK" --include="*.sqf"
-```
-Listar todos. Cada um vira um item pra triage:
-- Resolver agora (se trivial)
-- Anotar em `_DRO_REFACTOR_PROGRESS.md` como pendente
-- Remover se obsoleto
 
-### REPORTE DE VOLTA (FINAL):
+---
+
+### PARTE 4 — Bug pendente: rev_changeLocal EH leak
+
+**Arquivo:** `functions/fn_changeLocal.sqf` (migrado de `rev_changeLocal` em reviveFunctions.sqf)
+
+**Problema:** cada vez que a localidade de uma unidade AI muda, `fn_changeLocal` adiciona um novo `addEventHandler ["Respawn", ...]` via remoteExec SEM remover o anterior. N mudanças de localidade = N Respawn handlers acumulados. Cada handler interno adiciona HandleDamage + Killed sem cleanup → leak duplo.
+
+**Fix recomendado:**
+Antes de adicionar o novo Respawn EH, remover o anterior via tracking por setVariable:
+```sqf
+// No início do fn_changeLocal, antes de adicionar novo Respawn EH:
+private _oldRespawnId = _unit getVariable ["DRO_revRespawnHandlerId", -1];
+if (_oldRespawnId >= 0) then {
+    _unit removeEventHandler ["Respawn", _oldRespawnId];
+};
+
+// Após adicionar:
+private _newId = _unit addEventHandler ["Respawn", { ... }];
+_unit setVariable ["DRO_revRespawnHandlerId", _newId, true];
+```
+
+**CUIDADO de locality:** o Respawn EH em `fn_changeLocal` é adicionado via `remoteExec` na máquina que ganhou localidade da unidade. O Respawn EH em `fn_addReviveToUnit` é adicionado diferentemente (no servidor). Verificar que `removeEventHandler` no `fn_changeLocal` só remove o handler que ELE adicionou, não o do `fn_addReviveToUnit`. O tracking via `DRO_revRespawnHandlerId` garante isso (cada um rastreia seu próprio ID).
+
+Se a análise de locality mostrar que é mais seguro NÃO corrigir agora, documentar no relatório com o motivo e deixar como NOTED.
+
+---
+
+### PARTE 5 — Cleanup de TODO/FIXME
+
+```bash
+grep -rnE "TODO|FIXME|XXX|HACK" --include="*.sqf"
+```
+Para cada match:
+- Se trivial e seguro: resolver agora
+- Se relevante mas complexo: anotar no relatório como NOTED
+- Se obsoleto (referência a algo já corrigido): remover o comentário
+
+---
+
+### REGRAS
+
+- NÃO toque em código marcado "// Migrated from ..." (Fase 1).
+- NÃO toque em `bleedout.sqf` (reescrito inteiro na Fase 1, delicado).
+- NÃO delete arquivos — mova para `_archive/`.
+- Use `DRO_fnc_*` para nomes de funções.
+- LEIA cada arquivo inteiro antes de modificar.
+- Se encontrar algo que não tem certeza se deve corrigir, NÃO corrija — anote no relatório.
+
+### REPORTE DE VOLTA (append em _DRO_REFACTOR_PROGRESS.md):
 
 ```
 ## M6 — Final audit + cleanup — [DATA]
 
-### Antipadrões verificados (esperado: 0 reais)
-- while {true} reais: N (lista)
-- spawn { sleep N }: N (lista)
-- waitUntil + sleep: N (lista)
+### PARTE 1 — Verificações de integridade
+- 1.1 EH handlers revive: [OK / FIXED — detalhes]
+- 1.2 briefingJIP: [OK / FIXED — detalhes]
+- 1.3 CfgRemoteExec: [NÃO EXISTE (default) / WHITELISTED]
+- 1.4 Macros em fn_*.sqf: [OK — N macros verificados / FIXED — detalhes]
+- 1.5 fn_checkVehicleSpawn.sqf: [FIXED / NOTED — motivo]
+- 1.6 spawnGroupWeighted guards: N call sites auditados, N precisam fix, N corrigidos
+- 1.7 selectRemove guards (reinforce.sqf): [FIXED / NOTED]
 
-### PFH guards
-- PFHs com guard: N / total N
-- PFHs sem guard (precisa fix): <lista>
+### PARTE 2 — Audit de antipadrões
+- while {true} reais (não-comentário): N (lista ou "0")
+- spawn+sleep reais: N (lista ou "0")
+- waitUntil+sleep reais: N (lista ou "0")
+- PFHs com guard: N / total N. Sem guard: <lista ou "nenhum">
+- PFHs auto-removentes OK: N. Possíveis leaks: <lista ou "nenhum">
 
-### removePerFrameHandler coverage
-- PFHs auto-removentes corretos: N
-- Possíveis leaks: <lista>
+### PARTE 3 — Dead code cleanup
+- AIReviveListen.sqf: MOVED to _archive/
+- supportCASHeliOld.sqf: MOVED to _archive/
+- Lib stubs: MANTIDOS
+- Aliases init.sqf: MANTIDOS + header adicionado
 
-### Dead code
-- AIReviveListen.sqf: [DELETED / MOVED to _archive / KEPT]
-- supportCASHeliOld.sqf: [DELETED / MOVED to _archive / KEPT]
+### PARTE 4 — rev_changeLocal EH leak
+- Status: [FIXED / NOTED — motivo]
+- Se FIXED: estratégia usada, side effects considerados
+- Se NOTED: análise de locality, motivo pra não corrigir agora
 
-### TODOs encontrados
+### PARTE 5 — TODO/FIXME cleanup
 - arquivo.sqf:LINHA — descrição — [RESOLVED / NOTED / REMOVED]
 - (etc)
 
 ### Estado final do projeto
-Fase 1: CBA migration ✅
-Fase 2 (M3): CfgFunctions ✅/✗
-Fase 4 (M4): IA gen hygiene ✅/✗
-Fase 6 (M5): start.sqf decomp ✅/✗
-Fase 6 (M6): final audit ✅
+- Fase 1 (CBA migration): ✅
+- M2 (bug fixes): ✅
+- M3 (CfgFunctions): ✅ + 4 hotfixes
+- M4 (AI gen hygiene): ✅
+- M5 (start.sqf decomposition): ✅
+- M6 (final audit): ✅
+- Bugs de gameplay pendentes: HVT spawn fora do mapa (não é bug de refactor)
 ```
 ````
 

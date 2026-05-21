@@ -166,5 +166,8 @@ switch (_selectedTask) do {
 	};
 };
 
-sleep 5;
-["REACTIVE_TASK", "Command", [_radioDesc]] spawn DRO_fnc_sendProgressMessage;
+// M3 hotfix #4 — sleep não permitido em unscheduled context; trocado por waitAndExecute
+[{
+    params ["_radioDesc"];
+    ["REACTIVE_TASK", "Command", [_radioDesc]] spawn DRO_fnc_sendProgressMessage;
+}, [_radioDesc], 5] call CBA_fnc_waitAndExecute;

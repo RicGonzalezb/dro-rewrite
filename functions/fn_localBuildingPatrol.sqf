@@ -11,9 +11,10 @@ params [["_maxSpawns", 6]];
 					_thisBuilding = _x;
 					diag_log format ["_thisBuilding = %1", _thisBuilding];					
 					_houseOuterPos = [(getPos _thisBuilding), 20, 50, 2, 0, 1, 0] call BIS_fnc_findSafePos;
-					_garrisonGroup = [_houseOuterPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1, 2]] call DRO_fnc_spawnGroupWeighted;	
+					_garrisonGroup = [_houseOuterPos, enemySide, eInfClassesForWeights, eInfClassWeights, [1, 2]] call DRO_fnc_spawnGroupWeighted;
 					_spawnTime = time;
-					waitUntil {(!isNil "_garrisonGroup") || (time >= (_spawnTime + 5))};					
+					// M6: guard reforçado — !isNil não captura grpNull; adicionado !isNull.
+					waitUntil {(!isNil "_garrisonGroup" && {!isNull _garrisonGroup}) || (time >= (_spawnTime + 5))};
 					diag_log format ["_garrisonGroup = %1", _garrisonGroup];
 					/*
 					_garMarker = createMarker [format["garMkr%1", random 10000], _thisBuilding];
@@ -21,9 +22,9 @@ params [["_maxSpawns", 6]];
 					_garMarker setMarkerColor "ColorOrange";
 					_garMarker setMarkerType "mil_dot";
 					*/
-					
-					_patrol = random 1;							
-					if (!isNil "_garrisonGroup") then {
+
+					_patrol = random 1;
+					if (!isNil "_garrisonGroup" && {!isNull _garrisonGroup}) then {
 						_spawns = _spawns + 1;
 						_garrisonGroup setBehaviour "SAFE";
 						

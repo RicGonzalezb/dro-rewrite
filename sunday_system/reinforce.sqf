@@ -77,9 +77,10 @@ for "_i" from 1 to _numReinforcements do {
 					
 					// Spawn units
 					_minAI = 4*aiMultiplier;
-					_maxAI = 8*aiMultiplier;					
-					_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI], false] call DRO_fnc_spawnGroupWeighted;				
-					if (!isNil "_reinfGroup") then {
+					_maxAI = 8*aiMultiplier;
+					_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI], false] call DRO_fnc_spawnGroupWeighted;
+					// M6: !isNil não captura grpNull; guard reforçado.
+					if (!isNil "_reinfGroup" && {!isNull _reinfGroup}) then {
 						[_reinfGroup, _targetPos] call BIS_fnc_taskAttack;
 						//[_reinfGroup, _targetPos, [50, 300], "FULL"] execVM "sunday_system\orders\patrolArea.sqf";											
 						diag_log format ["REINFORCEMENT: Infantry group %1 spawned at %2",_reinfGroup, _spawnPos];
@@ -113,6 +114,9 @@ for "_i" from 1 to _numReinforcements do {
 										
 					// Spawn vehicle
 					_vehType = [enemyGVPool] call DRO_fnc_selectRemove;
+					// M7 fix: selectRemove retorna objNull se pool vazio, ou string se pool tem elementos.
+					// isNull não aceita string — usar isEqualTo objNull para pool vazio, isEqualType "" para string válida.
+					if (_vehType isEqualTo objNull || {_vehType isEqualTo ""}) exitWith {};
 					_reinfVeh = createVehicle [_vehType, _spawnPos, [], 0, "NONE"];					
 					[_reinfVeh, enemySide, false] call DRO_fnc_createVehicleCrew;
 					waitUntil {!isNull (driver _reinfVeh)};
@@ -120,10 +124,11 @@ for "_i" from 1 to _numReinforcements do {
 					_maxUnits = ([_vehType] call DRO_fnc_getTrueCargo);
 					_minAI = (_maxUnits/2) * aiMultiplier;				
 					
-					_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxUnits], false] call DRO_fnc_spawnGroupWeighted;				
-					if (!isNil "_reinfGroup") then {
-						[_reinfGroup, _reinfVeh, true] spawn DRO_fnc_groupToVehicle;												
-						[_reinfVeh, _reinfGroup, _targetPos, true] execVM "sunday_system\orders\insertGroup.sqf";																				
+					_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxUnits], false] call DRO_fnc_spawnGroupWeighted;
+					// M6: !isNil não captura grpNull; guard reforçado.
+					if (!isNil "_reinfGroup" && {!isNull _reinfGroup}) then {
+						[_reinfGroup, _reinfVeh, true] spawn DRO_fnc_groupToVehicle;
+						[_reinfVeh, _reinfGroup, _targetPos, true] execVM "sunday_system\orders\insertGroup.sqf";
 						diag_log format ["REINFORCEMENT: Car transport group %1 spawned at %2; inserting at %3",_reinfGroup, _spawnPos, _targetPos];
 					};
 				};
@@ -153,7 +158,8 @@ for "_i" from 1 to _numReinforcements do {
 					
 					// Spawn vehicle
 					_vehType = [enemyGVTPool] call DRO_fnc_selectRemove;
-					if (!isNil "_vehType") then {
+					// M7 fix: selectRemove retorna objNull (pool vazio) ou string (classname).
+					if (!(_vehType isEqualTo objNull) && {!(_vehType isEqualTo "")}) then {
 						_reinfVeh = createVehicle [_vehType, _spawnPos, [], 0, "NONE"];
 						[_reinfVeh, enemySide, false] call DRO_fnc_createVehicleCrew;
 						waitUntil {!isNull (driver _reinfVeh)};
@@ -192,6 +198,8 @@ for "_i" from 1 to _numReinforcements do {
 				
 				// Spawn vehicle
 				_vehType = [enemyHeliPool] call DRO_fnc_selectRemove;
+				// M7 fix: selectRemove retorna objNull (pool vazio) ou string (classname).
+				if (_vehType isEqualTo objNull || {_vehType isEqualTo ""}) exitWith {};
 				_reinfVeh = createVehicle [_vehType, _spawnPos, [], 0, "FLY"];
 				_reinfVeh setPos _spawnPos;
 				[_reinfVeh, enemySide, false] call DRO_fnc_createVehicleCrew;
@@ -200,10 +208,11 @@ for "_i" from 1 to _numReinforcements do {
 				// Spawn units
 				_maxUnits = ([_vehType] call DRO_fnc_getTrueCargo);
 				_minAI = (_maxUnits/2) * aiMultiplier;								
-				_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxUnits], false] call DRO_fnc_spawnGroupWeighted;			
-				if (!isNil "_reinfGroup") then {
-					[_reinfGroup, _reinfVeh, true] spawn DRO_fnc_groupToVehicle;					
-					[_reinfVeh, _reinfGroup, _insertPos, true, _heliInsertType] execVM "sunday_system\orders\insertGroup.sqf";						
+				_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxUnits], false] call DRO_fnc_spawnGroupWeighted;
+				// M6: !isNil não captura grpNull; guard reforçado.
+				if (!isNil "_reinfGroup" && {!isNull _reinfGroup}) then {
+					[_reinfGroup, _reinfVeh, true] spawn DRO_fnc_groupToVehicle;
+					[_reinfVeh, _reinfGroup, _insertPos, true, _heliInsertType] execVM "sunday_system\orders\insertGroup.sqf";
 					diag_log format ["REINFORCEMENT: Heli transport group %1 spawned at %2; inserting at %3",_reinfGroup, _spawnPos, _insertPos];
 				} else {
 					{_reinfVeh deleteVehicleCrew _x} forEach crew _reinfVeh;

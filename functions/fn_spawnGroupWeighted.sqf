@@ -51,6 +51,7 @@ params [["_pos", []], ["_side", enemySide], "_classes", "_weights", "_unitNumber
 		if (_addToDyn && dynamicSim == 0) then {
 			_group enableDynamicSimulation true;
 		};
+		_group setGroupIdGlobal [format ["DRO_enemy_%1", floor random 10000]]; // debug tracking
 		deleteGroup _tempGroup;
 		_group;
 	};

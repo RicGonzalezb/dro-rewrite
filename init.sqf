@@ -1,10 +1,11 @@
-// ============================================================
-// M3 — Legacy function aliases (temporary rollback shims)
-// Maps old sun_*/dro_*/rev_*/chz_*/fnc_* names to DRO_fnc_*
-// Remove in M4 once all callers confirmed updated.
-// Execute on: all machines (server + client) via init.sqf
-// ============================================================
-
+// =====================================================================
+// LEGACY ALIASES — mantidos para retrocompatibilidade com eventuais
+// scripts externos ou mods que referenciem os nomes antigos (sun_*,
+// dro_*, rev_*, fnc_*, chz_*). Todas as funções reais estão em
+// CfgFunctions como DRO_fnc_*. Remover estes aliases somente após
+// confirmar que nenhum código externo depende dos nomes legados.
+// Criados no M3 (CfgFunctions migration) — 2026-05-17
+// =====================================================================
 // Note: CfgFunctions loads DRO_fnc_* BEFORE this runs, so
 // these assignments are always valid at init.sqf execution time.
 
