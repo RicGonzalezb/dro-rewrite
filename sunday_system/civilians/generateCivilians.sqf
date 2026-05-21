@@ -139,16 +139,16 @@ _createHostileCivUnit = {
 };
 
 _createSafeSpot = {
-	params ["_pos", ["_useBuilding", true], ["_type", 1], ["_capacity", 3]];
-	_modCivsSafeSpot = (createGroup centerSide) createUnit ["ModuleCivilianPresenceSafeSpot_F", _pos, [], 0, "FORM"];	
+	params ["_pos", ["_useBuilding", true], ["_type", 1], ["_capacity", 1]];
+	_modCivsSafeSpot = (createGroup centerSide) createUnit ["ModuleCivilianPresenceSafeSpot_F", _pos, [], 0, "FORM"];
 	{
 		_modCivsSafeSpot setVariable [(_x select 0),(_x select 1),true];
 	} forEach [
-		["#useBuilding", true],		
-		["#type", 1],		
-		["#terminal", false],	
-		["#capacity", 3],		
-		["objectarea", [0.1,0.1,0,false,-1]]		
+		["#useBuilding", _useBuilding],
+		["#type", _type],
+		["#terminal", false],
+		["#capacity", _capacity],  // M7 fix: usa parâmetro (antes hardcoded 3)
+		["objectarea", [0.1,0.1,0,false,-1]]
 	];
 };
 
@@ -247,12 +247,32 @@ if (((AOLocations select _AOIndex) select 4) == 1) then {
 
 diag_log format ["DRO: Generating civilian positions at AO %1", (name ((AOLocations select _AOIndex) select 5))];
 
-// M7 fix: embaralhar posições para evitar aglomeração (selectRandom repetia posições)
+// M7 fix: embaralhar e filtrar posições para evitar aglomeração
 private _shuffledCivPositions = +_civPositions;
-_shuffledCivPositions call BIS_fnc_arrayShuffle;
-private _posCount = count _shuffledCivPositions;
+if (count _shuffledCivPositions > 0) then {
+	_shuffledCivPositions call BIS_fnc_arrayShuffle;
+};
+// Filtrar posições muito próximas — mínimo 30m entre cada spawn point
+private _filteredCivPositions = [];
+{
+	private _pos = _x;
+	private _tooClose = false;
+	{
+		if (_pos distance2D _x < 30) exitWith { _tooClose = true };
+	} forEach _filteredCivPositions;
+	if (!_tooClose) then { _filteredCivPositions pushBack _pos };
+} forEach _shuffledCivPositions;
+if (count _filteredCivPositions == 0 && {count _shuffledCivPositions > 0}) then {
+	_filteredCivPositions = _shuffledCivPositions; // fallback: usar sem filtro
+};
+private _posCount = count _filteredCivPositions;
+diag_log format ["DRO: civPositions raw=%1, filtered=%2", count _shuffledCivPositions, _posCount];
 
 private _modUnitCount = 15;
+if (_posCount == 0) then {
+	diag_log "DRO: WARNING — _civPositions empty, skipping open-area civ spawn";
+};
+if (_posCount > 0) then {
 switch (type ((AOLocations select _AOIndex) select 5)) do {
 	case "NameVillage": {
 		private _numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt;
@@ -260,7 +280,7 @@ switch (type ((AOLocations select _AOIndex) select 5)) do {
 		diag_log format ["DRO: Civilian _maxAI: %1", _maxAI];
 		_modUnitCount = 20;
 		for "_x" from 1 to _numCivs do {
-			private _civPosition = _shuffledCivPositions select ((_x - 1) mod _posCount);
+			private _civPosition = _filteredCivPositions select ((_x - 1) mod _posCount);
 			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
 			[_civPosition, true, 2] call _createSafeSpot;
 			if (hostileCivsEnabled) then {
@@ -276,7 +296,7 @@ switch (type ((AOLocations select _AOIndex) select 5)) do {
 		diag_log format ["DRO: Civilian _maxAI: %1", _maxAI];
 		_modUnitCount = 25;
 		for "_x" from 1 to _numCivs do {
-			private _civPosition = _shuffledCivPositions select ((_x - 1) mod _posCount);
+			private _civPosition = _filteredCivPositions select ((_x - 1) mod _posCount);
 			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
 			[_civPosition, true, 2] call _createSafeSpot;
 			if (hostileCivsEnabled) then {
@@ -292,7 +312,7 @@ switch (type ((AOLocations select _AOIndex) select 5)) do {
 		_modUnitCount = 30;
 		private _numCivs = [_minAI + 3, _maxAI + 3] call BIS_fnc_randomInt;
 		for "_x" from 1 to _numCivs do {
-			private _civPosition = _shuffledCivPositions select ((_x - 1) mod _posCount);
+			private _civPosition = _filteredCivPositions select ((_x - 1) mod _posCount);
 			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
 			[_civPosition, true, 2] call _createSafeSpot;
 			if (hostileCivsEnabled) then {
@@ -308,7 +328,7 @@ switch (type ((AOLocations select _AOIndex) select 5)) do {
 		_modUnitCount = 15;
 		private _numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt;
 		for "_x" from 1 to _numCivs do {
-			private _civPosition = _shuffledCivPositions select ((_x - 1) mod _posCount);
+			private _civPosition = _filteredCivPositions select ((_x - 1) mod _posCount);
 			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
 			[_civPosition, true, 2] call _createSafeSpot;
 			if (hostileCivsEnabled) then {
@@ -319,6 +339,7 @@ switch (type ((AOLocations select _AOIndex) select 5)) do {
 		};
 	};
 };
+}; // end if (_posCount > 0)
 
 // Create market bustle
 private _continue = if (isNil "marketPositionsUsed") then {true} else {if (marketPositionsUsed) then {false}};
@@ -387,7 +408,8 @@ if (count civCarClasses > 0) then {
 
 private _modCivs = (createGroup centerSide) createUnit ["ModuleCivilianPresence_F", _AOPos, [], 0, "FORM"];
 _modCivs setVariable ["#unitCount", 0, true];
-_modCivs setVariable ["objectarea", [(_AOSize / 2), (_AOSize / 2), 0, false, -1], true];
+// M7 fix: área aumentada de AOSize/2 para AOSize*0.75 — civis se espalham mais
+_modCivs setVariable ["objectarea", [(_AOSize * 0.75), (_AOSize * 0.75), 0, false, -1], true];
 _modCivs setVariable ["#onCreated", {[_this] call DRO_fnc_civDeathHandler}, true];
 _modCivs setVariable ["#useAgents", true, true];
 _modCivs setVariable ["#usePanicMode", true, true];
