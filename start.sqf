@@ -63,7 +63,7 @@ extractHeliUsed = false;
 reinforceChance = 0.5;
 stealthActive = false;
 enemyCommsActive = true;
-hostileCivsEnabled = if (random 1 > 0.5) then {true} else {false};
+hostileCivsEnabled = false; // M7 fix: será setado corretamente em generateCivilians.sqf baseado em civiliansEnabled
 
 civDeathCounter = 0;
 publicVariable "civDeathCounter";

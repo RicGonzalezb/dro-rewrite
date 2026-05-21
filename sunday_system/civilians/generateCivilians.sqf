@@ -22,8 +22,9 @@ _createCivUnit = {
 	_group
 };
 
-//1,2 = enabled, enabled + hostile
-hostileCivsEnabled = if (civiliansEnabled == 2) then {true} else { if (civiliansEnabled == 1) then { if (random 1 > 0.5) then {true} else {false}; }; };
+// M7 fix: hostis SOMENTE com civiliansEnabled == 2 (enabled & hostile)
+// civiliansEnabled == 1 (enabled) → sem hostis
+hostileCivsEnabled = (civiliansEnabled == 2);
 publicVariable "hostileCivsEnabled";
 
 if (hostileCivsEnabled) then {
@@ -218,13 +219,10 @@ for "_i" from 1 to _numHousesToFill do {
 	if (isNull _thisHouse) then { continue };
 	(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", (getPos _thisHouse), [], 0, "FORM"];
 	private _buildingPositions = [_thisHouse] call BIS_fnc_buildingPositions;	
-	{ 
-		_chance = 0.5;
-		for "_bp" from 1 to ((count _buildingPositions) min 3) step 1 do {
-			if (random 1 > _chance) then {			
-				[_x, false, [], false] call _createHostileCivUnit;	
-				_chance = _chance + 0.2;
-			};
+	// M7 fix: max 1 civ hostil por posição de building (antes spawnava até 3 no mesmo ponto)
+	{
+		if (random 1 > 0.5) then {
+			[_x, false, [], false] call _createHostileCivUnit;
 		};
 	} forEach _buildingPositions;
 	[(getPos _thisHouse), true, ((count _buildingPositions) - 1)] call _createSafeSpot;
@@ -248,6 +246,12 @@ if (((AOLocations select _AOIndex) select 4) == 1) then {
 };
 
 diag_log format ["DRO: Generating civilian positions at AO %1", (name ((AOLocations select _AOIndex) select 5))];
+
+// M7 fix: embaralhar posições para evitar aglomeração (selectRandom repetia posições)
+private _shuffledCivPositions = +_civPositions;
+_shuffledCivPositions call BIS_fnc_arrayShuffle;
+private _posCount = count _shuffledCivPositions;
+
 private _modUnitCount = 15;
 switch (type ((AOLocations select _AOIndex) select 5)) do {
 	case "NameVillage": {
@@ -255,29 +259,29 @@ switch (type ((AOLocations select _AOIndex) select 5)) do {
 		diag_log format ["DRO: Civilian _minAI: %1", _minAI];
 		diag_log format ["DRO: Civilian _maxAI: %1", _maxAI];
 		_modUnitCount = 20;
-		for "_x" from 1 to _numCivs do {			
-			private _civPosition = selectRandom _civPositions;
+		for "_x" from 1 to _numCivs do {
+			private _civPosition = _shuffledCivPositions select ((_x - 1) mod _posCount);
 			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
 			[_civPosition, true, 2] call _createSafeSpot;
 			if (hostileCivsEnabled) then {
 				if (_x < (_numCivs * 0.4)) then {
-					[_civPosition, true, [], true] call _createHostileCivUnit;					
+					[_civPosition, true, [], true] call _createHostileCivUnit;
 				};
 			};
-		};		
+		};
 	};
 	case "NameCity": {
 		private _numCivs = [_minAI + 2, _maxAI + 2] call BIS_fnc_randomInt;
 		diag_log format ["DRO: Civilian _minAI: %1", _minAI];
 		diag_log format ["DRO: Civilian _maxAI: %1", _maxAI];
 		_modUnitCount = 25;
-		for "_x" from 1 to _numCivs do {			
-			private _civPosition = selectRandom _civPositions;
+		for "_x" from 1 to _numCivs do {
+			private _civPosition = _shuffledCivPositions select ((_x - 1) mod _posCount);
 			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
 			[_civPosition, true, 2] call _createSafeSpot;
 			if (hostileCivsEnabled) then {
 				if (_x < (_numCivs * 0.4)) then {
-					[_civPosition, true, [], true] call _createHostileCivUnit;	
+					[_civPosition, true, [], true] call _createHostileCivUnit;
 				};
 			};
 		};
@@ -287,8 +291,8 @@ switch (type ((AOLocations select _AOIndex) select 5)) do {
 		diag_log format ["DRO: Civilian _maxAI: %1", _maxAI];
 		_modUnitCount = 30;
 		private _numCivs = [_minAI + 3, _maxAI + 3] call BIS_fnc_randomInt;
-		for "_x" from 1 to _numCivs do {			
-			private _civPosition = selectRandom _civPositions;
+		for "_x" from 1 to _numCivs do {
+			private _civPosition = _shuffledCivPositions select ((_x - 1) mod _posCount);
 			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
 			[_civPosition, true, 2] call _createSafeSpot;
 			if (hostileCivsEnabled) then {
@@ -303,8 +307,8 @@ switch (type ((AOLocations select _AOIndex) select 5)) do {
 		diag_log format ["DRO: Civilian _maxAI: %1", _maxAI];
 		_modUnitCount = 15;
 		private _numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt;
-		for "_x" from 1 to _numCivs do {			
-			private _civPosition = selectRandom _civPositions;
+		for "_x" from 1 to _numCivs do {
+			private _civPosition = _shuffledCivPositions select ((_x - 1) mod _posCount);
 			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
 			[_civPosition, true, 2] call _createSafeSpot;
 			if (hostileCivsEnabled) then {
