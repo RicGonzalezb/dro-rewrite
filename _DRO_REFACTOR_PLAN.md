@@ -23,6 +23,7 @@
 | M4 | Higiene de geradores IA (dynamicSim, uiSleep, skill cap) | ✅ DONE |
 | M5 | start.sqf decomposition (1352→939 linhas, 7 funções) | ✅ DONE |
 | M6 | Final audit + dead code cleanup + bug fixes | ✅ DONE |
+| M7 | Smoke test hotfixes (geradores, reinforce, civis hostis, anti-aglomeração) | ✅ DONE |
 
 4. **Fluxo de trabalho:** você NÃO executa os módulos diretamente — você gera prompts autocontidos para sessões Sonnet, que têm acesso aos arquivos da missão. O prompt deve conter todo o contexto necessário (caminho, regras, o que não tocar, formato de relatório). Após o Sonnet executar, o usuário (Gonza) traz o resultado pra você validar.
 5. **O usuário fala português (BR).** Comunique-se em português.

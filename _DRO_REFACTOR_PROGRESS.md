@@ -1053,6 +1053,75 @@ Smoke test após M6 revelou 2 bugs de runtime + 1 issue visual (heli extract men
 
 **Conclusão:** Efeito cascata dos erros nos geradores. Com os erros resolvidos, o flow de extração funcionou corretamente. `diag_log` diagnóstico mantido para futuros testes.
 
-### Smoke test final
+### Smoke test #2 (pós-fix geradores + reinforce)
 
-Ciclo completo de missão (init → geração de objetivos → destruição de caches → extração com heli) rodou **sem erros de código DRO no .rpt**. Únicos erros observados foram do mod TFAR (`fnc_loadoutReplaceProcess.sqf` — bug interno do mod, não relacionado à missão).
+Ciclo completo de missão (init → geração de objetivos → destruição de caches → extração com heli) rodou **sem erros de código DRO no .rpt**. Heli extract apareceu normalmente. Únicos erros observados foram do mod TFAR (`fnc_loadoutReplaceProcess.sqf` — bug interno do mod, não relacionado à missão).
+
+---
+
+### Bug #4 — Civis hostis spawnando com opção "enable" (sem hostile)
+
+**Sintoma:** Civis hostis apareciam mesmo com `civiliansEnabled == 1` (enable, sem hostile).
+
+**Causa:** Dois pontos setavam `hostileCivsEnabled` com 50% aleatório:
+- `start.sqf:66` — `hostileCivsEnabled = if (random 1 > 0.5) then {true} else {false}` (pré-set antes da lógica de civis)
+- `generateCivilians.sqf:26` — quando `civiliansEnabled == 1`, ainda tinha 50% de chance de habilitar hostis
+
+**Fix aplicado:**
+- `start.sqf:66` — `hostileCivsEnabled = false` (inicialização limpa, valor real definido em generateCivilians.sqf)
+- `generateCivilians.sqf:26` — simplificado para `hostileCivsEnabled = (civiliansEnabled == 2)`. Opção 1 = sem hostis, opção 2 = com hostis.
+
+### Bug #5 — Civis aglomerados em spawn points (dentro de prédios)
+
+**Sintoma:** Múltiplos civis spawnando no mesmo ponto/prédio, visível no Zeus.
+
+**Causas identificadas:**
+1. Loop de casas (linhas 221-229) spawnava até 3 hostis por posição de building (loop `for` aninhado desnecessário)
+2. Civis de área aberta usavam `selectRandom _civPositions` que podia repetir a mesma posição
+3. Safe spot capacity hardcoded em 3 — cada ponto atraía até 3 civis do engine
+4. Área do módulo principal `ModuleCivilianPresence_F` era `AOSize/2` — restringia a distribuição
+
+**Fixes aplicados:**
+
+| Mudança | Arquivo | Detalhe |
+|---------|---------|---------|
+| Max 1 hostil por building position | `generateCivilians.sqf:221-227` | Loop `for` removido, agora 50% chance de 1 civ por posição |
+| Filtro de distância mínima 30m | `generateCivilians.sqf:250-265` | Posições embaralhadas e filtradas — posições a <30m são descartadas |
+| Acesso sequencial (sem repetição) | `generateCivilians.sqf` (4 cases do switch) | `selectRandom` trocado por acesso indexado a posições filtradas |
+| Safe spot capacity 3→1 | `generateCivilians.sqf:141-152` | `#capacity` agora usa parâmetro (default 1) em vez de hardcoded 3 |
+| Área do módulo principal ampliada | `generateCivilians.sqf:411` | `AOSize/2` → `AOSize*0.75` (50% mais área de distribuição) |
+| Guard contra _posCount==0 | `generateCivilians.sqf:269-271` | Evita `mod 0` (divisor zero) que matava o script inteiro |
+
+### Smoke test #3 (final)
+
+Missão completa sem erros. Civis spawnando espalhados. Hostis respeitando parâmetro. Extração funcionando.
+
+### Arquivos modificados no M7
+
+| Arquivo | Mudança |
+|---------|---------|
+| `sunday_system/generate_enemies/generateBunker.sqf` | Guard spawnGroupWeighted (3 pontos) |
+| `sunday_system/generate_enemies/generateEmplacement.sqf` | Guard spawnGroupWeighted (1 ponto) |
+| `sunday_system/generate_enemies/generateRoadblock.sqf` | Guard spawnGroupWeighted (1 ponto) |
+| `sunday_system/generate_enemies/generateBarrier.sqf` | Guard spawnGroupWeighted (3 pontos) |
+| `sunday_system/reinforce.sqf` | isNull→isEqualTo objNull (3 cases) |
+| `start.sqf` | hostileCivsEnabled init = false |
+| `sunday_system/civilians/generateCivilians.sqf` | Hostis fix + anti-aglomeração (6 mudanças) |
+
+### Status final do projeto
+
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| Fase 1 | CBA migration (while→PFH, spawn→CBA_fnc_waitAndExecute) | ✅ |
+| M2 | Bug fixes deferidos (vn_artillery, revive EH/action leak) | ✅ |
+| M3 | CfgFunctions migration (67 funções, 695 call sites) + hotfixes #1–#4 | ✅ |
+| M4 | AI gen hygiene (dynamicSim, setGroupId, frame budgeting, skill audit) | ✅ |
+| M5 | start.sqf decomposition (7 funções, 1352→939 linhas) | ✅ |
+| M6 | Final audit, dead code cleanup, bug fixes | ✅ |
+| M7 | Smoke test hotfixes (geradores, reinforce, civis) | ✅ |
+
+### Pendências conhecidas (não críticas)
+
+- **`fn_changeLocal` EH leak** — NOTED no M6. Leak lento em cenário raro (AI trocando localidade muitas vezes). Fix requer variável por máquina, risco de regressão > risco do leak. Decisão: manter como está.
+- **HVT spawn fora do mapa** — bug de gameplay preexistente, não do refactor.
+- **`generateAO.sqf:25,35`** — while loop sem bound, risco baixo.
