@@ -20,8 +20,14 @@ if (count taskIntel > 0) then {
 			_taskMarker = (_taskDescData select 2) select 0;				
 			switch (_intelType) do {
 				case "MARKER": {
-					_marker = _taskData getVariable "followMarker";
-					diag_log format ["DRO: Revealing intel for followMarker %1 - %2", _taskTitle, _marker];										
+					_marker = _taskData getVariable ["followMarker", ""];
+					// Guard: skip if _taskData is null/dead or followMarker was never set
+					if (isNull _taskData || {_marker isEqualTo ""}) exitWith {
+						diag_log format ["DRO: WARNING - MARKER intel skipped: _taskData isNull=%1, _marker='%2' for task %3", isNull _taskData, _marker, _thisTask select 0];
+						// Re-queue so it can be retried if the object recovers
+						taskIntel pushBack [_thisTask select 0, _taskData, _subTask, "MARKER"];
+					};
+					diag_log format ["DRO: Revealing intel for followMarker %1 - %2", _taskTitle, _marker];
 					_realPos = getPos _taskData;
 					_markerSize = getMarkerSize _marker;
 					_newSize = if ((_markerSize select 0) > 300) then {
@@ -36,15 +42,15 @@ if (count taskIntel > 0) then {
 					_markerPos = [_realPos, random(_markerShiftAmount-(_markerShiftAmount*0.1)), (random 360)] call BIS_fnc_relPos;
 					_marker setMarkerPos [(_markerPos select 0), (_markerPos select 1)];
 					_marker setMarkerSize _markerSize;
-					diag_log format ["DRO: followMarker %1 set to size %2", _marker, _markerSize];					
-					[_thisTask select 0, _marker] call BIS_fnc_taskSetDestination;							
+					diag_log format ["DRO: followMarker %1 set to size %2", _marker, _markerSize];
+					[_thisTask select 0, _marker] call BIS_fnc_taskSetDestination;
 					_markerZoneShrunk = true;
 					// Add marker back if it's still too big
-					if ((_markerSize select 0) > 0) then {						
+					if ((_markerSize select 0) > 0) then {
 						taskIntel pushBack [_thisTask select 0, _taskData, _subTask, "MARKER"];
 						diag_log format ["DRO: followMarker %1 too big to complete and added to taskIntel", _marker];
-					} else {						
-						[_thisTask select 0, [_taskData, true]] call BIS_fnc_taskSetDestination;	
+					} else {
+						[_thisTask select 0, [_taskData, true]] call BIS_fnc_taskSetDestination;
 						diag_log format ["DRO: followMarker %1 completed and task %2 fixed to %3", _marker, (_thisTask select 0), _taskData];
 					};
 				};

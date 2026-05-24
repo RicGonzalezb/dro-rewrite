@@ -1108,6 +1108,96 @@ Missão completa sem erros. Civis spawnando espalhados. Hostis respeitando parâ
 | `start.sqf` | hostileCivsEnabled init = false |
 | `sunday_system/civilians/generateCivilians.sqf` | Hostis fix + anti-aglomeração (6 mudanças) |
 
+---
+
+## M8 — Feature "Civilians as Agents" + Hotfixes de runtime
+
+**Data:** 2026-05-23
+
+### Feature: Civilians as Agents
+
+**Objetivo:** Nova opção no menu de atributos da missão que permite spawnar civis não-hostis como `createAgent` (lightweight AI) em vez de `createUnit`, economizando performance significativamente.
+
+**Comportamento:**
+- ENABLED (padrão, valor 0): civis não-hostis spawnados via `createAgent` — sem IA completa, menor overhead
+- DISABLED (valor 1): civis spawnados via `createUnit` — IA completa, maior custo de performance
+- Civis hostis **sempre** usam `createUnit` independente do toggle (precisam de IA de combate)
+
+**IDC:** 2065 | **Variável global:** `civiliansAsAgents` | **Profile key:** `DRO_CIVILIANSASAGENTS`
+
+| Arquivo | Mudança |
+|---------|---------|
+| `sunday_system/dialogs/dialogsMainMenu.hpp` | Novo `CivsAgentSwitchButton` (IDC 2065) em y=34.5, abaixo de CIVILIANS. Stealth/Revive/Stamina/DynSim deslocados +3.5 cada |
+| `functions/fn_switchLookup.sqf` | Case 2065: variável `civiliansAsAgents`, opções `["ENABLED", "DISABLED"]` |
+| `loadProfile.sqf` | Carrega `civiliansAsAgents` de profileNamespace (default 0) |
+| `sunday_system/dialogs/populateStartupMenu.sqf` | Inicializa switch button 2065 ao abrir menu |
+| `functions/fn_clearData.sqf` | Reset do toggle 2065 para 0 (ENABLED) |
+| `sunday_system/civilians/generateCivilians.sqf` | Lógica condicional: `_useAgents = (civiliansAsAgents == 0)`. `_createCivUnit` usa `createAgent`/`createUnit` conforme toggle. `#useAgents` do módulo BIS vinculado à variável |
+
+---
+
+### Bug #6 — `_leader` undefined em fn_spawnEnemyGarrison.sqf (linhas 25, 37)
+
+**Sintoma:** Erros de runtime `_leader` undefined durante geração de garrison em prédios.
+
+**Causa:** `DRO_fnc_spawnGroupWeighted` pode retornar `grpNull` (grupo vazio) na primeira iteração (counter == 0). O código original usava `_garrisonCounter == 0` para decidir quem era o líder — se o primeiro spawn falhasse, `_leader` nunca era setado, e spawns subsequentes crashavam em `joinSilent _leader`. Além disso, o return value final `group _leader` não tinha guard.
+
+**Fix aplicado:**
+- Linha 16-19: Guard completo para resultado de `spawnGroupWeighted` — checa `!isNil`, `!isNull` e `count units > 0`
+- Linha 22: `_garrisonCounter == 0` → `isNil "_leader"` — qualquer spawn bem-sucedido pode virar líder
+- Linha 37: Return value guarded: `if (!isNil "_leader") then {group _leader} else {grpNull}`
+
+---
+
+### Bug #7 — `_marker` / `_markerSize` undefined em revealIntel.sqf (linhas 24, 37, 43)
+
+**Sintoma:** Erros de runtime ao buscar intel em corpo de inimigo morto. `_marker` undefined na linha 24, `_marker` undefined na linha 37, `_markerSize` undefined na linha 43. Erro secundário de `BIS_fnc_relPos` recebendo `[0,0,0]` (ARRAY) em vez de OBJECT.
+
+**Causa:** No case `"MARKER"` (linha 22-49), `_taskData getVariable "followMarker"` retorna `nil` quando o objeto associado à task foi destruído ou perdeu suas variáveis. O `_marker` nil cascateia para `getMarkerSize _marker` (→ `_markerSize` undefined) e `_marker setMarkerPos` (→ crash).
+
+**Fix aplicado:**
+- `getVariable "followMarker"` → `getVariable ["followMarker", ""]` (default seguro em vez de nil)
+- Guard `exitWith` no início do case: se `_taskData` é null ou `_marker` é string vazia, loga warning e re-enfileira o intel para retry
+- Previne toda a cadeia de erros cascateantes
+
+---
+
+### Arquivos modificados no M8
+
+| Arquivo | Mudança |
+|---------|---------|
+| `sunday_system/dialogs/dialogsMainMenu.hpp` | Novo switch button CivsAgent (IDC 2065) + reposicionamento vertical |
+| `functions/fn_switchLookup.sqf` | Case 2065 para civiliansAsAgents |
+| `loadProfile.sqf` | Load civiliansAsAgents de profileNamespace |
+| `sunday_system/dialogs/populateStartupMenu.sqf` | Init switch button 2065 |
+| `functions/fn_clearData.sqf` | Reset toggle 2065 |
+| `sunday_system/civilians/generateCivilians.sqf` | Lógica createAgent/createUnit condicional + #useAgents |
+| `functions/fn_spawnEnemyGarrison.sqf` | Guard spawnGroupWeighted + isNil leader + return guarded |
+| `sunday_system/intel/revealIntel.sqf` | Guard _marker nil no case MARKER |
+| `sunday_system/player_setup/generateFriendlies.sqf` | Guards [0,0,0] em waypoints do "Begin Assault" (ambient + rendezvous squads) |
+
+---
+
+### Bug #8 — Waypoints [0,0,0] no "Begin Assault" (Combined Arms)
+
+**Sintoma:** Ao usar o support "Begin Assault" no modo Combined Arms, alguns grupos de IA aliada recebiam waypoints na coordenada `[0,0,0]` (canto do mapa) em vez da área do objetivo. Visível no mapa com unidades se movendo para longe da AO.
+
+**Causa raiz (ambient squads):** O callback de assault (linha 302) usava `getMarkerPos "mkrHold"` para gerar posições aleatórias via `BIS_fnc_randomPos`. O marker `mkrHold` só é criado em `createExtractTask.sqf` **após todos os objetivos serem completados** (fase "Take and Hold"). Se o jogador acionava "Begin Assault" antes disso, `getMarkerPos` retornava `[0,0,0]` e `BIS_fnc_randomPos` gerava posições no canto do mapa.
+
+**Causa secundária (rendezvous squad):** O callback (linha 426) usava `_thisTrg` (trigger object) para `BIS_fnc_randomPos`. Se o trigger fosse deletado antes do assault, a função retornava posição inválida.
+
+**Fixes aplicados:**
+
+| Mudança | Localização | Detalhe |
+|---------|-------------|---------|
+| Fallback mkrHold → holdAO | `generateFriendlies.sqf` (ambient assault callback) | Se `getMarkerPos "mkrHold"` retorna `[0,0,0]`, usa `holdAO select 0` como centro e `holdAO select 1 / 4` como raio |
+| Guard _wp1Pos | `generateFriendlies.sqf` (ambient assault callback) | Valida `_wp1Pos` contra `[0,0,0]`, fallback para `holdAO select 0` |
+| Guard BIS_fnc_randomPos | Ambos callbacks (ambient + rendezvous) | Cada posição gerada é validada contra `[0,0,0]` antes de criar waypoint |
+| Guard _thisTrg null | `generateFriendlies.sqf` (rendezvous assault callback) | Se trigger foi deletado, usa `_rendezvousPos` como centro para waypoints intermediários |
+| Guard _rendezvousPos | `generateFriendlies.sqf` (rendezvous assault callback) | Valida `_rendezvousPos` contra `[0,0,0]` |
+
+---
+
 ### Status final do projeto
 
 | Fase | Descrição | Status |
@@ -1119,6 +1209,7 @@ Missão completa sem erros. Civis spawnando espalhados. Hostis respeitando parâ
 | M5 | start.sqf decomposition (7 funções, 1352→939 linhas) | ✅ |
 | M6 | Final audit, dead code cleanup, bug fixes | ✅ |
 | M7 | Smoke test hotfixes (geradores, reinforce, civis) | ✅ |
+| M8 | Feature "Civilians as Agents" + hotfixes garrison/intel/waypoints | ✅ |
 
 ### Pendências conhecidas (não críticas)
 

@@ -293,13 +293,25 @@ if (_ambFriendlyChance > 0.75) then {
 					_wp0 setWaypointCombatMode "BLUE";
 
 					private _wp1Pos = ((holdAO select 0) getPos [300, ((holdAO select 0) getDir (getPos (leader _thisSquad)))]);
+					// Guard: validate _wp1Pos is not [0,0,0]
+					if (_wp1Pos isEqualTo [0,0,0]) then { _wp1Pos = holdAO select 0; };
 					private _wp1 = _thisSquad addWaypoint [_wp1Pos, 0];
 					_wp1 setWaypointType "MOVE";
 					_wp1 setWaypointCombatMode "GREEN";
 					_waypoints pushBack [_wp1Pos, 0];
 
+					// Fallback: mkrHold may not exist yet (only created in createExtractTask after objectives complete)
+					private _holdCenter = getMarkerPos "mkrHold";
+					private _holdRadius = 50;
+					if (_holdCenter isEqualTo [0,0,0]) then {
+						_holdCenter = holdAO select 0;
+						_holdRadius = (holdAO select 1) / 4;
+						diag_log "DRO: WARNING - mkrHold not found for assault waypoints, using holdAO position as fallback";
+					};
 					for "_i" from 0 to 2 do {
-						private _randomPos = [[[getMarkerPos "mkrHold", 50]], ["water"]] call BIS_fnc_randomPos;
+						private _randomPos = [[[_holdCenter, _holdRadius]], ["water"]] call BIS_fnc_randomPos;
+						// Guard: skip if BIS_fnc_randomPos returned [0,0,0] (no valid position found)
+						if (_randomPos isEqualTo [0,0,0]) then { _randomPos = _holdCenter; };
 						private _wp = _thisSquad addWaypoint [_randomPos, 0];
 						_wp setWaypointType "MOVE";
 						_wp setWaypointCombatMode "YELLOW";
@@ -422,13 +434,23 @@ if (_friendlyChance > 0.75) then {
 				_wp0 setWaypointBehaviour "AWARE";
 				_wp0 setWaypointCombatMode "GREEN";
 
+				// Guard: if trigger was deleted, fall back to rendezvous position for intermediate waypoints
+				private _wpAreaCenter = if (!isNull _thisTrg) then { getPos _thisTrg } else { _rendezvousPos };
 				for "_i" from 0 to 2 do {
-					private _randomPos = [[_thisTrg], ["water"]] call BIS_fnc_randomPos;
+					private _randomPos = if (!isNull _thisTrg) then {
+						[[_thisTrg], ["water"]] call BIS_fnc_randomPos
+					} else {
+						[[[_wpAreaCenter, 200]], ["water"]] call BIS_fnc_randomPos
+					};
+					// Guard: skip [0,0,0] from BIS_fnc_randomPos failure
+					if (_randomPos isEqualTo [0,0,0]) then { _randomPos = _wpAreaCenter; };
 					private _wp = friendlySquad addWaypoint [_randomPos, 0];
 					_wp setWaypointType "MOVE";
 					_waypoints pushBack [_randomPos, 0];
 				};
 
+				// Guard: validate rendezvous position
+				if (_rendezvousPos isEqualTo [0,0,0]) then { _rendezvousPos = _wpAreaCenter; };
 				private _wpEnd = friendlySquad addWaypoint [_rendezvousPos, 0];
 				_wpEnd setWaypointType "MOVE";
 				_waypoints pushBack [_rendezvousPos, 0];
