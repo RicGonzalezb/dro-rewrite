@@ -261,76 +261,52 @@ private _posCount = count _filteredCivPositions;
 diag_log format ["DRO: civPositions raw=%1, filtered=%2", count _shuffledCivPositions, _posCount];
 
 private _modUnitCount = 15;
+private _numCivs = 0;
 if (_posCount == 0) then {
 	diag_log "DRO: WARNING — _civPositions empty, skipping open-area civ spawn";
 };
 if (_posCount > 0) then {
+
+// M8 fix: Create spawn points ONCE per unique filtered position (prevents clustering)
+// Before, the loop created 1 spawn point + 1 safe spot PER CIVILIAN, causing duplicates
+// when _numCivs > _posCount (mod wraps around = stacked spawn points at same position)
+{
+	(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _x, [], 0, "FORM"];
+	[_x, true, 2] call _createSafeSpot;
+} forEach _filteredCivPositions;
+
+// Set _numCivs and _modUnitCount based on location type
 switch (type ((AOLocations select _AOIndex) select 5)) do {
 	case "NameVillage": {
-		private _numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt;
-		diag_log format ["DRO: Civilian _minAI: %1", _minAI];
-		diag_log format ["DRO: Civilian _maxAI: %1", _maxAI];
+		_numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt;
 		_modUnitCount = 20;
-		for "_x" from 1 to _numCivs do {
-			private _civPosition = _filteredCivPositions select ((_x - 1) mod _posCount);
-			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
-			[_civPosition, true, 2] call _createSafeSpot;
-			if (hostileCivsEnabled) then {
-				if (_x < (_numCivs * 0.4)) then {
-					[_civPosition, true, [], true] call _createHostileCivUnit;
-				};
-			};
-		};
 	};
 	case "NameCity": {
-		private _numCivs = [_minAI + 2, _maxAI + 2] call BIS_fnc_randomInt;
-		diag_log format ["DRO: Civilian _minAI: %1", _minAI];
-		diag_log format ["DRO: Civilian _maxAI: %1", _maxAI];
+		_numCivs = [_minAI + 2, _maxAI + 2] call BIS_fnc_randomInt;
 		_modUnitCount = 25;
-		for "_x" from 1 to _numCivs do {
-			private _civPosition = _filteredCivPositions select ((_x - 1) mod _posCount);
-			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
-			[_civPosition, true, 2] call _createSafeSpot;
-			if (hostileCivsEnabled) then {
-				if (_x < (_numCivs * 0.4)) then {
-					[_civPosition, true, [], true] call _createHostileCivUnit;
-				};
-			};
-		};
 	};
 	case "NameCityCapital": {
-		diag_log format ["DRO: Civilian _minAI: %1", _minAI];
-		diag_log format ["DRO: Civilian _maxAI: %1", _maxAI];
+		_numCivs = [_minAI + 3, _maxAI + 3] call BIS_fnc_randomInt;
 		_modUnitCount = 30;
-		private _numCivs = [_minAI + 3, _maxAI + 3] call BIS_fnc_randomInt;
-		for "_x" from 1 to _numCivs do {
-			private _civPosition = _filteredCivPositions select ((_x - 1) mod _posCount);
-			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
-			[_civPosition, true, 2] call _createSafeSpot;
-			if (hostileCivsEnabled) then {
-				if (_x < (_numCivs * 0.4)) then {
-					[_civPosition, true, [], true] call _createHostileCivUnit;
-				};
-			};
-		};
 	};
 	case "NameLocal": {
-		diag_log format ["DRO: Civilian _minAI: %1", _minAI];
-		diag_log format ["DRO: Civilian _maxAI: %1", _maxAI];
+		_numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt;
 		_modUnitCount = 15;
-		private _numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt;
-		for "_x" from 1 to _numCivs do {
-			private _civPosition = _filteredCivPositions select ((_x - 1) mod _posCount);
-			(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
-			[_civPosition, true, 2] call _createSafeSpot;
-			if (hostileCivsEnabled) then {
-				if (_x < (_numCivs * 0.4)) then {
-					[_civPosition, true, [], true] call _createHostileCivUnit;
-				};
-			};
+	};
+};
+diag_log format ["DRO: Civilian spawn — type=%1, minAI=%2, maxAI=%3, numCivs=%4, modUnitCount=%5, spawnPoints=%6",
+	type ((AOLocations select _AOIndex) select 5), _minAI, _maxAI, _numCivs, _modUnitCount, _posCount];
+
+// Hostile civs — distributed across filtered positions (no duplicates per position)
+if (hostileCivsEnabled) then {
+	for "_h" from 1 to _numCivs do {
+		if (_h < (_numCivs * 0.4)) then {
+			private _civPosition = _filteredCivPositions select ((_h - 1) mod _posCount);
+			[_civPosition, true, [], true] call _createHostileCivUnit;
 		};
 	};
 };
+
 }; // end if (_posCount > 0)
 
 // Create market bustle
@@ -398,11 +374,11 @@ if (count civCarClasses > 0) then {
 	};
 };
 
+diag_log format ["DRO: ModuleCivilianPresence_F init — useAgents=%1, civiliansAsAgents=%2", _useAgents, civiliansAsAgents];
 private _modCivs = (createGroup centerSide) createUnit ["ModuleCivilianPresence_F", _AOPos, [], 0, "FORM"];
 _modCivs setVariable ["#unitCount", _modUnitCount, true];
 // M7 fix: área aumentada de AOSize/2 para AOSize*0.75 — civis se espalham mais
 _modCivs setVariable ["objectarea", [(_AOSize * 0.75), (_AOSize * 0.75), 0, false, -1], true];
-_modCivs setVariable ["#onCreated", {[_this] call DRO_fnc_civDeathHandler}, true];
 _modCivs setVariable ["#useAgents", _useAgents, true];
 _modCivs setVariable ["#usePanicMode", true, true];
 _modCivs setVariable ["DRO_uniformList", _C_uniformList];
@@ -412,13 +388,16 @@ _modCivs setVariable ["DRO_speakers", _C_speakers];
 _modCivs setVariable ["DRO_faces", _C_faces];
 _modCivs setVariable ["DRO_headgearList", _C_headgearList];
 _modCivs setVariable ["DRO_vestList", _C_vestList];
+// M8 fix: #onCreated definido UMA vez (antes estava duplicado, linha 381 era sobrescrita pela 391)
 _modCivs setVariable ["#onCreated", {
-	removeAllItems _this;	
+	// Diagnostic: confirm agent vs unit creation
+	diag_log format ["DRO: Civilian spawned — isAgent=%1, group=%2, typeOf=%3", (isNull (group _this)), group _this, typeOf _this];
+	removeAllItems _this;
 	removeVest _this;
 	removeHeadgear _this;
 	removeUniform _this;
 	_module = (_this getVariable "#core");
-	[_this, (selectRandom (_module getVariable "DRO_firstNames")), (selectRandom (_module getVariable "DRO_lastNames")), (selectRandom (_module getVariable "DRO_speakers")), (selectRandom (_module getVariable "DRO_faces"))] remoteExec ["DRO_fnc_setNameMP", 0, true];		
+	[_this, (selectRandom (_module getVariable "DRO_firstNames")), (selectRandom (_module getVariable "DRO_lastNames")), (selectRandom (_module getVariable "DRO_speakers")), (selectRandom (_module getVariable "DRO_faces"))] remoteExec ["DRO_fnc_setNameMP", 0, true];
 	_this addUniform (selectRandom (_module getVariable "DRO_uniformList"));
 	if (random 1 > 0.6) then {_this addHeadgear (selectRandom (_module getVariable "DRO_headgearList"))};
 	if (random 1 > 0.3) then {_this addVest (selectRandom (_module getVariable "DRO_vestList"))};

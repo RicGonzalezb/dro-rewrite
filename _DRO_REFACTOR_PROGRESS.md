@@ -1247,6 +1247,29 @@ Demais variáveis de `start.sqf` são seguras: ou têm `publicVariable` (broadca
 
 ---
 
+### Bug #11 — Civis clustering em spawn points + diagnóstico agents vs units
+
+**Sintoma:** Civis se aglomeravam no mesmo ponto ("civilian presence spawn point"), empilhando-se dentro e fora de prédios. Além disso, civis estavam sendo criados como units (com grupo) em vez de agents, mesmo com a opção de agents ligada.
+
+**Causa raiz (clustering):** O loop de spawn criava `ModuleCivilianPresenceUnit_F` + `ModuleCivilianPresenceSafeSpot_F` **por civil**, não por posição. Com `_numCivs=6` e `_posCount=3`, as posições reciclavam via `mod`, empilhando 2+ spawn points e safe spots no mesmo ponto. Os 4 switch cases (NameVillage, NameCity, NameCityCapital, NameLocal) tinham o mesmo pattern duplicado.
+
+**Fix clustering:**
+- Spawn points + safe spots criados **uma vez por posição filtrada** (`forEach _filteredCivPositions`), fora do switch
+- Switch refatorado para definir apenas `_numCivs` e `_modUnitCount`
+- Hostile civs mantidos no loop separado (precisam de posições individuais)
+
+**Causa raiz (agents — pendente diagnóstico):**
+- `#onCreated` estava definido DUAS VEZES — linha 381 (simples) era sobrescrita pela linha 391 (complexa). Removida a duplicata.
+- Adicionado `diag_log` no `#onCreated` para confirmar se `isNull (group _this)` (true = agent, false = unit)
+- Adicionado `diag_log` antes da criação do módulo mostrando `_useAgents` e `civiliansAsAgents`
+- Se os logs confirmarem que o módulo BIS ignora `#useAgents`, será necessário workaround
+
+| Arquivo | Mudança |
+|---------|---------|
+| `sunday_system/civilians/generateCivilians.sqf` | Spawn points 1x por posição, switch refatorado, `#onCreated` deduplicado, diag_log agents |
+
+---
+
 ### Feature — Corridor Civilians (Extended AO)
 
 **Descrição:** Quando Extended AO está ativo (`count AOLocations > 1`), civis pacíficos são spawnados em vilas e localidades **entre** as AOs, fazendo o mapa parecer mais vivo fora das zonas de combate.
