@@ -599,10 +599,14 @@ if (civiliansEnabled == 1 || civiliansEnabled == 2) then {
 				_civSpawn = [_forEachIndex] execVM "sunday_system\civilians\generateCivilians.sqf";
 				_scripts pushBack _civSpawn;
 			} forEach AOLocations;			
-			//waitUntil {({!scriptDone _x} count _scripts) == 0};			
-			if (random 1 > 0.3) then {				
-				[] execVM "sunday_system\intel\addCivilianIntel.sqf";				
-			};					
+			//waitUntil {({!scriptDone _x} count _scripts) == 0};
+			// Corridor civilians between AOs (Extended AO only)
+			if (count AOLocations > 1) then {
+				[] execVM "sunday_system\civilians\generateCorridorCivilians.sqf";
+			};
+			if (random 1 > 0.3) then {
+				[] execVM "sunday_system\intel\addCivilianIntel.sqf";
+			};
 		};
 };
 

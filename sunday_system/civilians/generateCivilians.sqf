@@ -10,24 +10,9 @@ patrolGroups = [];
 private _useAgents = (civiliansAsAgents == 0);
 diag_log format ["DRO: Civilians as Agents = %1", _useAgents];
 
-_createCivUnit = {
-	params ["_pos", "_module", ["_customClasses", civClasses]];
-	_civType = selectRandom _customClasses;
-	_group = createGroup civilian;
-	if (_useAgents) then {
-		_unit = createAgent [_civType, _pos, [], 0, "NONE"];
-	} else {
-		_unit = _group createUnit [_civType, _pos, [], 0, "NONE"];
-	};
-	_unit setVariable ["#core", _module];
-	_unit setBehaviour "CARELESS";
-	_unit execFSM "A3\Modules_F_Tacops\Ambient\CivilianPresence\FSM\behavior.fsm";
-	_module setVariable ["#units", ((_module getVariable ["#units", []]) + [_unit])];
-	[_unit] call DRO_fnc_civDeathHandler;
-	// Currently civilians don't always exit dynamic simulation correctly
-	//_group enableDynamicSimulation true;
-	_group
-};
+// _createCivUnit REMOVIDO (M8 cleanup) — era código morto, nunca chamado.
+// Civis regulares são criados pelo módulo ModuleCivilianPresence_F (usa #useAgents).
+// Civis hostis usam _createHostileCivUnit (precisa de grupo para waypoints/combate).
 
 // M7 fix: hostis SOMENTE com civiliansEnabled == 2 (enabled & hostile)
 // civiliansEnabled == 1 (enabled) → sem hostis
@@ -414,7 +399,7 @@ if (count civCarClasses > 0) then {
 };
 
 private _modCivs = (createGroup centerSide) createUnit ["ModuleCivilianPresence_F", _AOPos, [], 0, "FORM"];
-_modCivs setVariable ["#unitCount", 0, true];
+_modCivs setVariable ["#unitCount", _modUnitCount, true];
 // M7 fix: área aumentada de AOSize/2 para AOSize*0.75 — civis se espalham mais
 _modCivs setVariable ["objectarea", [(_AOSize * 0.75), (_AOSize * 0.75), 0, false, -1], true];
 _modCivs setVariable ["#onCreated", {[_this] call DRO_fnc_civDeathHandler}, true];
