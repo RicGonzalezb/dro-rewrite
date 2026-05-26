@@ -1198,102 +1198,6 @@ Missão completa sem erros. Civis spawnando espalhados. Hostis respeitando parâ
 
 ---
 
-### Bug #9 — `dro_messageStack` undefined em dedicated server (múltiplos arquivos)
-
-**Sintoma:** Erro `Undefined variable in expression: dro_messagestack` em `fn_sendProgressMessage.sqf` linha 146 ao revelar intel com civil informante, e em `heliExtract.sqf` linha 79 ao chamar extração de helicóptero. Ocorre exclusivamente em servidor dedicado.
-
-**Causa raiz:** `dro_messageStack` é inicializado em `start.sqf` (linha 81) que roda **apenas no servidor**. 13 arquivos fazem `dro_messageStack pushBack` diretamente, e quando esses scripts rodam no **cliente** (buscar intel, chamar suporte, etc.), a variável não existe. Em hosted server não ocorre porque o host é servidor e cliente ao mesmo tempo.
-
-**Fix aplicado:**
-- `fn_sendProgressMessage.sqf` — guard `isNil "dro_messageStack"` no início da função (cobre todas as chamadas via `DRO_fnc_sendProgressMessage`)
-- `initPlayerLocal.sqf` — inicializa `dro_messageStack = []` em todo cliente ao conectar (cobre os 13 arquivos que fazem `pushBack` diretamente)
-
-**Prevenção adicional — variáveis server-only usadas em contexto de cliente:**
-
-Auditoria completa das variáveis de `start.sqf` sem `publicVariable`. Guards adicionados em `fn_sendProgressMessage.sqf`:
-
-| Case | Variável | Guard |
-|------|----------|-------|
-| `END_RENDEZVOUS` | `friendlySquad` | `isNil "friendlySquad"` exitWith |
-| `END_RENDEZVOUS_FAIL` | `friendlySquad` | `isNil "friendlySquad"` exitWith |
-| `END_HOLD` | `holdAO` | `isNil "holdAO" \|\| count holdAO < 6` exitWith |
-
-Demais variáveis de `start.sqf` são seguras: ou têm `publicVariable` (broadcast para clientes), ou só são usadas em scripts server-only.
-
-| Arquivo | Mudança |
-|---------|---------|
-| `functions/fn_sendProgressMessage.sqf` | Guard `dro_messageStack` init + guards `friendlySquad`/`holdAO` nos cases END_* |
-| `initPlayerLocal.sqf` | Init `dro_messageStack = []` em todo cliente |
-
----
-
-### Bug #10 — generateCivilians.sqf: código morto `_createCivUnit` + `#unitCount` = 0
-
-**Sintoma:** Função `_createCivUnit` (linhas 13-30) criava `createGroup civilian` para cada civil, inclusive para agents (grupo ficava vazio/desperdiçado). Além disso, o módulo `ModuleCivilianPresence_F` recebia `#unitCount = 0` enquanto `_modUnitCount` era calculado (15/20/25/30 por tipo de localização) mas nunca aplicado.
-
-**Causa raiz:**
-- `_createCivUnit` era código morto — definida mas **nunca chamada** em nenhum arquivo da missão. Os civis regulares são todos criados pelo módulo `ModuleCivilianPresence_F` do engine (que já respeita `#useAgents`).
-- `#unitCount = 0` era um bug: a variável `_modUnitCount` era calculada corretamente nos switch cases (NameVillage=20, NameCity=25, NameCityCapital=30, NameLocal=15) mas nunca passada ao módulo.
-
-**Fix aplicado:**
-- `_createCivUnit` removido (substituído por comentário explicativo)
-- `#unitCount` corrigido de `0` para `_modUnitCount`
-
-**Nota sobre civis hostis:** `_createHostileCivUnit` mantém `createGroup` porque precisa de grupo para waypoints e comportamento de combate. Cada hostil fica isolado no seu próprio grupo (1 integrante), correto para indivíduos hostis.
-
-| Arquivo | Mudança |
-|---------|---------|
-| `sunday_system/civilians/generateCivilians.sqf` | Removido `_createCivUnit` (código morto) + corrigido `#unitCount` de `0` para `_modUnitCount` |
-
----
-
-### Bug #11 — Civis clustering em spawn points + diagnóstico agents vs units
-
-**Sintoma:** Civis se aglomeravam no mesmo ponto ("civilian presence spawn point"), empilhando-se dentro e fora de prédios. Além disso, civis estavam sendo criados como units (com grupo) em vez de agents, mesmo com a opção de agents ligada.
-
-**Causa raiz (clustering):** O loop de spawn criava `ModuleCivilianPresenceUnit_F` + `ModuleCivilianPresenceSafeSpot_F` **por civil**, não por posição. Com `_numCivs=6` e `_posCount=3`, as posições reciclavam via `mod`, empilhando 2+ spawn points e safe spots no mesmo ponto. Os 4 switch cases (NameVillage, NameCity, NameCityCapital, NameLocal) tinham o mesmo pattern duplicado.
-
-**Fix clustering:**
-- Spawn points + safe spots criados **uma vez por posição filtrada** (`forEach _filteredCivPositions`), fora do switch
-- Switch refatorado para definir apenas `_numCivs` e `_modUnitCount`
-- Hostile civs mantidos no loop separado (precisam de posições individuais)
-
-**Causa raiz (agents — pendente diagnóstico):**
-- `#onCreated` estava definido DUAS VEZES — linha 381 (simples) era sobrescrita pela linha 391 (complexa). Removida a duplicata.
-- Adicionado `diag_log` no `#onCreated` para confirmar se `isNull (group _this)` (true = agent, false = unit)
-- Adicionado `diag_log` antes da criação do módulo mostrando `_useAgents` e `civiliansAsAgents`
-- Se os logs confirmarem que o módulo BIS ignora `#useAgents`, será necessário workaround
-
-| Arquivo | Mudança |
-|---------|---------|
-| `sunday_system/civilians/generateCivilians.sqf` | Spawn points 1x por posição, switch refatorado, `#onCreated` deduplicado, diag_log agents |
-
----
-
-### Feature — Corridor Civilians (Extended AO)
-
-**Descrição:** Quando Extended AO está ativo (`count AOLocations > 1`), civis pacíficos são spawnados em vilas e localidades **entre** as AOs, fazendo o mapa parecer mais vivo fora das zonas de combate.
-
-**Comportamento:**
-- Ativo APENAS com Extended AO (múltiplas AOs) — single AO não executa o script
-- Para cada par de AOs, calcula o ponto médio e busca vilas/localidades num raio de 1/3 da distância (300m–1500m)
-- Filtra localidades que já estão dentro de uma AO existente (evita duplicar civis)
-- Filtra duplicatas (mesma vila encontrada em múltiplos corredores)
-- Cap de 5 localidades de corredor para não impactar performance
-- Usa agents ou units conforme a opção `civiliansAsAgents`
-- Civis pacíficos apenas — sem hostis, sem inimigos
-- Unit count reduzido: Villages 4-7, NameLocal 2-4 (vs 15-30 nas AOs)
-- Spawn points baseados em roads + buildings da localidade, com 30m de distância mínima entre pontos
-- Safe spots criados nos buildings para comportamento natural
-- Death handler (`DRO_fnc_civDeathHandler`) aplicado via `#onCreated`
-
-| Arquivo | Mudança |
-|---------|---------|
-| `sunday_system/civilians/generateCorridorCivilians.sqf` | **NOVO** — script de civis de corredor entre AOs |
-| `start.sqf` | Chamada `execVM` do corridor script dentro do bloco `civiliansEnabled`, condicionada a `count AOLocations > 1` |
-
----
-
 ### Status final do projeto
 
 | Fase | Descrição | Status |
@@ -1305,7 +1209,7 @@ Demais variáveis de `start.sqf` são seguras: ou têm `publicVariable` (broadca
 | M5 | start.sqf decomposition (7 funções, 1352→939 linhas) | ✅ |
 | M6 | Final audit, dead code cleanup, bug fixes | ✅ |
 | M7 | Smoke test hotfixes (geradores, reinforce, civis) | ✅ |
-| M8 | Feature "Civilians as Agents" + hotfixes garrison/intel/waypoints/dedicated server/civ spawn cleanup + corridor civs | ✅ |
+| M8 | Feature "Civilians as Agents" + hotfixes garrison/intel/waypoints | ✅ |
 
 ### Pendências conhecidas (não críticas)
 
