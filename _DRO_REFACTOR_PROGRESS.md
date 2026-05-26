@@ -1209,7 +1209,63 @@ Missão completa sem erros. Civis spawnando espalhados. Hostis respeitando parâ
 | M5 | start.sqf decomposition (7 funções, 1352→939 linhas) | ✅ |
 | M6 | Final audit, dead code cleanup, bug fixes | ✅ |
 | M7 | Smoke test hotfixes (geradores, reinforce, civis) | ✅ |
-| M8 | Feature "Civilians as Agents" + hotfixes garrison/intel/waypoints | ✅ |
+| M8 | Feature "Civilians as Agents" + hotfixes garrison/intel/waypoints + civ spawn cleanup | ✅ |
+
+### Bug #10 — `_createCivUnit` código morto + `#unitCount` hardcoded em 0
+
+**Sintoma:** `_createCivUnit` era definido (linhas 13-30) mas nunca chamado em lugar nenhum — código morto. `_modUnitCount` era calculado corretamente (15/20/25/30) pelo switch, mas `#unitCount` era hardcoded em `0` — o módulo BIS nunca recebia o valor correto.
+
+**Fix aplicado:**
+- Removido `_createCivUnit` inteiro (dead code)
+- `#unitCount` alterado de `0` para `_modUnitCount`
+
+---
+
+### Bug #11 — Civis clustering em spawn points + `#onCreated` duplicado
+
+**Sintoma:** Múltiplos `ModuleCivilianPresenceUnit_F` (spawn points) criados na mesma posição. Com `_numCivs=6` e `_posCount=3`, cada posição recebia 2 spawn points empilhados. O `#onCreated` era setado 2x (linha 420 com `civDeathHandler`, sobrescrito na 430 com customização completa) — a primeira definição era desperdiçada.
+
+**Fix aplicado:**
+- Spawn points movidos para FORA do loop per-civilian: `forEach _filteredCivPositions` cria 1 spawn point + 1 safe spot por posição única
+- Switch refatorado: cada case agora só define `_numCivs` e `_modUnitCount` (código duplicado eliminado)
+- Civis hostis continuam usando loop separado
+- `#onCreated` duplicado removido — apenas a definição completa (com customização de uniforme/nome) é mantida
+- Adicionado `diag_log` diagnóstico dentro do `#onCreated` para monitorar `isAgent` vs unit
+
+---
+
+### Investigação Zeus — Interface não abre
+
+**Sintoma:** Após aplicar commits de corredor + clustering fix, a interface Zeus parava de abrir (tecla Y não respondia).
+
+**Diagnóstico:**
+- RPT analisado: zero erros de script da missão
+- Missão não tem `ModuleCurator_F` no `mission.sqm` nem `assignCurator` ativo — depende 100% do Zeus Enhanced (ZEN)
+- Revert dos 2 commits (corredor + clustering) restaurou o Zeus
+- Reaplicação apenas dos bug fixes (#10, #11) sem o corredor — **pendente teste**
+
+**Conclusão provisória:** O script `generateCorridorCivilians.sqf` provavelmente interfere com o Zeus Enhanced via excesso de entidades `sideLogic` (grupos + módulos) ou conflito com `createCenter sideLogic`. Feature de corredor suspensa até investigação mais profunda.
+
+---
+
+### Feature suspensa: Corridor Civilians (Extended AO)
+
+**Objetivo:** Spawnar civis em vilas/hamlets entre AOs quando Extended AO está ativo, para que o mapa pareça mais "vivo" fora das áreas de objetivo.
+
+**Status:** Implementado e testado, mas causou conflito com Zeus Enhanced (interface não abria). Revertido. Código original disponível no histórico git (commit `0571c14`).
+
+**Design documentado (para reimplementação futura):**
+- Só ativa quando `count AOLocations > 1` (Extended AO ligado)
+- Para cada par de AOs: calcula midpoint, busca `nearestLocations` num raio de corredor (1/3 da distância, clamp 300-1500m)
+- Filtra locações dentro de AOs existentes, deduplica, cap em 5 locações
+- Por locação: coleta spawn positions de roads + buildings (30m min spacing), cria spawn points, safe spots em buildings (max 4), controller `ModuleCivilianPresence_F`
+- Unit count mais leve que AO civs: NameVillage 4-7, NameLocal 2-4
+- Respeita `civiliansAsAgents`, aplica `DRO_fnc_civDeathHandler`
+- Chamada em `start.sqf` após geração de civis das AOs
+
+**Hipótese do conflito:** O `createCenter sideLogic` e a criação de múltiplos grupos/módulos Logic pelo corredor podem interferir com como o Zeus Enhanced gerencia seu curator module. Investigar: (1) usar o `centerSide` já existente em vez de criar novo, (2) limitar quantidade de grupos Logic, (3) testar com Zeus vanilla em vez de ZEN.
+
+---
 
 ### Pendências conhecidas (não críticas)
 
