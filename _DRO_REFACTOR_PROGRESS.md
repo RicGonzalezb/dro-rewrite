@@ -1198,6 +1198,50 @@ Missão completa sem erros. Civis spawnando espalhados. Hostis respeitando parâ
 
 ---
 
+### Bug #10 — `_createCivUnit` código morto + `#unitCount` hardcoded em 0
+
+**Sintoma:** `_createCivUnit` era definido (linhas 13-30) mas nunca chamado — código morto que criava grupos desnecessários. `_modUnitCount` era calculado corretamente (15/20/25/30) pelo switch, mas `#unitCount` era hardcoded em `0`.
+
+**Fix:** Removido `_createCivUnit`. `#unitCount` alterado de `0` para `_modUnitCount`.
+
+---
+
+### Bug #11 — Civis clustering em spawn points + `#onCreated` duplicado
+
+**Sintoma:** Múltiplos spawn points (`ModuleCivilianPresenceUnit_F`) criados na mesma posição. Com `_numCivs=6` e `_posCount=3`, posições 0,1,2 recebiam 2 spawn points cada (duplicatas via `mod`). `#onCreated` era setado 2x — primeira definição (apenas `civDeathHandler`) sobrescrita pela segunda (customização completa).
+
+**Fix (v3 — após 2 tentativas que quebravam Zeus Enhanced):**
+- Switch refatorado: cada case agora só define `_numCivs` e `_modUnitCount`
+- Spawn points criados para `min(_numCivs, _posCount)` posições únicas — sem duplicatas E sem excesso
+- `#onCreated` duplicado removido — apenas a definição completa é mantida
+- Diagnóstico `diag_log` adicionado no `#onCreated` para monitorar `isAgent`
+
+**IMPORTANTE — Lição aprendida (Zeus Enhanced):**
+O fix v1 criava spawn points para TODAS as posições filtradas (`forEach _filteredCivPositions` — 60-75 por AO). Com 6 AOs, ~400+ entidades `sideLogic` eram criadas, o que impedia o Zeus Enhanced de abrir sua interface. O fix v2 (corredor + fix v1) agravava ainda mais. O fix v3 limita spawn points a `min(_numCivs, _posCount)` — tipicamente 3-8 por AO, compatível com Zeus.
+
+**Regra para futuras features:** Manter entidades `sideLogic` (grupos + módulos em `createGroup centerSide`) no mínimo possível. Zeus Enhanced é sensível à quantidade de Logic entities.
+
+---
+
+### Feature suspensa: Corridor Civilians (Extended AO)
+
+**Objetivo:** Spawnar civis em vilas/hamlets entre AOs quando Extended AO está ativo, para que o mapa pareça mais "vivo".
+
+**Status:** Implementado e testado, mas contribuiu para o problema de excesso de Logic entities que quebrava Zeus. Revertido. Código original disponível no git (commit `0571c14`).
+
+**Design (para reimplementação):**
+- Só ativa quando `count AOLocations > 1` (Extended AO)
+- Para cada par de AOs: midpoint, `nearestLocations` em raio 1/3 da distância (clamp 300-1500m)
+- Filtra locações dentro de AOs, deduplica, cap 5 locações
+- Por locação: spawn positions de roads + buildings (30m spacing), spawn points, safe spots (max 4), controller
+- Unit count leve: NameVillage 4-7, NameLocal 2-4
+- Respeita `civiliansAsAgents`, aplica `DRO_fnc_civDeathHandler`
+- Chamada em `start.sqf` após civis das AOs
+
+**Para reimplementar:** Usar o `centerSide` já existente (não criar novo com `createCenter sideLogic`). Limitar spawn points a `min(_numCivs, posCount)` seguindo a mesma regra do fix v3. Testar Zeus após cada AO de corredor adicionada.
+
+---
+
 ### Status final do projeto
 
 | Fase | Descrição | Status |
@@ -1209,7 +1253,7 @@ Missão completa sem erros. Civis spawnando espalhados. Hostis respeitando parâ
 | M5 | start.sqf decomposition (7 funções, 1352→939 linhas) | ✅ |
 | M6 | Final audit, dead code cleanup, bug fixes | ✅ |
 | M7 | Smoke test hotfixes (geradores, reinforce, civis) | ✅ |
-| M8 | Feature "Civilians as Agents" + hotfixes garrison/intel/waypoints | ✅ |
+| M8 | Feature "Civilians as Agents" + hotfixes garrison/intel/waypoints + civ spawn cleanup | ✅ |
 
 ### Pendências conhecidas (não críticas)
 
