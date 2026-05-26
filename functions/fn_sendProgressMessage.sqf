@@ -1,7 +1,5 @@
 // Migrated from DRO_fnc_sendProgressMessage — M3 CfgFunctions migration
-params ["_message", ["_sender", "Command"], ["_data", []], ["_playAudio", true]];
-// Guard: ensure dro_messageStack exists (may not be initialized yet on this client)
-if (isNil "dro_messageStack") then { dro_messageStack = []; };
+params ["_message", ["_sender", "Command"], ["_data", []], ["_playAudio", true]];	
 	//sleep (random [1, 2, 1.5]);
 	/*
 	if (!isNil "bis_fnc_showsubtitle_subtitle") then {
@@ -177,8 +175,7 @@ if (isNil "dro_messageStack") then { dro_messageStack = []; };
 				_playAudio
 			];				
 		};
-		case "END_RENDEZVOUS": {
-			if (isNil "friendlySquad") exitWith {};
+		case "END_RENDEZVOUS": {			
 			_phrase = selectRandom [
 				(format ["Alright %1, rendezvous with %2 then make your way out of the AO.", playerCallsign, groupId friendlySquad]),
 				(format ["That's everything %1, rendezvous with %2 before you leave the AO.", playerCallsign, groupId friendlySquad])
@@ -190,10 +187,9 @@ if (isNil "dro_messageStack") then { dro_messageStack = []; };
 				_playAudio
 			];				
 		};
-		case "END_RENDEZVOUS_FAIL": {
-			if (isNil "friendlySquad") exitWith {};
+		case "END_RENDEZVOUS_FAIL": {			
 			_phrase = selectRandom [
-				(format ["We've lost contact with %1! Proceed to extraction and we'll send a recovery team to find them.", groupId friendlySquad])
+				(format ["We've lost contact with %1! Proceed to extraction and we'll send a recovery team to find them.", groupId friendlySquad])				
 			];
 			dro_messageStack pushBack [
 				[
@@ -202,8 +198,7 @@ if (isNil "dro_messageStack") then { dro_messageStack = []; };
 				_playAudio
 			];			
 		};
-		case "END_HOLD": {
-			if (isNil "holdAO" || {count holdAO < 6}) exitWith {};
+		case "END_HOLD": {			
 			_phrase = selectRandom [
 				(format ["Alright %1, we need you to assist taking and holding %2. All units are go and the command has been given to secure the area.", playerCallsign, (text (holdAO select 5))]),
 				(format ["Tasking complete %1. Your orders are now to assist the push to take and hold %2. All units are moving to secure the area.", playerCallsign, (text (holdAO select 5))])

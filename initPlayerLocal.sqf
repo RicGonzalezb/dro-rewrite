@@ -18,8 +18,6 @@ if (!hasInterface || isDedicated) exitWith {};
 player setVariable ['startReady', false, true];
 playerCameraView = cameraView;
 loadoutSavingStarted = false;
-// Ensure dro_messageStack exists on every client (initialized on server in start.sqf)
-if (isNil "dro_messageStack") then { dro_messageStack = []; };
 
 fnc_missionText = {
 	// Mission info readout

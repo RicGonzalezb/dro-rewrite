@@ -6,10 +6,6 @@ class EditorData
 	scaleGridStep=1;
 	autoGroupingDist=10;
 	toggles=513;
-	mods[]=
-	{
-		"3denEnhanced"
-	};
 	class ItemIDProvider
 	{
 		nextID=1224;
@@ -24,7 +20,7 @@ class EditorData
 	};
 	class Camera
 	{
-		pos[]={6851.1592,312.9924,1028.4753};
+		pos[]={6849.4722,303.73596,1061.3319};
 		dir[]={-0.17764208,-0.48835248,0.85438824};
 		up[]={-0.099411115,0.87264848,0.47812822};
 		aside[]={0.9790718,-4.6661444e-07,0.20356658};
@@ -372,8 +368,6 @@ class Mission
 		forecastWind=0.099999994;
 		forecastWaves=0.099999994;
 		forecastLightnings=0.099999994;
-		wavesForced=1;
-		windForced=1;
 		year=2035;
 		month=6;
 		day=24;

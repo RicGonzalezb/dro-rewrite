@@ -19,7 +19,7 @@ _thisBuilding = _this select 0;
 			if (!isNil "_group" && {!isNull _group} && {count (units _group) > 0}) then {
 				private _unit = ((units _group) select 0);
 				_unit setUnitPos "UP";
-				if (isNil "_leader") then {
+				if (_garrisonCounter == 0) then {
 					_leader = _unit;
 				} else {
 					[_unit] joinSilent _leader;
@@ -34,4 +34,4 @@ _thisBuilding = _this select 0;
 		enemySemiAlertableGroups pushBack (group _leader);
 	};
 	enemyPosCollection pushBack (getPos _thisBuilding);
-	if (!isNil "_leader") then {group _leader} else {grpNull}
+	group _leader

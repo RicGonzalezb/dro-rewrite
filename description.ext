@@ -3,11 +3,6 @@
 #include "sunday_system\dialogs\dialogsMainMenu.hpp"
 #include "sunday_system\dialogs\dialogsLobby.hpp"
 
-author			= "mbrdrm, chazbotic & Major_Greybeard";
-onLoadName		= "DYNAMIC RECON OPS - REWRITE";
-onLoadMission	= "Perform recon operations around a random location. Mission by mbrdrm, ACE compatibility added by chazbotic, rewritten by Major_Greybeard";
-
-
 enableDebugConsole = 1;
 allowFunctionsLog = 1;
 
