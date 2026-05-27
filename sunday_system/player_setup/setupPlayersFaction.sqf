@@ -644,8 +644,11 @@ switch (insertType) do {
 						} forEach _magazines;	
 					} forEach (units (grpNetId call BIS_fnc_groupFromNetId));
 					
-					["AmmoboxInit", [_box, true]] spawn BIS_fnc_arsenal;
-					[_box, true] call ACE_arsenal_fnc_initBox;
+					if (isClass (configFile >> "CfgPatches" >> "ace_main")) then {
+						[_box, player, true] call ACE_arsenal_fnc_openBox;
+					} else {
+						["AmmoboxInit", [_box, true]] spawn BIS_fnc_arsenal;
+					};				
 					[_box] spawn {
 						waitUntil {(missionNameSpace getVariable ["playersReady", 0]) == 1};
 						[(_this select 0)] call sun_supplyBox;

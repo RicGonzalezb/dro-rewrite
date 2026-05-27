@@ -42,6 +42,15 @@ markerArsenal setMarkerColor markerColorPlayers;
 markerArsenal setMarkerType "mil_flag";
 markerArsenal setMarkerText "Arsenal";
 
-[_arsenal, ["Arsenal", "['Open', true] call BIS_fnc_arsenal", nil, 6]] remoteExec ["addAction", 0];
+if (isClass (configFile >> "CfgPatches" >> "ace_main")) then {
+	[_arsenal, true, true] call ace_arsenal_fnc_initBox;
+	_arsenal addAction ["Arsenal", "[(_this select 0), (_this select 1), true] call ace_arsenal_fnc_openBox", nil, 6];
+	
+} else {
+	[_arsenal, ["Arsenal", "['Open', true] call BIS_fnc_arsenal", nil, 6]] remoteExec ["addAction", 0];
+};	
 
-[_arsenal, true, true] call ACE_arsenal_fnc_initBox;
+
+
+
+//[_arsenal, true, true] call ACE_arsenal_fnc_initBox;

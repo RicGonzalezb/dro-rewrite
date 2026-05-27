@@ -240,7 +240,7 @@ if (!isNil "firstLobbyOpen") then {
 // Destroy camera and allow player control if lobby isn't complete and dialog is exited
 waitUntil {!dialog};
 if (((missionNameSpace getVariable "lobbyComplete") != 1)) then {	
-	if (isNull (uiNamespace getVariable ["BIS_fnc_arsenal_cam", objNull ])) then {
+	if (isNull (uiNamespace getVariable ["BIS_fnc_arsenal_cam", objNull ]) || isNull (findDisplay 1127001)) then {
 		if (!visibleMap) then {
 			camLobby cameraEffect ["terminate","back"];
 			camUseNVG false;

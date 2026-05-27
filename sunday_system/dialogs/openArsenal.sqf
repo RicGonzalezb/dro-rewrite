@@ -29,11 +29,27 @@ if (!isNull (_this select 0)) then {
 	};
 	
 	// Open arsenal
-	["Open", true] call BIS_fnc_arsenal;
+	if (isClass (configFile >> "CfgPatches" >> "ace_main")) then {
+		closeDialog 1;
+		[_unit, _unit, true] call ACE_arsenal_fnc_openBox;
+		systemChat "Clicou";
+		
+		waitUntil {sleep 0.02;  !isNull (findDisplay 1127001)};
+		systemChat "Abriu Arsenal";
+		
+		waitUntil {sleep 0.02;  isNull (findDisplay 1127001)};
+		systemChat "FECHOU Arsenal";
+		
+	} else {
+		["Open", true] call BIS_fnc_arsenal;		
+		
+		waitUntil {sleep 0.02; !isNull ( uiNamespace getVariable [ "BIS_fnc_arsenal_cam", objNull ])};
 	
-	waitUntil {!isNull ( uiNamespace getVariable [ "BIS_fnc_arsenal_cam", objNull ] )};
+		waitUntil {sleep 0.02; isNull ( uiNamespace getVariable [ "BIS_fnc_arsenal_cam", objNull ] )};
+	};	
+		
 	
-	waitUntil {isNull ( uiNamespace getVariable [ "BIS_fnc_arsenal_cam", objNull ] )};
+	
 	
 	if (player != _oldUnit) then {
 		selectPlayer _oldUnit;

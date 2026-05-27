@@ -67,16 +67,55 @@ for "_i" from 0 to (count AOLocations - 2) do {
 	};
 };
 
-// Cap at 8 corridor locations (raised from 5 — direct spawn is cheaper than BIS module)
-if (count _corridorLocations > 8) then {
-	_corridorLocations resize 8;
+diag_log format ["DRO: Phase 1 (corridors) found %1 locations", count _corridorLocations];
+
+// --- Phase 1b: Find nearby locations around each AO (satellite villages) ---
+// Catches villages close to an AO but outside its radius — not covered by
+// generateCivilians.sqf (which only spawns inside AOSize) nor by Phase 1
+// (which only searches between AO pairs).
+
+{
+	private _aoPos = _x;
+	private _aoSize = _aoSizes select _forEachIndex;
+	private _searchRadius = _aoSize + 800;
+
+	private _nearLocs = nearestLocations [_aoPos, ["NameLocal", "NameVillage"], _searchRadius];
+
+	{
+		private _locPos = getPos _x;
+		private _locName = text _x;
+
+		// Must be OUTSIDE the AO radius (inside is already covered by generateCivilians)
+		private _distToAO = _locPos distance2D _aoPos;
+		if (_distToAO < _aoSize) then { continue };
+
+		// Must not be inside ANY other AO either
+		private _insideOtherAO = false;
+		{
+			if (_locPos distance2D _x < (_aoSizes select _forEachIndex)) exitWith { _insideOtherAO = true };
+		} forEach _aoPositions;
+
+		if (!_insideOtherAO && !(_locName in _usedLocationNames)) then {
+			_corridorLocations pushBack _x;
+			_usedLocationNames pushBack _locName;
+			diag_log format ["DRO: Satellite location found: %1 (%2) at %3 [near AO %4, dist=%5m]",
+				_locName, type _x, _locPos, _forEachIndex, round _distToAO];
+		};
+	} forEach _nearLocs;
+} forEach _aoPositions;
+
+diag_log format ["DRO: Phase 1+1b total: %1 locations", count _corridorLocations];
+
+// Cap at 10 total locations (corridor + satellite)
+if (count _corridorLocations > 10) then {
+	_corridorLocations resize 10;
 };
 
 if (count _corridorLocations == 0) exitWith {
-	diag_log "DRO: No corridor locations found between AOs";
+	diag_log "DRO: No corridor/satellite locations found";
 };
 
-diag_log format ["DRO: Found %1 corridor locations for direct civilian spawn", count _corridorLocations];
+diag_log format ["DRO: Found %1 locations for direct civilian spawn", count _corridorLocations];
 
 // --- Phase 2: Spawn civilians directly at each corridor location ---
 // No BIS module — just createAgent (or createUnit). Simple, reliable.
