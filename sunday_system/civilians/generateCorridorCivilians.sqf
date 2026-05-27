@@ -107,15 +107,17 @@ diag_log format ["DRO: Found %1 corridor locations for civilian presence", count
 		if (!_tooClose) then { _spawnPositions pushBack _rPos };
 	} forEach _roads;
 
-	// Buildings nearby
+	// Buildings nearby — only when units mode (agents can't navigate interiors)
 	private _buildings = _locPos nearObjects ["House", _areaSize];
-	{
-		if (count _spawnPositions >= 10) exitWith {};
-		private _bPos = getPos _x;
-		private _tooClose = false;
-		{ if (_bPos distance2D _x < 30) exitWith { _tooClose = true } } forEach _spawnPositions;
-		if (!_tooClose) then { _spawnPositions pushBack _bPos };
-	} forEach _buildings;
+	if (!_useAgents) then {
+		{
+			if (count _spawnPositions >= 10) exitWith {};
+			private _bPos = getPos _x;
+			private _tooClose = false;
+			{ if (_bPos distance2D _x < 30) exitWith { _tooClose = true } } forEach _spawnPositions;
+			if (!_tooClose) then { _spawnPositions pushBack _bPos };
+		} forEach _buildings;
+	};
 
 	// Fallback: at least the location center
 	if (count _spawnPositions == 0) then {
@@ -129,19 +131,22 @@ diag_log format ["DRO: Found %1 corridor locations for civilian presence", count
 	};
 
 	// Create safe spots at buildings so civs have places to hang out (max 4)
-	{
-		if (_forEachIndex >= 4) exitWith {};
-		private _ssUnit = (createGroup centerSide) createUnit ["ModuleCivilianPresenceSafeSpot_F", (getPos _x), [], 0, "FORM"];
+	// M8: skip building safe spots when agents enabled — agents can't navigate interiors
+	if (!_useAgents) then {
 		{
-			_ssUnit setVariable [(_x select 0), (_x select 1), true];
-		} forEach [
-			["#useBuilding", true],
-			["#type", 1],
-			["#terminal", false],
-			["#capacity", 2],
-			["objectarea", [0.1, 0.1, 0, false, -1]]
-		];
-	} forEach _buildings;
+			if (_forEachIndex >= 4) exitWith {};
+			private _ssUnit = (createGroup centerSide) createUnit ["ModuleCivilianPresenceSafeSpot_F", (getPos _x), [], 0, "FORM"];
+			{
+				_ssUnit setVariable [(_x select 0), (_x select 1), true];
+			} forEach [
+				["#useBuilding", true],
+				["#type", 1],
+				["#terminal", false],
+				["#capacity", 1],
+				["objectarea", [0.1, 0.1, 0, false, -1]]
+			];
+		} forEach _buildings;
+	};
 
 	// Create the civilian presence controller
 	private _modCivs = (createGroup centerSide) createUnit ["ModuleCivilianPresence_F", _locPos, [], 0, "FORM"];

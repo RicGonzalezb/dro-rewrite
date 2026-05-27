@@ -204,19 +204,21 @@ private _percentToFill = 0.3;
 if (_numHouses < 9) then {_percentToFill = 0.5};
 _numHousesToFill = _numHouses * _percentToFill;
 if (_numHousesToFill > 10) then {_numHousesToFill = 10};
+// M8: agents can't navigate building interiors — skip building spawn points/safe spots when agents enabled
+if (!_useAgents) then {
 for "_i" from 1 to _numHousesToFill do {
 	private _thisHouse = [_filteredHouses] call DRO_fnc_selectRemove;
 	if (isNull _thisHouse) then { continue };
 	(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", (getPos _thisHouse), [], 0, "FORM"];
 	_totalSpawnPoints = _totalSpawnPoints + 1;
-	private _buildingPositions = [_thisHouse] call BIS_fnc_buildingPositions;	
+	private _buildingPositions = [_thisHouse] call BIS_fnc_buildingPositions;
 	// M7 fix: max 1 civ hostil por posição de building (antes spawnava até 3 no mesmo ponto)
 	{
 		if (random 1 > 0.5) then {
 			[_x, false, [], false] call _createHostileCivUnit;
 		};
 	} forEach _buildingPositions;
-	[(getPos _thisHouse), true, ((count _buildingPositions) - 1)] call _createSafeSpot;
+	[(getPos _thisHouse), true, 1] call _createSafeSpot;
 	if (_debug == 1) then {
 		_garMarker = createMarker [format["garMkr%1", random 10000], getPos _thisHouse];
 		_garMarker setMarkerShape "ICON";
@@ -224,7 +226,8 @@ for "_i" from 1 to _numHousesToFill do {
 		_garMarker setMarkerType "mil_dot";
 		_garMarker setMarkerText format ["Civ %1", (typeOf  _thisHouse)];
 	};
-};
+}; // end for _i (building loop)
+}; // end if (!_useAgents) — agents skip building interiors entirely
 
 _civPositions = (((AOLocations select _AOIndex) select 2) select 0) + (((AOLocations select _AOIndex) select 2) select 2) + (((AOLocations select _AOIndex) select 2) select 4);
 
