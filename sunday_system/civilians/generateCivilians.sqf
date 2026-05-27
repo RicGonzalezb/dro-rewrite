@@ -391,7 +391,28 @@ _modCivs setVariable ["#onCreated", {
 	if (random 1 > 0.6) then {_this addHeadgear (selectRandom (_module getVariable "DRO_headgearList"))};
 	if (random 1 > 0.3) then {_this addVest (selectRandom (_module getVariable "DRO_vestList"))};
 	[_this] call DRO_fnc_civDeathHandler;
-	diag_log format ["DRO: Civilian spawned — isAgent=%1, group=%2, typeOf=%3", (isNull (group _this)), group _this, typeOf _this];
+	// M8 fix: BIS module sometimes ignores #useAgents — force convert unit to agent
+	private _module = (_this getVariable "#core");
+	private _wantAgents = _module getVariable ["#useAgents", false];
+	if (_wantAgents && {!(isNull (group _this))}) then {
+		private _pos = getPos _this;
+		private _type = typeOf _this;
+		private _dir = getDir _this;
+		private _uniform = uniform _this;
+		private _headgear = headgear _this;
+		private _vest = vest _this;
+		deleteVehicle _this;
+		private _agent = createAgent [_type, _pos, [], 0, "NONE"];
+		_agent setDir _dir;
+		_agent setBehaviour "CARELESS";
+		if (_uniform != "") then { removeUniform _agent; _agent addUniform _uniform };
+		if (_headgear != "") then { _agent addHeadgear _headgear };
+		if (_vest != "") then { _agent addVest _vest };
+		[_agent] call DRO_fnc_civDeathHandler;
+		diag_log format ["DRO: Civilian CONVERTED unit→agent — typeOf=%1", _type];
+	} else {
+		diag_log format ["DRO: Civilian spawned — isAgent=%1, typeOf=%2", (isNull (group _this)), typeOf _this];
+	};
 }, true];
 ["init", [_modCivs]] call bis_fnc_moduleCivilianPresence;
 
