@@ -143,8 +143,10 @@ _createSafeSpot = {
 private _AOPos = ((AOLocations select _AOIndex) select 0);
 private _AOSize = ((AOLocations select _AOIndex) select 1);
 centerSide = createCenter sideLogic;
+private _totalSpawnPoints = 0;
 
 (createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _AOPos, [], 0, "FORM"];
+_totalSpawnPoints = _totalSpawnPoints + 1;
 
 private _customClasses = civClasses;
 if (civFaction == "CIV_F") then {
@@ -206,6 +208,7 @@ for "_i" from 1 to _numHousesToFill do {
 	private _thisHouse = [_filteredHouses] call DRO_fnc_selectRemove;
 	if (isNull _thisHouse) then { continue };
 	(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", (getPos _thisHouse), [], 0, "FORM"];
+	_totalSpawnPoints = _totalSpawnPoints + 1;
 	private _buildingPositions = [_thisHouse] call BIS_fnc_buildingPositions;	
 	// M7 fix: max 1 civ hostil por posição de building (antes spawnava até 3 no mesmo ponto)
 	{
@@ -281,6 +284,7 @@ _spawnCount = _numCivs min _posCount;
 for "_x" from 0 to (_spawnCount - 1) do {
 	private _civPosition = _filteredCivPositions select _x;
 	(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
+	_totalSpawnPoints = _totalSpawnPoints + 1;
 	[_civPosition, true, 2] call _createSafeSpot;
 };
 
@@ -314,7 +318,8 @@ if (_continue && !isNil "marketPositions") then {
 				};
 				if (_forEachIndex % 2 == 0) then {
 					(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _x, [], 0, "FORM"];
-					[_x, true, 2] call _createSafeSpot;				
+					_totalSpawnPoints = _totalSpawnPoints + 1;
+					[_x, true, 2] call _createSafeSpot;
 				};		
 			} forEach _thisMarketPositions;
 		} forEach marketPositions;
@@ -361,11 +366,11 @@ if (count civCarClasses > 0) then {
 };
 
 private _modCivs = (createGroup centerSide) createUnit ["ModuleCivilianPresence_F", _AOPos, [], 0, "FORM"];
-// M8 fix: unitCount must match spawnCount to avoid clustering (module tries to fill all slots at available points)
-_modCivs setVariable ["#unitCount", (_spawnCount max 1), true];
+// M8 fix: unitCount = total spawn points criados — 1 civ por ponto, sem clustering
+_modCivs setVariable ["#unitCount", (_totalSpawnPoints max 1), true];
 // M7 fix: área aumentada de AOSize/2 para AOSize*0.75 — civis se espalham mais
 _modCivs setVariable ["objectarea", [(_AOSize * 0.75), (_AOSize * 0.75), 0, false, -1], true];
-diag_log format ["DRO: ModuleCivilianPresence_F init — useAgents=%1, civiliansAsAgents=%2", _useAgents, civiliansAsAgents];
+diag_log format ["DRO: ModuleCivilianPresence_F init — useAgents=%1, unitCount=%2, totalSpawnPoints=%3", _useAgents, _totalSpawnPoints, _totalSpawnPoints];
 _modCivs setVariable ["#useAgents", _useAgents, true];
 _modCivs setVariable ["#usePanicMode", true, true];
 _modCivs setVariable ["DRO_uniformList", _C_uniformList];
