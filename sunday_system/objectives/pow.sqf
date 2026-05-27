@@ -52,6 +52,10 @@ switch (_powStyle) do {
 		};
 		
 		_group = [_powPos, playersSide, powClass, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
+		if (isNil "_group" || {isNull _group} || {count (units _group) == 0}) exitWith {
+			_break = true;
+			diag_log "DRO: POW OUTSIDE spawn failed — spawnGroupWeighted returned empty group";
+		};
 		_powChar = ((units _group) select 0);
 		//_group = createGroup playersSide;
 		//_powChar = _group createUnit [powClass, _powPos, [], 0, "NONE"];
@@ -75,10 +79,14 @@ switch (_powStyle) do {
 		_thisBuildingPlace = [0,((count _buildingPlaces)-1)] call BIS_fnc_randomInt;				
 		_powPos = getPos _building;
 		_group = [_powPos, playersSide, powClass, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
+		if (isNil "_group" || {isNull _group} || {count (units _group) == 0}) exitWith {
+			_break = true;
+			diag_log "DRO: POW INSIDE spawn failed — spawnGroupWeighted returned empty group";
+		};
 		_powChar = ((units _group) select 0);
-		
+
 		//_group = createGroup playersSide;
-		//_powChar = _group createUnit [powClass, _powPos, [], 0, "NONE"];			
+		//_powChar = _group createUnit [powClass, _powPos, [], 0, "NONE"];
 		_powChar setPosATL (_building buildingPos _thisBuildingPlace);	
 	};		
 };
