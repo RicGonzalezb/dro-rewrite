@@ -330,40 +330,36 @@ if (_continue && !isNil "marketPositions") then {
 
 // Spawn civilian vehicles
 if (count civCarClasses > 0) then {
-	if (random 1 > 0.5 || (((AOLocations select _AOIndex) select 4) == 1)) then {
-		_numCivVehicles = [1,3] call BIS_fnc_randomInt;
-		for "_i" from 1 to _numCivVehicles do {							
-			if (count (((AOLocations select _AOIndex) select 2) select 0) > 0) then {
-				_pos = [(((AOLocations select _AOIndex) select 2) select 0)] call DRO_fnc_selectRemove;
-				_class = (selectRandom civCarClasses);
-				_pos = _pos findEmptyPosition [0, 20, _class];
-				if (count _pos > 0) then {				
-					_veh = createVehicle [_class, _pos, [], 0, "NONE"];
-					//_veh = _class createVehicle _pos;			
-					_roadList = _pos nearRoads 10;
-					if (count _roadList > 0) then {
-						_thisRoad = _roadList select 0;
-						_direction = [_thisRoad] call DRO_fnc_getRoadDir;
-						_veh setDir _direction;
-						_newPos = [_pos, 4, (_direction + 90)] call BIS_fnc_relPos;
-						if (!(_newPos isFlatEmpty [5, -1, -1, -1, 0, false] isEqualTo [])) then {
-							_veh setPos _newPos;
-						};
-					};
-					if (random 1 > 0.75) then {
-						createVehicleCrew _veh;
-						waitUntil {!isNull (driver _veh)};
-						if (random 1 > 0.5) then {
-							patrolGroups pushBack (group driver _veh);
-						};
-						{
-							[_x] call DRO_fnc_civDeathHandler;
-						} forEach units (group driver _veh);
-						
+	// M8: always spawn civ vehicles (removed 50% chance gate)
+	_numCivVehicles = [1,3] call BIS_fnc_randomInt;
+	for "_i" from 1 to _numCivVehicles do {
+		if (count (((AOLocations select _AOIndex) select 2) select 0) > 0) then {
+			_pos = [(((AOLocations select _AOIndex) select 2) select 0)] call DRO_fnc_selectRemove;
+			_class = (selectRandom civCarClasses);
+			_pos = _pos findEmptyPosition [0, 20, _class];
+			if (count _pos > 0) then {
+				_veh = createVehicle [_class, _pos, [], 0, "NONE"];
+				_roadList = _pos nearRoads 10;
+				if (count _roadList > 0) then {
+					_thisRoad = _roadList select 0;
+					_direction = [_thisRoad] call DRO_fnc_getRoadDir;
+					_veh setDir _direction;
+					_newPos = [_pos, 4, (_direction + 90)] call BIS_fnc_relPos;
+					if (!(_newPos isFlatEmpty [5, -1, -1, -1, 0, false] isEqualTo [])) then {
+						_veh setPos _newPos;
 					};
 				};
-			};			
-		};		
+				if (random 1 > 0.75) then {
+					createVehicleCrew _veh;
+					waitUntil {!isNull (driver _veh)};
+					// M8: all crewed civ vehicles patrol (removed 50% chance)
+					patrolGroups pushBack (group driver _veh);
+					{
+						[_x] call DRO_fnc_civDeathHandler;
+					} forEach units (group driver _veh);
+				};
+			};
+		};
 	};
 };
 
