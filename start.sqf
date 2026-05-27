@@ -604,6 +604,11 @@ if (civiliansEnabled == 1 || civiliansEnabled == 2) then {
 				[] execVM "sunday_system\intel\addCivilianIntel.sqf";				
 			};					
 		};
+
+		// Corridor civilians between AOs (Extended AO only)
+		if (count AOLocations > 1) then {
+			[] execVM "sunday_system\civilians\generateCorridorCivilians.sqf";
+		};
 };
 
 missionNameSpace setVariable ["objectivesSpawned", 1, true];
