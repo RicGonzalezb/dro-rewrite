@@ -257,6 +257,7 @@ private _posCount = count _filteredCivPositions;
 diag_log format ["DRO: civPositions raw=%1, filtered=%2", count _shuffledCivPositions, _posCount];
 
 private _modUnitCount = 15;
+private _spawnCount = 0;
 if (_posCount == 0) then {
 	diag_log "DRO: WARNING — _civPositions empty, skipping open-area civ spawn";
 };
@@ -271,12 +272,12 @@ switch (type ((AOLocations select _AOIndex) select 5)) do {
 	case "NameLocal": { _numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt; _modUnitCount = 15; };
 };
 
-diag_log format ["DRO: Civilian spawn — type=%1, minAI=%2, maxAI=%3, numCivs=%4, modUnitCount=%5, spawnPoints=%6",
-	type ((AOLocations select _AOIndex) select 5), _minAI, _maxAI, _numCivs, _modUnitCount, _posCount];
+diag_log format ["DRO: Civilian spawn — type=%1, minAI=%2, maxAI=%3, numCivs=%4, spawnCount=%5, filteredPositions=%6",
+	type ((AOLocations select _AOIndex) select 5), _minAI, _maxAI, _numCivs, _spawnCount, _posCount];
 
 // M8 fix: create spawn points for min(_numCivs, _posCount) UNIQUE positions only
 // Prevents duplicates (old bug) without flooding sideLogic with 60+ entities (new bug)
-private _spawnCount = _numCivs min _posCount;
+_spawnCount = _numCivs min _posCount;
 for "_x" from 0 to (_spawnCount - 1) do {
 	private _civPosition = _filteredCivPositions select _x;
 	(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
@@ -360,7 +361,8 @@ if (count civCarClasses > 0) then {
 };
 
 private _modCivs = (createGroup centerSide) createUnit ["ModuleCivilianPresence_F", _AOPos, [], 0, "FORM"];
-_modCivs setVariable ["#unitCount", _modUnitCount, true];
+// M8 fix: unitCount must match spawnCount to avoid clustering (module tries to fill all slots at available points)
+_modCivs setVariable ["#unitCount", (_spawnCount max 1), true];
 // M7 fix: área aumentada de AOSize/2 para AOSize*0.75 — civis se espalham mais
 _modCivs setVariable ["objectarea", [(_AOSize * 0.75), (_AOSize * 0.75), 0, false, -1], true];
 diag_log format ["DRO: ModuleCivilianPresence_F init — useAgents=%1, civiliansAsAgents=%2", _useAgents, civiliansAsAgents];
