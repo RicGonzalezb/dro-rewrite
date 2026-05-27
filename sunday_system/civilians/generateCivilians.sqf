@@ -121,8 +121,8 @@ _createHostileCivUnit = {
 		};
 	};
 	
-	// Currently civilians don't always exit dynamic simulation correctly
-	//_group enableDynamicSimulation true;	
+	// M8: civs ALWAYS get dynamic simulation regardless of user toggle
+	_group enableDynamicSimulation true;
 	_group;
 };
 
@@ -393,6 +393,8 @@ _modCivs setVariable ["#onCreated", {
 	if (random 1 > 0.6) then {_this addHeadgear (selectRandom (_module getVariable "DRO_headgearList"))};
 	if (random 1 > 0.3) then {_this addVest (selectRandom (_module getVariable "DRO_vestList"))};
 	[_this] call DRO_fnc_civDeathHandler;
+	// M8: civs ALWAYS get dynamic simulation (performance savings regardless of user toggle)
+	_this enableDynamicSimulation true;
 	// M8 fix: BIS module sometimes ignores #useAgents — force convert unit to agent
 	private _module = (_this getVariable "#core");
 	private _wantAgents = _module getVariable ["#useAgents", false];
@@ -407,6 +409,7 @@ _modCivs setVariable ["#onCreated", {
 		private _agent = createAgent [_type, _pos, [], 0, "NONE"];
 		_agent setDir _dir;
 		_agent setBehaviour "CARELESS";
+		_agent enableDynamicSimulation true;
 		if (_uniform != "") then { removeUniform _agent; _agent addUniform _uniform };
 		if (_headgear != "") then { _agent addHeadgear _headgear };
 		if (_vest != "") then { _agent addVest _vest };

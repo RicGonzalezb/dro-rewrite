@@ -144,11 +144,13 @@ private _totalSpawned = 0;
 		if (_useAgents) then {
 			private _agent = createAgent [_civType, _pos, [], 5, "NONE"];
 			_agent setBehaviour "CARELESS";
+			_agent enableDynamicSimulation true;
 			[_agent] call DRO_fnc_civDeathHandler;
 		} else {
 			private _grp = createGroup civilian;
 			private _unit = _grp createUnit [_civType, _pos, [], 5, "NONE"];
 			_unit setBehaviour "CARELESS";
+			_grp enableDynamicSimulation true;
 			[_unit] call DRO_fnc_civDeathHandler;
 		};
 		_spawned = _spawned + 1;

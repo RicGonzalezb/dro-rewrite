@@ -127,10 +127,11 @@ diag_log "DRO: Waiting for factions to be chosen by host";
 waitUntil {(missionNameSpace getVariable ["factionsChosen", 0]) == 1};
 diag_log "DRO: Factions chosen";
 
-// Disable dynamic simulation if desired
-if (dynamicSim == 1) then {
-	enableDynamicSimulationSystem false;
-};
+// M8: Dynamic Simulation system stays ALWAYS ON.
+// When dynamicSim == 1 (user disabled), enemies simply won't be marked —
+// they stay always simulated. Civilians are ALWAYS marked for dynSim
+// regardless of this toggle (performance savings on civs are always worth it).
+// Civ vehicles excluded — they keep traveling the map even when far from players.
 
 // Force Sunday Revive disabled if ACE3 has cardiac arrest time greater than zero
 if ((["Respawn", 0] call BIS_fnc_getParamValue) < 3) then {
