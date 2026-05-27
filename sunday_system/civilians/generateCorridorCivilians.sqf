@@ -1,29 +1,24 @@
 // *****
-// Corridor Civilians — Extended AO only
+// Corridor Civilians v3 — Extended AO only
 // Spawns peaceful civilians at villages/hamlets BETWEEN AOs.
-// Makes the map feel more alive outside combat zones.
-// Only agents (civiliansAsAgents == 0) or isolated units — no groups, no hostile civs.
+// Direct agent/unit creation (no BIS module — simpler, more reliable).
+// Searches along the full axis between each AO pair, not just midpoints.
 // *****
 
 if (count AOLocations <= 1) exitWith {
 	diag_log "DRO: Corridor civs skipped — single AO";
 };
 
-// Wait for centerSide to exist (created by generateCivilians.sqf, may not be ready yet)
-private _waitStart = diag_tickTime;
-waitUntil {!isNil "centerSide" || {diag_tickTime - _waitStart > 30}};
-if (isNil "centerSide") exitWith {
-	diag_log "DRO: Corridor civs ABORTED — centerSide not available after 30s";
-};
-
 private _useAgents = (civiliansAsAgents == 0);
-diag_log format ["DRO: Generating corridor civilians (agents=%1)", _useAgents];
+diag_log format ["DRO: Generating corridor civilians v3 (agents=%1)", _useAgents];
 
 // Collect AO positions and sizes for exclusion filtering
 private _aoPositions = AOLocations apply {_x select 0};
 private _aoSizes = AOLocations apply {_x select 1};
 
 // --- Phase 1: Find unique corridor locations between all AO pairs ---
+// Search at 3 points along each axis (25%, 50%, 75%) to catch locations
+// that aren't near the midpoint but ARE between two AOs.
 
 private _corridorLocations = [];
 private _usedLocationNames = [];
@@ -32,54 +27,61 @@ for "_i" from 0 to (count AOLocations - 2) do {
 	for "_j" from (_i + 1) to (count AOLocations - 1) do {
 		private _posA = (AOLocations select _i) select 0;
 		private _posB = (AOLocations select _j) select 0;
-
-		// Midpoint between the two AOs
-		private _midpoint = [
-			((_posA select 0) + (_posB select 0)) / 2,
-			((_posA select 1) + (_posB select 1)) / 2
-		];
-
-		// Search radius: 1/3 of distance, clamped 300–1500m
 		private _dist = _posA distance2D _posB;
-		private _searchRadius = ((_dist / 3) max 300) min 1500;
 
-		// Find villages/hamlets in the corridor
-		private _nearLocs = nearestLocations [_midpoint, ["NameLocal", "NameVillage"], _searchRadius];
+		// Skip AO pairs too close together (< 600m — likely overlapping)
+		if (_dist < 600) then { continue };
 
+		// Search at 25%, 50%, 75% along the axis
 		{
-			private _locPos = getPos _x;
-			private _locName = text _x;
+			private _t = _x;
+			private _searchPos = [
+				((_posA select 0) * (1 - _t)) + ((_posB select 0) * _t),
+				((_posA select 1) * (1 - _t)) + ((_posB select 1) * _t)
+			];
 
-			// Skip if inside any existing AO radius (already has civs from generateCivilians)
-			private _insideAO = false;
+			// Search radius: 1/3 of distance, clamped 400–2000m
+			private _searchRadius = ((_dist / 3) max 400) min 2000;
+
+			private _nearLocs = nearestLocations [_searchPos, ["NameLocal", "NameVillage"], _searchRadius];
+
 			{
-				if (_locPos distance2D _x < (_aoSizes select _forEachIndex)) exitWith { _insideAO = true };
-			} forEach _aoPositions;
+				private _locPos = getPos _x;
+				private _locName = text _x;
 
-			// Skip duplicates (same village found in multiple corridors)
-			if (!_insideAO && !(_locName in _usedLocationNames)) then {
-				_corridorLocations pushBack _x;
-				_usedLocationNames pushBack _locName;
-				diag_log format ["DRO: Corridor location found: %1 (%2) at %3", _locName, type _x, _locPos];
-			};
-		} forEach _nearLocs;
+				// Skip if inside any existing AO radius
+				private _insideAO = false;
+				{
+					if (_locPos distance2D _x < (_aoSizes select _forEachIndex)) exitWith { _insideAO = true };
+				} forEach _aoPositions;
+
+				// Skip duplicates
+				if (!_insideAO && !(_locName in _usedLocationNames)) then {
+					_corridorLocations pushBack _x;
+					_usedLocationNames pushBack _locName;
+					diag_log format ["DRO: Corridor location found: %1 (%2) at %3 [axis %4-%5, t=%6]",
+						_locName, type _x, _locPos, _i, _j, _t];
+				};
+			} forEach _nearLocs;
+		} forEach [0.25, 0.5, 0.75];
 	};
 };
 
-// Cap at 5 corridor locations to avoid performance hit
-if (count _corridorLocations > 5) then {
-	_corridorLocations resize 5;
+// Cap at 8 corridor locations (raised from 5 — direct spawn is cheaper than BIS module)
+if (count _corridorLocations > 8) then {
+	_corridorLocations resize 8;
 };
 
 if (count _corridorLocations == 0) exitWith {
 	diag_log "DRO: No corridor locations found between AOs";
 };
 
-diag_log format ["DRO: Found %1 corridor locations for civilian presence", count _corridorLocations];
+diag_log format ["DRO: Found %1 corridor locations for direct civilian spawn", count _corridorLocations];
 
-// --- Phase 2: Spawn civilian presence at each corridor location ---
-// IMPORTANT: reuse centerSide from generateCivilians.sqf (already created via createCenter sideLogic)
-// Do NOT call createCenter sideLogic again — minimise sideLogic entity count for Zeus compatibility
+// --- Phase 2: Spawn civilians directly at each corridor location ---
+// No BIS module — just createAgent (or createUnit). Simple, reliable.
+
+private _totalSpawned = 0;
 
 {
 	private _loc = _x;
@@ -101,24 +103,24 @@ diag_log format ["DRO: Found %1 corridor locations for civilian presence", count
 		default { 200 };
 	};
 
-	// --- Gather spawn positions: roads + buildings ---
+	// --- Gather spawn positions: roads (+ buildings when units mode) ---
 	private _spawnPositions = [];
 
 	// Roads nearby
 	private _roads = _locPos nearRoads _areaSize;
 	{
-		if (count _spawnPositions >= 8) exitWith {};
+		if (count _spawnPositions >= _unitCount) exitWith {};
 		private _rPos = getPos _x;
 		private _tooClose = false;
 		{ if (_rPos distance2D _x < 30) exitWith { _tooClose = true } } forEach _spawnPositions;
 		if (!_tooClose) then { _spawnPositions pushBack _rPos };
 	} forEach _roads;
 
-	// Buildings nearby — only when units mode (agents can't navigate interiors)
-	private _buildings = _locPos nearObjects ["House", _areaSize];
+	// Buildings — only when units mode (agents can't navigate interiors)
 	if (!_useAgents) then {
+		private _buildings = _locPos nearObjects ["House", _areaSize];
 		{
-			if (count _spawnPositions >= 10) exitWith {};
+			if (count _spawnPositions >= _unitCount) exitWith {};
 			private _bPos = getPos _x;
 			private _tooClose = false;
 			{ if (_bPos distance2D _x < 30) exitWith { _tooClose = true } } forEach _spawnPositions;
@@ -126,50 +128,36 @@ diag_log format ["DRO: Found %1 corridor locations for civilian presence", count
 		} forEach _buildings;
 	};
 
-	// Fallback: at least the location center
+	// Fallback: location center
 	if (count _spawnPositions == 0) then {
 		_spawnPositions pushBack _locPos;
 	};
 
-	// Create spawn point modules — LIMIT to min(_unitCount, posCount) to avoid Zeus entity flood
+	// Spawn civs directly — no BIS module needed
 	private _spawnCount = _unitCount min (count _spawnPositions);
-	for "_i" from 0 to (_spawnCount - 1) do {
-		(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", (_spawnPositions select _i), [], 0, "FORM"];
+	private _spawned = 0;
+
+	for "_c" from 0 to (_spawnCount - 1) do {
+		private _pos = _spawnPositions select _c;
+		private _civType = selectRandom civClasses;
+
+		if (_useAgents) then {
+			private _agent = createAgent [_civType, _pos, [], 5, "NONE"];
+			_agent setBehaviour "CARELESS";
+			[_agent] call DRO_fnc_civDeathHandler;
+		} else {
+			private _grp = createGroup civilian;
+			private _unit = _grp createUnit [_civType, _pos, [], 5, "NONE"];
+			_unit setBehaviour "CARELESS";
+			[_unit] call DRO_fnc_civDeathHandler;
+		};
+		_spawned = _spawned + 1;
 	};
 
-	// Create safe spots at buildings so civs have places to hang out (max 4)
-	// M8: skip building safe spots when agents enabled — agents can't navigate interiors
-	if (!_useAgents) then {
-		{
-			if (_forEachIndex >= 4) exitWith {};
-			private _ssUnit = (createGroup centerSide) createUnit ["ModuleCivilianPresenceSafeSpot_F", (getPos _x), [], 0, "FORM"];
-			{
-				_ssUnit setVariable [(_x select 0), (_x select 1), true];
-			} forEach [
-				["#useBuilding", true],
-				["#type", 1],
-				["#terminal", false],
-				["#capacity", 1],
-				["objectarea", [0.1, 0.1, 0, false, -1]]
-			];
-		} forEach _buildings;
-	};
-
-	// Create the civilian presence controller
-	private _modCivs = (createGroup centerSide) createUnit ["ModuleCivilianPresence_F", _locPos, [], 0, "FORM"];
-	_modCivs setVariable ["#unitCount", _unitCount, true];
-	_modCivs setVariable ["objectarea", [_areaSize, _areaSize, 0, false, -1], true];
-	_modCivs setVariable ["#useAgents", _useAgents, true];
-	_modCivs setVariable ["#usePanicMode", true, true];
-	_modCivs setVariable ["#onCreated", {
-		[_this] call DRO_fnc_civDeathHandler;
-		diag_log format ["DRO: Corridor civ spawned — isAgent=%1, typeOf=%2, pos=%3", (isNull (group _this)), typeOf _this, getPos _this];
-	}, true];
-	["init", [_modCivs]] call bis_fnc_moduleCivilianPresence;
-
-	diag_log format ["DRO: Corridor civs at %1: %2 units, %3 spawn points, %4 safe spots, area %5m",
-		_locName, _unitCount, _spawnCount, (count _buildings) min 4, _areaSize];
+	_totalSpawned = _totalSpawned + _spawned;
+	diag_log format ["DRO: Corridor civs at %1: %2/%3 spawned (agents=%4), area %5m",
+		_locName, _spawned, _unitCount, _useAgents, _areaSize];
 
 } forEach _corridorLocations;
 
-diag_log format ["DRO: Corridor civilian generation complete — %1 locations populated", count _corridorLocations];
+diag_log format ["DRO: Corridor civilian generation complete — %1 locations, %2 civs total", count _corridorLocations, _totalSpawned];
