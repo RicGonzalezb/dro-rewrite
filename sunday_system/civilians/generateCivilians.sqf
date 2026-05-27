@@ -262,20 +262,19 @@ if (count _filteredCivPositions == 0 && {count _shuffledCivPositions > 0}) then 
 private _posCount = count _filteredCivPositions;
 diag_log format ["DRO: civPositions raw=%1, filtered=%2", count _shuffledCivPositions, _posCount];
 
-private _modUnitCount = 15;
 private _spawnCount = 0;
 if (_posCount == 0) then {
 	diag_log "DRO: WARNING — _civPositions empty, skipping open-area civ spawn";
 };
 if (_posCount > 0) then {
 
-// M8: determine _numCivs and _modUnitCount by location type
+// M8: determine _numCivs by location type
 private _numCivs = 0;
 switch (type ((AOLocations select _AOIndex) select 5)) do {
-	case "NameVillage": { _numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt; _modUnitCount = 20; };
-	case "NameCity": { _numCivs = [_minAI + 2, _maxAI + 2] call BIS_fnc_randomInt; _modUnitCount = 25; };
-	case "NameCityCapital": { _numCivs = [_minAI + 3, _maxAI + 3] call BIS_fnc_randomInt; _modUnitCount = 30; };
-	case "NameLocal": { _numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt; _modUnitCount = 15; };
+	case "NameVillage": { _numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt; };
+	case "NameCity": { _numCivs = [_minAI + 2, _maxAI + 2] call BIS_fnc_randomInt; };
+	case "NameCityCapital": { _numCivs = [_minAI + 3, _maxAI + 3] call BIS_fnc_randomInt; };
+	case "NameLocal": { _numCivs = [_minAI, _maxAI] call BIS_fnc_randomInt; };
 };
 
 diag_log format ["DRO: Civilian spawn — type=%1, minAI=%2, maxAI=%3, numCivs=%4, spawnCount=%5, filteredPositions=%6",

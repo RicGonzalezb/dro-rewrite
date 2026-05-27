@@ -9,6 +9,13 @@ if (count AOLocations <= 1) exitWith {
 	diag_log "DRO: Corridor civs skipped — single AO";
 };
 
+// Wait for centerSide to exist (created by generateCivilians.sqf, may not be ready yet)
+private _waitStart = diag_tickTime;
+waitUntil {!isNil "centerSide" || {diag_tickTime - _waitStart > 30}};
+if (isNil "centerSide") exitWith {
+	diag_log "DRO: Corridor civs ABORTED — centerSide not available after 30s";
+};
+
 private _useAgents = (civiliansAsAgents == 0);
 diag_log format ["DRO: Generating corridor civilians (agents=%1)", _useAgents];
 
@@ -156,22 +163,7 @@ diag_log format ["DRO: Found %1 corridor locations for civilian presence", count
 	_modCivs setVariable ["#usePanicMode", true, true];
 	_modCivs setVariable ["#onCreated", {
 		[_this] call DRO_fnc_civDeathHandler;
-		// M8 fix: BIS module sometimes ignores #useAgents — force convert unit to agent
-		private _module = (_this getVariable "#core");
-		private _wantAgents = _module getVariable ["#useAgents", false];
-		if (_wantAgents && {!(isNull (group _this))}) then {
-			private _pos = getPos _this;
-			private _type = typeOf _this;
-			private _dir = getDir _this;
-			deleteVehicle _this;
-			private _agent = createAgent [_type, _pos, [], 0, "NONE"];
-			_agent setDir _dir;
-			_agent setBehaviour "CARELESS";
-			[_agent] call DRO_fnc_civDeathHandler;
-			diag_log format ["DRO: Corridor civ CONVERTED unit→agent — typeOf=%1", _type];
-		} else {
-			diag_log format ["DRO: Corridor civ spawned — isAgent=%1, typeOf=%2", (isNull (group _this)), typeOf _this];
-		};
+		diag_log format ["DRO: Corridor civ spawned — isAgent=%1, typeOf=%2, pos=%3", (isNull (group _this)), typeOf _this, getPos _this];
 	}, true];
 	["init", [_modCivs]] call bis_fnc_moduleCivilianPresence;
 
