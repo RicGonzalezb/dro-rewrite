@@ -133,6 +133,11 @@ diag_log "DRO: Factions chosen";
 // regardless of this toggle (performance savings on civs are always worth it).
 // Civ vehicles excluded — they keep traveling the map even when far from players.
 
+// M8: DynSim distances — increased from defaults (group 500, vehicle 350, emptyVehicle 250)
+"Group" setDynamicSimulationDistance 1000;
+"Vehicle" setDynamicSimulationDistance 2000;
+"EmptyVehicle" setDynamicSimulationDistance 1000;
+
 // Force Sunday Revive disabled if ACE3 has cardiac arrest time greater than zero
 if ((["Respawn", 0] call BIS_fnc_getParamValue) < 3) then {
 	if ((configfile >> "CfgPatches" >> "ace_medical") call BIS_fnc_getCfgIsClass) then {	
