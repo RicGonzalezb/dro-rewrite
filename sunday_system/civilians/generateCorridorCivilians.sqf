@@ -1,9 +1,9 @@
 // *****
-// Corridor & Satellite Civilians v4
-// Phase 1: Satellite — 1km radius around each AO center (outside AO radius)
-// Phase 2: Corridor — rectangular area between each AO pair (length=dist, width=1km)
+// Corridor & Satellite Civilians v5
+// Phase 1: Satellite — ring _aoSize*0.6 … _aoSize+1500 around each AO center
+// Phase 2: Corridor — explicit point-to-segment geometry (no markers/inArea)
+// Fix: excludeRadius = aoSize*0.6 liberates perimeter villages from exclusion.
 // Direct agent/unit creation (no BIS module).
-// Marker rectangles used only for inArea calculation, deleted after use.
 // *****
 
 if (count AOLocations <= 1) exitWith {
@@ -11,7 +11,7 @@ if (count AOLocations <= 1) exitWith {
 };
 
 private _useAgents = (civiliansAsAgents == 0);
-diag_log format ["DRO: Generating corridor/satellite civilians v4 (agents=%1, AOs=%2)", _useAgents, count AOLocations];
+diag_log format ["DRO: Generating corridor/satellite civilians v5 (agents=%1, AOs=%2)", _useAgents, count AOLocations];
 
 // Collect AO positions and sizes for filtering
 private _aoPositions = AOLocations apply {_x select 0};
@@ -20,32 +20,35 @@ private _aoSizes = AOLocations apply {_x select 1};
 private _allLocations = [];
 private _usedLocationNames = [];
 
-// --- Phase 1: Satellite — 1km radius around each AO center ---
-// Finds villages/hamlets near each AO but OUTSIDE its operational radius.
+// --- Phase 1: Satellite — ring _excludeRadius … _aoSize+1500 around each AO center ---
+// Finds villages/hamlets near each AO but OUTSIDE its exclusion core.
 // These are "suburb" locations not covered by generateCivilians.sqf.
 
 {
 	private _aoPos = _x;
 	private _aoSize = _aoSizes select _forEachIndex;
 	private _aoIdx = _forEachIndex;
+	private _excludeRadius = _aoSize * 0.6;
+	private _searchRadius = _aoSize + 1500;
 
-	private _nearLocs = nearestLocations [_aoPos, ["NameLocal", "NameVillage"], 1000];
+	private _nearLocs = nearestLocations [_aoPos, ["NameLocal", "NameVillage"], _searchRadius];
 
 	{
 		private _locPos = getPos _x;
 		private _locName = text _x;
 
-		// Must be OUTSIDE this AO's operational radius
+		// Must be OUTSIDE this AO's exclusion radius
 		private _distToAO = _locPos distance2D _aoPos;
-		if (_distToAO < _aoSize) then {
-			diag_log format ["DRO: Sat SKIP (inside AO %1): %2, dist=%3m < aoSize=%4m",
-				_aoIdx, _locName, round _distToAO, round _aoSize];
+		if (_distToAO < _excludeRadius) then {
+			diag_log format ["DRO: Sat SKIP (inside AO %1): %2, dist=%3m < excludeRadius=%4m",
+				_aoIdx, _locName, round _distToAO, round _excludeRadius];
 		} else {
-			// Must not be inside any OTHER AO's radius either
+			// Must not be inside any OTHER AO's exclusion radius either
 			private _insideOtherAO = false;
 			private _whichAO = -1;
 			{
-				if (_forEachIndex != _aoIdx && {_locPos distance2D _x < (_aoSizes select _forEachIndex)}) exitWith {
+				private _otherExclude = (_aoSizes select _forEachIndex) * 0.6;
+				if (_forEachIndex != _aoIdx && {_locPos distance2D _x < _otherExclude}) exitWith {
 					_insideOtherAO = true;
 					_whichAO = _forEachIndex;
 				};
@@ -69,12 +72,12 @@ private _usedLocationNames = [];
 
 diag_log format ["DRO: Phase 1 (satellite) found %1 locations", count _allLocations];
 
-// --- Phase 2: Corridor — rectangular area between each AO pair ---
-// For each unique pair (i,j): create invisible rectangular marker centered
-// at midpoint, length = distance between AO centers, width = 1km.
-// Find locations inside the rectangle, excluding AOs and Phase 1 results.
+// --- Phase 2: Corridor — explicit point-to-segment geometry ---
+// For each unique pair (i,j): accept locations within _corridorHalfWidth of
+// the A→B axis, within the A→B extent (t in [-0.1, 1.1]), and outside AO cores.
+// No markers or inArea — avoids the rotation/semantics bug.
 
-private _corridorMarkers = [];
+private _corridorHalfWidth = 700;
 
 for "_i" from 0 to (count _aoPositions - 2) do {
 	for "_j" from (_i + 1) to (count _aoPositions - 1) do {
@@ -94,58 +97,68 @@ for "_i" from 0 to (count _aoPositions - 2) do {
 			((_posA select 1) + (_posB select 1)) / 2
 		];
 
-		// Direction from A to B (compass bearing for setMarkerDir)
-		private _dx = (_posB select 0) - (_posA select 0);
-		private _dy = (_posB select 1) - (_posA select 1);
-		private _dir = _dx atan2 _dy;
-
-		// Create invisible rectangular marker
-		// setMarkerSize [halfWidth, halfLength] — after setMarkerDir, the b-axis aligns with direction
-		private _markerName = format ["DRO_corridor_%1_%2", _i, _j];
-		private _marker = createMarker [_markerName, _midPos];
-		_marker setMarkerShape "RECTANGLE";
-		_marker setMarkerSize [500, _dist / 2];
-		_marker setMarkerDir _dir;
-		_marker setMarkerAlpha 0;
-		_corridorMarkers pushBack _marker;
-
-		diag_log format ["DRO: Corridor marker %1-%2: mid=%3, dist=%4m, dir=%5, size=[500,%6]",
-			_i, _j, _midPos, round _dist, round _dir, round (_dist / 2)];
-
-		// Search for locations — radius covers the rectangle's diagonal + margin
-		private _searchRadius = (_dist / 2) + 600;
+		// Search radius: half-dist + corridor half-width + margin
+		private _searchRadius = (_dist / 2) + 800;
 		private _nearLocs = nearestLocations [_midPos, ["NameLocal", "NameVillage"], _searchRadius];
+
+		diag_log format ["DRO: Corridor pair %1-%2: dist=%3m, %4 candidates (searchRadius=%5m)",
+			_i, _j, round _dist, count _nearLocs, round _searchRadius];
+
+		// Segment AB components for point-to-segment projection
+		private _ax = _posA select 0; private _ay = _posA select 1;
+		private _bx = _posB select 0; private _by = _posB select 1;
+		private _dxAB = _bx - _ax; private _dyAB = _by - _ay;
+		private _lenSq = (_dxAB * _dxAB) + (_dyAB * _dyAB);
 
 		private _foundThisPair = 0;
 		{
 			private _locPos = getPos _x;
 			private _locName = text _x;
+			private _px = _locPos select 0; private _py = _locPos select 1;
 
-			// Must be inside the corridor rectangle
-			if !(_locPos inArea _marker) then {
-				// Skip silently — most locations won't be in the rectangle
+			// Project P onto segment A→B; clamp foot to segment for perp distance
+			private _t = if (_lenSq > 0) then {
+				(((_px - _ax) * _dxAB) + ((_py - _ay) * _dyAB)) / _lenSq
+			} else { 0 };
+			private _tc = (0 max _t) min 1;
+			private _footX = _ax + _tc * _dxAB;
+			private _footY = _ay + _tc * _dyAB;
+			private _perp = [_px, _py] distance2D [_footX, _footY];
+
+			// Accept if within half-width and within segment extent (small margin)
+			private _inCorridor = (_perp <= _corridorHalfWidth) && (_t >= -0.1) && (_t <= 1.1);
+
+			if (!_inCorridor) then {
+				diag_log format ["DRO: Corridor cand %1: perp=%2m, t=%3, decision=REJECT (outside corridor)",
+					_locName, round _perp, _t toFixed 2];
 			} else {
-				// Must not be inside any AO radius
+				// Must not be inside any AO's exclusion core
 				private _insideAO = false;
 				private _whichAO = -1;
 				{
-					if (_locPos distance2D _x < (_aoSizes select _forEachIndex)) exitWith {
+					private _aoExclude = (_aoSizes select _forEachIndex) * 0.6;
+					private _d = _locPos distance2D _x;
+					if (_d < _aoExclude) exitWith {
 						_insideAO = true;
 						_whichAO = _forEachIndex;
+						diag_log format ["DRO: excluded (AO core %1): %2, dist=%3 < %4",
+							_forEachIndex, _locName, round _d, round _aoExclude];
 					};
 				} forEach _aoPositions;
 
 				if (_insideAO) then {
-					diag_log format ["DRO: Corridor SKIP (inside AO %1): %2", _whichAO, _locName];
+					diag_log format ["DRO: Corridor cand %1: perp=%2m, t=%3, decision=REJECT (AO core %4)",
+						_locName, round _perp, _t toFixed 2, _whichAO];
 				} else {
 					if (_locName in _usedLocationNames) then {
-						diag_log format ["DRO: Corridor SKIP (already found): %1", _locName];
+						diag_log format ["DRO: Corridor cand %1: perp=%2m, t=%3, decision=REJECT (duplicate)",
+							_locName, round _perp, _t toFixed 2];
 					} else {
 						_allLocations pushBack _x;
 						_usedLocationNames pushBack _locName;
 						_foundThisPair = _foundThisPair + 1;
-						diag_log format ["DRO: Corridor location: %1 (%2) at %3 [pair %4-%5]",
-							_locName, type _x, _locPos, _i, _j];
+						diag_log format ["DRO: Corridor cand %1: perp=%2m, t=%3, decision=ACCEPT [pair %4-%5]",
+							_locName, round _perp, _t toFixed 2, _i, _j];
 					};
 				};
 			};
@@ -155,9 +168,6 @@ for "_i" from 0 to (count _aoPositions - 2) do {
 			_i, _j, count _nearLocs, _foundThisPair];
 	};
 };
-
-// Cleanup — markers served their purpose
-{ deleteMarker _x } forEach _corridorMarkers;
 
 diag_log format ["DRO: Phase 1+2 total: %1 unique locations", count _allLocations];
 
