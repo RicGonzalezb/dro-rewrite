@@ -6,8 +6,15 @@
 // Direct agent/unit creation (no BIS module).
 // *****
 
-if (count AOLocations <= 1) exitWith {
-	diag_log "DRO: Corridor civs skipped — single AO";
+// Satellite (Phase 1) runs for ANY number of AOs, including a single AO.
+// The corridor pass (Phase 2) self-skips when there is only 1 AO, because
+// its pair loop (`for _i from 0 to count-2`) simply doesn't iterate.
+
+// Only populate corridors/satellites when civilians-as-agents is ENABLED.
+// With full units (agents OFF), spreading extra civs across the periphery
+// is a performance cost not worth paying.
+if (civiliansAsAgents != 0) exitWith {
+	diag_log "DRO: Corridor/satellite civs skipped — civilians-as-agents is DISABLED";
 };
 
 private _useAgents = (civiliansAsAgents == 0);

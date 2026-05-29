@@ -611,10 +611,9 @@ if (civiliansEnabled == 1 || civiliansEnabled == 2) then {
 			};					
 		};
 
-		// Corridor civilians between AOs (Extended AO only)
-		if (count AOLocations > 1) then {
-			[] execVM "sunday_system\civilians\generateCorridorCivilians.sqf";
-		};
+		// Satellite (sempre, inclusive 1 AO) + corridor (apenas AOs>1) civilians.
+		// Gating de contagem de AO e de civilians-as-agents é feito dentro do script.
+		[] execVM "sunday_system\civilians\generateCorridorCivilians.sqf";
 };
 
 missionNameSpace setVariable ["objectivesSpawned", 1, true];
