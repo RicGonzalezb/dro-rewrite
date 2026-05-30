@@ -165,64 +165,72 @@ sleep 3;
 
 if (player == topUnit) then {
 	// M9: Carregar profile e params ANTES das decisoes de UI.
-	// loadProfile.sqf: le profileNamespace e publica globais.
-	// loadParams.sqf: se override ativo, sobrescreve globais com params do lobby.
 	[] call compile preprocessFileLineNumbers "loadProfile.sqf";
 	[] call compile preprocessFileLineNumbers "loadParams.sqf";
 
 	if (DRO_paramOverrideActive && DRO_paramSkipUI) then {
-		// ---- ESTADO #2: Faccoes via params — pula o dialogo de pre-geracao ----
-		// loadParams.sqf ja setou playersFaction/enemyFaction/civFaction +
-		// factionsChosen=1 (server recebe via broadcast). Sem sundayDialog.
-		diag_log "DRO M9: skip pre-gen UI (faccoes via params, factionsChosen broadcast).";
-
+		// ESTADO #2: faccoes via params, pula o dialogo de pre-geracao.
+		diag_log "DRO M9: skip pre-gen UI (faccoes via params).";
 	} else {
-		// ---- ESTADO #3 ou Vanilla ----
-		waitUntil {!dialog};
-		// Faction dialog
-		diag_log "DRO: Create menu dialog";
-		_handle = createDialog "sundayDialog";
-		diag_log format ["DRO: Created dialog: %1", _handle];
-		// M9 hotfix #2: execVM e ASSINCRONO. Definir menuComplete=false ANTES
-		// garante que o waitUntil abaixo nao avalie nil (race que abortava o
-		// waitUntil e disparava o travamento antes do populateStartupMenu terminar).
-		menuComplete = false;
-		[] execVM "sunday_system\dialogs\populateStartupMenu.sqf";
-		//playSound "Transition1";
-
-		if (DRO_paramOverrideActive) then {
-			// ---- ESTADO #3: Override ON, faccoes via UI ----
-			// Travar navegacao em INFO. Listboxes de faccao (1301/1311/1321)
-			// e os combos avancados (3800-3805) permanecem visiveis e ativos.
-			// As outras abas (SCENARIO/ENVIRONMENT/OBJECTIVES/ADVANCED FACTIONS)
-			// ficam inacessiveis — os params ja configuraram esses valores.
-			waitUntil { !isNil "menuComplete" && {menuComplete} };
-			disableSerialization;
-			// Reduz o array de navegacao para so a aba INFO
-			menuSliderArray = [["INFO", 1140]];
-			menuSliderCurrent = 0;
-			// Desabilita e esconde as setas de navegacao (IDC 1150="<", IDC 1151=">")
-			((findDisplay 52525) displayCtrl 1150) ctrlEnable false;
-			((findDisplay 52525) displayCtrl 1150) ctrlShow false;
-			((findDisplay 52525) displayCtrl 1151) ctrlEnable false;
-			((findDisplay 52525) displayCtrl 1151) ctrlShow false;
-			// M9: esconder "Reset Default Options" (IDC 1143) — resetaria os
-			// params/profile que nao podem ser reconfigurados com override ON.
-			((findDisplay 52525) displayCtrl 1143) ctrlEnable false;
-			((findDisplay 52525) displayCtrl 1143) ctrlShow false;
-			// M9: aviso destacado na aba INFO (controle 1144, oculto por padrao).
-			_noticeCtrl = (findDisplay 52525) displayCtrl 1144;
-			_noticeCtrl ctrlSetStructuredText (parseText (
-				"<t size='1.15' shadow='1'>SERVER-DEFINED SETUP</t><br/><br/>"
-				+ "<t size='0.95'>Mission settings have been pre-configured by the server.</t><br/><br/>"
-				+ "<t size='0.95'>Only faction selection remains available — choose your factions above and press START.</t>"
-			));
-			_noticeCtrl ctrlSetFade 0;
-			_noticeCtrl ctrlShow true;
-			_noticeCtrl ctrlCommit 0;
-			diag_log "DRO M9: UI travada na aba INFO (param override ativo). Faccoes ainda selecionaveis. Aviso server-defined exibido.";
+		// ESTADO #3 ou Vanilla. Funcao reutilizavel para (re)abrir o menu.
+		DRO_openSetupMenu = {
+			if (!isNull (findDisplay 52525)) exitWith {};
+			if ((missionNameSpace getVariable ["factionsChosen", 0]) == 1) exitWith {};
+			createDialog "sundayDialog";
+			menuComplete = false;
+			[] execVM "sunday_system\dialogs\populateStartupMenu.sqf";
+			if (DRO_paramOverrideActive) then {
+				[] spawn {
+					waitUntil { !isNil "menuComplete" && {menuComplete} };
+					disableSerialization;
+					menuSliderArray = [["INFO", 1140]];
+					menuSliderCurrent = 0;
+					{
+						((findDisplay 52525) displayCtrl _x) ctrlEnable false;
+						((findDisplay 52525) displayCtrl _x) ctrlShow false;
+					} forEach [1150, 1151, 1143];
+					private _n = (findDisplay 52525) displayCtrl 1144;
+					_n ctrlSetStructuredText (parseText (
+						"<t size='1.15' shadow='1'>SERVER-DEFINED SETUP</t><br/><br/>"
+						+ "<t size='0.95'>Mission settings have been pre-configured by the server.</t><br/><br/>"
+						+ "<t size='0.95'>Only faction selection remains available — choose your factions above and press START.</t>"
+					));
+					_n ctrlSetFade 0;
+					_n ctrlShow true;
+					_n ctrlCommit 0;
+					diag_log "DRO M9: UI travada na aba INFO.";
+				};
+			};
 		};
-		// ---- Vanilla (override OFF): comportamento original, nada muda ----
+
+		waitUntil {!dialog};
+		call DRO_openSetupMenu;
+
+		// M9: HOME (199) reabre o menu se fechado por ESC sem dar START.
+		DRO_setupReopenEH = (findDisplay 46) displayAddEventHandler ["KeyDown", {
+			params ["_disp", "_key"];
+			if (_key == 199 && {(missionNameSpace getVariable ["factionsChosen", 0]) == 0} && {isNull (findDisplay 52525)}) then {
+				call DRO_openSetupMenu;
+				("DRO_reopenHint" call BIS_fnc_rscLayer) cutText ["", "PLAIN", 0];
+			};
+			false
+		}];
+
+		// Watcher: avisa quando o menu esta fechado e ainda nao confirmado.
+		DRO_setupWatchPFH = [{
+			params ["_a", "_h"];
+			private _layer = "DRO_reopenHint" call BIS_fnc_rscLayer;
+			if ((missionNameSpace getVariable ["factionsChosen", 0]) == 1) exitWith {
+				_layer cutText ["", "PLAIN", 0];
+				if (!isNil "DRO_setupReopenEH") then { (findDisplay 46) displayRemoveEventHandler ["KeyDown", DRO_setupReopenEH]; };
+				[_h] call CBA_fnc_removePerFrameHandler;
+			};
+			if (isNull (findDisplay 52525)) then {
+				_layer cutText ["Menu de configuracao fechado - pressione HOME para reabri-lo", "PLAIN", 0, true];
+			} else {
+				_layer cutText ["", "PLAIN", 0];
+			};
+		}, 0.5, []] call CBA_fnc_addPerFrameHandler;
 	};
 };
 
