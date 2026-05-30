@@ -204,8 +204,29 @@ class sundayDialog {
 					w = "20 * pixelGridNoUIScale * pixelW";	
 					h = "safezoneH - (30 * pixelGridNoUIScale * pixelH)";	
 				};	
+				// M9: aviso destacado mostrado SOMENTE no estado #3 (override ON,
+				// faccoes via UI). Oculto por padrao (fade=1) e excluido do loop
+				// de fade em populateStartupMenu.sqf. Texto setado em initPlayerLocal.sqf.
+				class serverNotice: sundayText
+				{
+					idc = 1144;
+					type = CT_STRUCTURED_TEXT;
+					text = "";
+					fade = 1;
+					x = "3 * pixelGridNoUIScale * pixelW";
+					y = "15 * pixelGridNoUIScale * pixelH";
+					w = "20 * pixelGridNoUIScale * pixelW";
+					h = "20 * pixelGridNoUIScale * pixelH";
+					colorBackground[] = { 0.45, 0.33, 0.0, 0.55 };
+					size = "((pixelH * (pixelGridNoUIScale) * 2) * 1.2) * 0.7";
+					class Attributes {
+						color = "#FFD200";
+						align = "center";
+						valign = "middle";
+					};
+				};
 				class clearData: DROBasicButton
-				{			
+				{
 					idc = 1143;
 					text = "Reset Default Options";
 					x = "3 * pixelGridNoUIScale * pixelW";

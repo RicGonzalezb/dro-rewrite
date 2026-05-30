@@ -23,6 +23,13 @@ respawnTemplates[] = {"MenuPosition", "Tickets", "Spectator", "EndMission"};
 
 class Params
 {
+	class DRO_HdrGameplay
+	{
+		title = "===== DRO — GAMEPLAY =====";
+		values[] = {0};
+		texts[] = {"(section header)"};
+		default = 0;
+	};
 	class Respawn
 	{
 		title = "Respawn";
@@ -71,6 +78,326 @@ class Params
 	*/
 	#define TIMEACCELERATION_DEFAULT 1
 	#include "\a3\Functions_F_MP_Mark\Params\paramTimeAcceleration.hpp"
+
+	// ================================================================
+	// M9 — Lobby Param Override (DRO_ParamOverride)
+	// Defaults espelham os defaults de loadProfile.sqf (exceto os dois
+	// toggles-mestre que sao sempre 0=OFF).
+	// ================================================================
+
+	// ---- Cabecalho-divisor (param dummy, ignorado pelo loadParams) ----
+	class DRO_HdrMaster
+	{
+		title = "===== PARAMETERS OVERRIDE — MASTER =====";
+		values[] = {0};
+		texts[] = {"(section header)"};
+		default = 0;
+	};
+	// ---- Toggles-mestre ----
+	class DRO_ParamOverride
+	{
+		title = "Use Lobby Parameters only";
+		values[] = {0,1};
+		texts[] = {"Disabled (use UI)", "Enabled"};
+		default = 0;
+	};
+
+	// ---- Scenario ----
+	class DRO_HdrScenario
+	{
+		title = "===== SCENARIO =====";
+		values[] = {0};
+		texts[] = {"(section header)"};
+		default = 0;
+	};
+	class DRO_ParamPreset
+	{
+		title = "Game Mode";
+		values[] = {1,2,3};
+		texts[] = {"Recon Ops","Sniper Ops","Combined Arms"};
+		default = 1;
+	};
+	class DRO_ParamExtendedAO
+	{
+		title = "Extended AO";
+		values[] = {0,1};
+		texts[] = {"Enabled","Disabled"};
+		default = 0;
+	};
+	class DRO_ParamAISkill
+	{
+		title = "AI Skill";
+		values[] = {0,1,2};
+		texts[] = {"Normal","Hard","Custom"};
+		default = 2;
+	};
+	class DRO_ParamEnemySize
+	{
+		title = "Enemy Force Size";
+		values[] = {5,8,10,12,15,17};
+		texts[] = {"x0.5","x0.8","x1.0","x1.2","x1.5","x1.7"};
+		default = 10;
+	};
+	class DRO_ParamMines
+	{
+		title = "Minefields";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamCivilians
+	{
+		title = "Civilians";
+		values[] = {0,1,2,3};
+		texts[] = {"Random","Enabled","Enabled & Hostile","Disabled"};
+		default = 0;
+	};
+	class DRO_ParamCivAgents
+	{
+		title = "Civilians as Agents";
+		values[] = {0,1};
+		texts[] = {"Enabled","Disabled"};
+		default = 0;
+	};
+	class DRO_ParamStealth
+	{
+		title = "Stealth";
+		values[] = {0,1,2};
+		texts[] = {"Random","Enabled","Disabled"};
+		default = 0;
+	};
+	class DRO_ParamRevive
+	{
+		title = "Revive";
+		values[] = {0,1,2,3};
+		texts[] = {"300s","120s","60s","Disabled"};
+		default = 3;
+	};
+	class DRO_ParamStamina
+	{
+		title = "Stamina";
+		values[] = {0,1};
+		texts[] = {"Enabled","Disabled"};
+		default = 0;
+	};
+	class DRO_ParamDynSim
+	{
+		title = "Dynamic Simulation";
+		values[] = {0,1};
+		texts[] = {"Enabled","Disabled"};
+		default = 0;
+	};
+
+	// ---- Environment ----
+	class DRO_HdrEnvironment
+	{
+		title = "===== ENVIRONMENT =====";
+		values[] = {0};
+		texts[] = {"(section header)"};
+		default = 0;
+	};
+	class DRO_ParamTimeOfDay
+	{
+		title = "Time of Day";
+		values[] = {0,1,2,3,4,5,6,7};
+		texts[] = {"Random","Dawn","Morning","Midday","Afternoon","Dusk","Evening","Midnight"};
+		default = 0;
+	};
+	class DRO_ParamWeather
+	{
+		title = "Weather";
+		values[] = {0,1,2,3,4};
+		texts[] = {"Random","Clear","Light","Overcast","Storm"};
+		default = 0;
+	};
+	class DRO_ParamMonth
+	{
+		title = "Month";
+		values[] = {0,1,2,3,4,5,6,7,8,9,10,11,12};
+		texts[] = {"Random","January","February","March","April","May","June","July","August","September","October","November","December"};
+		default = 0;
+	};
+	class DRO_ParamDay
+	{
+		title = "Day";
+		values[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
+		texts[] = {"Random","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31"};
+		default = 0;
+	};
+	class DRO_ParamAnimals
+	{
+		title = "Animals";
+		values[] = {0,1};
+		texts[] = {"Enabled","Disabled"};
+		default = 0;
+	};
+
+	// ---- Objectives ----
+	class DRO_HdrObjectives
+	{
+		title = "===== OBJECTIVES =====";
+		values[] = {0};
+		texts[] = {"(section header)"};
+		default = 0;
+	};
+	class DRO_ParamNumObjectives
+	{
+		title = "No. of Objectives";
+		values[] = {0,1,2,3,4,5};
+		texts[] = {"Random","1","2","3","4","5"};
+		default = 0;
+	};
+	class DRO_ParamObjHVT
+	{
+		title = "Obj: Eliminate HVT";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamObjPOW
+	{
+		title = "Obj: Rescue Hostage";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 1;
+	};
+	class DRO_ParamObjIntel
+	{
+		title = "Obj: Retrieve Intel";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 1;
+	};
+	class DRO_ParamObjCache
+	{
+		title = "Obj: Destroy Cache";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamObjAsset
+	{
+		title = "Obj: Destroy Asset";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamObjSteal
+	{
+		title = "Obj: Steal Vehicle";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamObjClear
+	{
+		title = "Obj: Clear Area";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamObjFortify
+	{
+		title = "Obj: Fortify";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamObjDisarm
+	{
+		title = "Obj: Disarm";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamObjProtect
+	{
+		title = "Obj: Protect Civilian";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+
+	// ---- Factions (usados apenas quando DRO_ParamUseFactions==1) ----
+	// Indice 0 = RANDOM. Indices 1-8 = classnames vanilla + Contact.
+	// loadParams.sqf valida existencia em CfgFactionClasses antes de aplicar.
+	class DRO_HdrFactions
+	{
+		title = "===== FACTIONS =====";
+		values[] = {0};
+		texts[] = {"(section header)"};
+		default = 0;
+	};
+	class DRO_ParamUseFactions
+	{
+		title = "Factions Via Parameters Toggle (skips UI)";
+		values[] = {0,1};
+		texts[] = {"Disabled (choose on UI)", "Enabled"};
+		default = 0;
+	};
+	class DRO_ParamPlayerFaction
+	{
+		title = "Player Faction";
+		values[] = {0,1,2,3,4,5,6,7,8};
+		texts[] = {"Random","NATO (BLU_F)","NATO Pacific (BLU_T_F)","CSAT (OPF_F)","CSAT Pacific (OPF_T_F)","AAF (IND_F)","FIA (IND_G_F)","LDF (IND_L_F)","Russia (OPF_R_F)"};
+		default = 0;
+	};
+	class DRO_ParamEnemyFaction
+	{
+		title = "Enemy Faction";
+		values[] = {0,1,2,3,4,5,6,7,8};
+		texts[] = {"Random","NATO (BLU_F)","NATO Pacific (BLU_T_F)","CSAT (OPF_F)","CSAT Pacific (OPF_T_F)","AAF (IND_F)","FIA (IND_G_F)","LDF (IND_L_F)","Russia (OPF_R_F)"};
+		default = 0;
+	};
+	class DRO_ParamCivFaction
+	{
+		title = "Civilian Faction";
+		values[] = {0,1,2};
+		texts[] = {"Default","Civilians (CIV_F)","IDAP (CIV_IDAP_F)"};
+		default = 0;
+	};
+	class DRO_ParamPlayerAdv1
+	{
+		title = "Player Adv Faction 1";
+		values[] = {0,1,2,3,4,5,6,7,8};
+		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
+		default = 0;
+	};
+	class DRO_ParamPlayerAdv2
+	{
+		title = "Player Adv Faction 2";
+		values[] = {0,1,2,3,4,5,6,7,8};
+		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
+		default = 0;
+	};
+	class DRO_ParamPlayerAdv3
+	{
+		title = "Player Adv Faction 3";
+		values[] = {0,1,2,3,4,5,6,7,8};
+		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
+		default = 0;
+	};
+	class DRO_ParamEnemyAdv1
+	{
+		title = "Enemy Adv Faction 1";
+		values[] = {0,1,2,3,4,5,6,7,8};
+		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
+		default = 0;
+	};
+	class DRO_ParamEnemyAdv2
+	{
+		title = "Enemy Adv Faction 2";
+		values[] = {0,1,2,3,4,5,6,7,8};
+		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
+		default = 0;
+	};
+	class DRO_ParamEnemyAdv3
+	{
+		title = "Enemy Adv Faction 3";
+		values[] = {0,1,2,3,4,5,6,7,8};
+		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
+		default = 0;
+	};
 };
 
 class RscTitles {

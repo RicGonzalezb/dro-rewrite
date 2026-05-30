@@ -162,15 +162,68 @@ closeDialog 1;
 */
 sleep 3;
 
-if (player == topUnit) then {	
-	waitUntil {!dialog};
-	// Faction dialog
-	diag_log "DRO: Create menu dialog";
-	_handle = createDialog "sundayDialog";
-	diag_log format ["DRO: Created dialog: %1", _handle];
+
+if (player == topUnit) then {
+	// M9: Carregar profile e params ANTES das decisoes de UI.
+	// loadProfile.sqf: le profileNamespace e publica globais.
+	// loadParams.sqf: se override ativo, sobrescreve globais com params do lobby.
 	[] call compile preprocessFileLineNumbers "loadProfile.sqf";
-	[] execVM "sunday_system\dialogs\populateStartupMenu.sqf";
-	//playSound "Transition1";
+	[] call compile preprocessFileLineNumbers "loadParams.sqf";
+
+	if (DRO_paramOverrideActive && DRO_paramSkipUI) then {
+		// ---- ESTADO #2: Faccoes via params — pula o dialogo de pre-geracao ----
+		// loadParams.sqf ja setou playersFaction/enemyFaction/civFaction +
+		// factionsChosen=1 (server recebe via broadcast). Sem sundayDialog.
+		diag_log "DRO M9: skip pre-gen UI (faccoes via params, factionsChosen broadcast).";
+
+	} else {
+		// ---- ESTADO #3 ou Vanilla ----
+		waitUntil {!dialog};
+		// Faction dialog
+		diag_log "DRO: Create menu dialog";
+		_handle = createDialog "sundayDialog";
+		diag_log format ["DRO: Created dialog: %1", _handle];
+		// M9 hotfix #2: execVM e ASSINCRONO. Definir menuComplete=false ANTES
+		// garante que o waitUntil abaixo nao avalie nil (race que abortava o
+		// waitUntil e disparava o travamento antes do populateStartupMenu terminar).
+		menuComplete = false;
+		[] execVM "sunday_system\dialogs\populateStartupMenu.sqf";
+		//playSound "Transition1";
+
+		if (DRO_paramOverrideActive) then {
+			// ---- ESTADO #3: Override ON, faccoes via UI ----
+			// Travar navegacao em INFO. Listboxes de faccao (1301/1311/1321)
+			// e os combos avancados (3800-3805) permanecem visiveis e ativos.
+			// As outras abas (SCENARIO/ENVIRONMENT/OBJECTIVES/ADVANCED FACTIONS)
+			// ficam inacessiveis — os params ja configuraram esses valores.
+			waitUntil { !isNil "menuComplete" && {menuComplete} };
+			disableSerialization;
+			// Reduz o array de navegacao para so a aba INFO
+			menuSliderArray = [["INFO", 1140]];
+			menuSliderCurrent = 0;
+			// Desabilita e esconde as setas de navegacao (IDC 1150="<", IDC 1151=">")
+			((findDisplay 52525) displayCtrl 1150) ctrlEnable false;
+			((findDisplay 52525) displayCtrl 1150) ctrlShow false;
+			((findDisplay 52525) displayCtrl 1151) ctrlEnable false;
+			((findDisplay 52525) displayCtrl 1151) ctrlShow false;
+			// M9: esconder "Reset Default Options" (IDC 1143) — resetaria os
+			// params/profile que nao podem ser reconfigurados com override ON.
+			((findDisplay 52525) displayCtrl 1143) ctrlEnable false;
+			((findDisplay 52525) displayCtrl 1143) ctrlShow false;
+			// M9: aviso destacado na aba INFO (controle 1144, oculto por padrao).
+			_noticeCtrl = (findDisplay 52525) displayCtrl 1144;
+			_noticeCtrl ctrlSetStructuredText (parseText (
+				"<t size='1.15' shadow='1'>SERVER-DEFINED SETUP</t><br/><br/>"
+				+ "<t size='0.95'>Mission settings have been pre-configured by the server.</t><br/><br/>"
+				+ "<t size='0.95'>Only faction selection remains available — choose your factions above and press START.</t>"
+			));
+			_noticeCtrl ctrlSetFade 0;
+			_noticeCtrl ctrlShow true;
+			_noticeCtrl ctrlCommit 0;
+			diag_log "DRO M9: UI travada na aba INFO (param override ativo). Faccoes ainda selecionaveis. Aviso server-defined exibido.";
+		};
+		// ---- Vanilla (override OFF): comportamento original, nada muda ----
+	};
 };
 
 _rscLayer cutFadeOut 2;
@@ -402,13 +455,11 @@ player createDiaryRecord ["dro", ["Dynamic Recon Ops", "
 	Dynamic Recon Ops is a randomized, re-playable scenario that generates an enemy occupied AO with a selection of tasks to complete within.
 	Select your AO location, the factions you want to use and any supports available or leave them all randomized and see what mission you are sent on.<br /><br />
 	Designed to be simple to use but with plenty of options to customize your mission setup, the objective behind DRO is to create a way to quickly get playing a new scenario in singleplayer or co-op. With as few changes to the base game as possible, DRO aims to showcase the unique and varied gameplay that Arma 3 has to offer for smaller scale infantry combat.<br /><br />
-	Additionally, DRO has been designed from the ground up to take advantage of faction mods. If you have any mods that create new factions they will be selectable as player or enemy sides within the mission. However, the scenario itself requires no mods apart from specific terrains if you want to use them.<br /><br />
 	Thank you for playing!	
 "]];
 
 // Start saving player loadout periodically.
-// Migrated from `[] spawn { while {true} do { sleep 5; ... } }` to a
-// non-scheduled CBA per-frame handler with 5s delta. Same behavior.
+// Migrated to a non-scheduled CBA per-frame handler with 5s delta.
 loadoutSavingStarted = true;
 playerRespawning = false;
 diag_log format ["DRO: Initial respawn loadout = %1", (getUnitLoadout player)];
@@ -419,4 +470,3 @@ if (isNil "DRO_loadoutSaverPFH") then {
 		};
 	}, 5, []] call CBA_fnc_addPerFrameHandler;
 };
-

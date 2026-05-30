@@ -31,7 +31,16 @@ publicVariable "topUnit";
 
 diag_log format ["DRO: topUnit = %1", topUnit];
 
-[(profileNamespace getVariable ["DRO_timeOfDay", 0])] call DRO_fnc_randomTime;
+// M9: Em dedicated server, profileNamespace e do servidor (diferente do host).
+// Se override ativo, le timeOfDay direto do param (mesmo resultado em todas as maquinas).
+// Override OFF: comportamento original preservado (le do server profileNamespace).
+private _DRO_m9_todParam = ["DRO_ParamOverride", 0] call BIS_fnc_getParamValue;
+private _DRO_m9_toD = if (_DRO_m9_todParam == 1) then {
+	["DRO_ParamTimeOfDay", 0] call BIS_fnc_getParamValue
+} else {
+	profileNamespace getVariable ["DRO_timeOfDay", 0]
+};
+[_DRO_m9_toD] call DRO_fnc_randomTime;
 
 playersFaction = "";
 enemyFaction = "";
@@ -82,6 +91,16 @@ dro_messageStack = [];
 enemyPosCollection = [];
 
 diag_log "DRO: Variables defined";
+
+// M9 — Lobby Param Override: aplicar params do lobby sobre as vars de geracao.
+// Roda APOS as inicializacoes de variaveis acima para que loadParams
+// possa sobrescrever valores (ex: playersFaction, numObjectives).
+// Com override OFF: sai no exitWith inicial e nao muda nada.
+// Com override ON + UseFactions: seta playersFaction/enemyFaction +
+//   factionsChosen=1, destravando o waitUntil na linha ~127.
+[] call compile preprocessFileLineNumbers "loadParams.sqf";
+diag_log "DRO M9: loadParams.sqf chamado de start.sqf";
+
 diag_log "DRO: Compiling scripts";
 
 // [M3 removed] DRO_fnc_generateAO = compile preprocessFile "sunday_system\generate_ao\generateAO.sqf";

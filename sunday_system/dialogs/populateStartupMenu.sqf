@@ -13,9 +13,9 @@ menuSliderCurrent = 0;
 ctrlSetFocus ((findDisplay 52525) displayCtrl 1150);
 
 {	
-	if ((ctrlIDC _x != 1098) && (ctrlIDC _x != 1052) && (ctrlIDC _x != 1053)) then {
+	if ((ctrlIDC _x != 1098) && (ctrlIDC _x != 1052) && (ctrlIDC _x != 1053) && (ctrlIDC _x != 1144)) then {
 		((findDisplay 52525) displayCtrl (ctrlIDC _x)) ctrlSetFade 0;
-	};	
+	};
 	if (ctrlIDC _x < 5000) then {
 		((findDisplay 52525) displayCtrl (ctrlIDC _x)) ctrlCommit 0.3;
 	}; 		
