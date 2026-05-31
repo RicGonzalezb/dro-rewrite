@@ -207,6 +207,9 @@ if ((["DRO_ParamUseFactions", 0] call BIS_fnc_getParamValue) == 1) then {
 	publicVariable "DRO_paramSkipUI";
 	diag_log "DRO M9: DRO_ParamUseFactions=1 — faccoes via params, UI sera pulada.";
 
+	// M9 fix: resolver faccoes UMA vez, somente no servidor (selectRandom diverge
+	// entre server e client em RANDOM). Cliente recebe os classnames via publicVariable.
+	if (isServer && {(missionNameSpace getVariable ["factionsChosen", 0]) == 0}) then {
 	// ---- Player Faction ----
 	private _pfIdx = ["DRO_ParamPlayerFaction", 0] call BIS_fnc_getParamValue;
 	private _pfCN  = _combatFactionMap select _pfIdx;
@@ -279,6 +282,7 @@ if ((["DRO_ParamUseFactions", 0] call BIS_fnc_getParamValue) == 1) then {
 	if ((missionNameSpace getVariable ["factionsChosen", 0]) == 0) then {
 		missionNameSpace setVariable ["factionsChosen", 1, true];
 		diag_log "DRO M9: factionsChosen = 1 (set by loadParams — faccoes via param).";
+	};
 	};
 };
 
