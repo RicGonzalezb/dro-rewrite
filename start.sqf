@@ -13,7 +13,11 @@ respawnTime = switch (["Respawn", 0] call BIS_fnc_getParamValue) do {
 	case 0: {20};
 	case 1: {45};
 	case 2: {90};
-	case 3: {nil};
+	case 3: {300};
+	case 4: {600};
+	case 5: {1200};
+	case 6: {1800};
+	case 7: {nil};
 };
 publicVariable "respawnTime";
 
@@ -158,7 +162,7 @@ diag_log "DRO: Factions chosen";
 "EmptyVehicle" setDynamicSimulationDistance 1000;
 
 // Force Sunday Revive disabled if ACE3 has cardiac arrest time greater than zero
-if ((["Respawn", 0] call BIS_fnc_getParamValue) < 3) then {
+if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7) then {
 	if ((configfile >> "CfgPatches" >> "ace_medical") call BIS_fnc_getCfgIsClass) then {	
 		if (!isNil "ace_medical_statemachine_cardiacArrestTime") then {
 			if (ace_medical_statemachine_cardiacArrestTime > 0) then {

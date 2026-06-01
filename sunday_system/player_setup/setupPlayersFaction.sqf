@@ -665,7 +665,7 @@ switch (insertType) do {
 				markerPlayerStart setMarkerType "loc_Bunker";
 				markerPlayerStart setMarkerSize [3, 3];
 				markerPlayerStart setMarkerText _campName;
-				if ((["Respawn", 0] call BIS_fnc_getParamValue) < 3 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {	
+				if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {	
 					respawnFOB = [missionNamespace, "campMkr", _campName] call BIS_fnc_addRespawnPosition;
 				};
 			};
@@ -755,7 +755,7 @@ switch (insertType) do {
 					markerPlayerStart setMarkerType "mil_start";
 					markerPlayerStart setMarkerText "Sea Insert";
 					
-					if ((["Respawn", 0] call BIS_fnc_getParamValue) < 3 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {	
+					if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {	
 						respawnBoat = [missionNamespace, (_vehiclePool select 0)] call BIS_fnc_addRespawnPosition;
 					};
 					
@@ -801,7 +801,7 @@ switch (insertType) do {
 		markerPlayerStart setMarkerType "mil_end";
 		markerPlayerStart setMarkerText "Drop Point";
 		
-		if ((["Respawn", 0] call BIS_fnc_getParamValue) < 3 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {	
+		if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {	
 			respawnHALO = [missionNamespace, "campMkr", "Landing Zone"] call BIS_fnc_addRespawnPosition;
 		};
 		
@@ -958,7 +958,7 @@ switch (insertType) do {
 		markerPlayerStart setMarkerType "mil_end";
 		markerPlayerStart setMarkerText _campName;
 		
-		if ((["Respawn", 0] call BIS_fnc_getParamValue) < 3 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {
+		if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {
 			respawnHeli = [missionNamespace, "campMkr", _campName] call BIS_fnc_addRespawnPosition;
 		};
 		
@@ -1113,7 +1113,7 @@ playerGroup = _playerGroup;
 
 if (isMultiplayer) then {
 	// If respawn is enabled add the dynamic team respawn position
-	if ((["Respawn", 0] call BIS_fnc_getParamValue) < 3) then {
+	if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7) then {
 		if ((["RespawnPositions", 0] call BIS_fnc_getParamValue) == 0 || (["RespawnPositions", 0] call BIS_fnc_getParamValue) == 2) then {
 			[] execVM 'sunday_system\player_setup\teamRespawnPos.sqf';
 		};
@@ -1125,7 +1125,7 @@ if (isMultiplayer) then {
 	{
 		if (!isPlayer _x) then {
 			// Add eventhandlers to govern respawning in MP games
-			if ((["Respawn", 0] call BIS_fnc_getParamValue) == 3) then {
+			if ((["Respawn", 0] call BIS_fnc_getParamValue) == 7) then {
 				// Respawn disabled
 				[_x, ["respawn", {
 					_unit = (_this select 0);

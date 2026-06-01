@@ -84,7 +84,7 @@ if (count _respawnPos > 0) then {
 		};
 	};
 
-	if ((["Respawn", 0] call BIS_fnc_getParamValue) == 3) then {
+	if ((["Respawn", 0] call BIS_fnc_getParamValue) == 7) then {
 		[_unit, ["respawn", {
 			_unit = (_this select 0);				
 			deleteVehicle _unit
