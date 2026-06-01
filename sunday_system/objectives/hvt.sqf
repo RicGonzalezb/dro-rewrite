@@ -25,11 +25,19 @@ _hvtStyle = selectRandom _hvtStyles;
 switch (_hvtStyle) do {
 	case "INSIDE": {				
 		_building = [(((AOLocations select _AOIndex) select 2) select 7)] call DRO_fnc_selectRemove;
+		if (isNull _building) exitWith {
+			_break = true;
+			diag_log "DRO: HVT INSIDE -- building null (pool empty), aborting";
+		};
 		_buildingPlaces = [_building] call BIS_fnc_buildingPositions;
 		_thisBuildingPlace = [0,((count _buildingPlaces)-1)] call BIS_fnc_randomInt;
 		
 		// Create HVT unit
 		_hvtGroup = [getPos _building, enemySide, _hvtType, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;		
+		if (isNil "_hvtGroup" || {isNull _hvtGroup} || {count (units _hvtGroup) == 0}) exitWith {
+			_break = true;
+			diag_log "DRO: HVT INSIDE -- spawnGroupWeighted returned empty group";
+		};
 		_hvtChar = ((units _hvtGroup) select 0);
 		//_hvtGroup = createGroup enemySide;
 		//_hvtChar = _hvtGroup createUnit [_hvtType, getPos _building, [], 0, "NONE"];			
@@ -60,6 +68,10 @@ switch (_hvtStyle) do {
 	};
 	case "OUTSIDE": {		
 		_hvtPos = [(((AOLocations select _AOIndex) select 2) select 4)] call DRO_fnc_selectRemove;	
+		if (!(_hvtPos isEqualType []) || {count _hvtPos < 3} || {_hvtPos isEqualTo [0,0,0]}) exitWith {
+			_break = true;
+			diag_log "DRO: HVT OUTSIDE -- hvtPos invalid (pool empty or [0,0,0])";
+		};
 		_hvtPos set [2,0];					
 		
 		// STATIONARY
@@ -81,9 +93,22 @@ switch (_hvtStyle) do {
 				} forEach _spawnedObjects;					
 				// Create HVT unit						
 				_hvtSpawnPos = _hvtPos findEmptyPosition [0, 15, _hvtType];
+				if (_hvtSpawnPos isEqualTo [] || {_hvtSpawnPos isEqualTo [0,0,0]}) then {
+					if (!(_hvtPos isEqualTo [0,0,0])) then {
+						_hvtSpawnPos = _hvtPos;
+					} else {
+						_break = true;
+						diag_log "DRO: HVT FOBS -- findEmptyPosition failed and hvtPos invalid";
+					};
+				};
+				if (_break) exitWith {};
 				//_hvtGroup = createGroup enemySide;
 				//_hvtChar = _hvtGroup createUnit [_hvtType, _hvtSpawnPos, [], 0, "NONE"];
 				_hvtGroup = [_hvtSpawnPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
+				if (isNil "_hvtGroup" || {isNull _hvtGroup} || {count (units _hvtGroup) == 0}) exitWith {
+					_break = true;
+					diag_log "DRO: HVT FOBS -- spawnGroupWeighted returned empty group";
+				};
 				_hvtChar = ((units _hvtGroup) select 0);
 				
 				_dist = 10;
@@ -102,7 +127,20 @@ switch (_hvtStyle) do {
 			case "MEETINGS": {
 				// Create HVT unit
 				_hvtSpawnPos = _hvtPos findEmptyPosition [0, 15, _hvtType];
+				if (_hvtSpawnPos isEqualTo [] || {_hvtSpawnPos isEqualTo [0,0,0]}) then {
+					if (!(_hvtPos isEqualTo [0,0,0])) then {
+						_hvtSpawnPos = _hvtPos;
+					} else {
+						_break = true;
+						diag_log "DRO: HVT MEETINGS -- findEmptyPosition failed and hvtPos invalid";
+					};
+				};
+				if (_break) exitWith {};
 				_hvtGroup = [_hvtSpawnPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
+				if (isNil "_hvtGroup" || {isNull _hvtGroup} || {count (units _hvtGroup) == 0}) exitWith {
+					_break = true;
+					diag_log "DRO: HVT MEETINGS -- spawnGroupWeighted returned empty group";
+				};
 				_hvtChar = ((units _hvtGroup) select 0);
 				//_hvtGroup = createGroup enemySide;
 				//_hvtChar = _hvtGroup createUnit [_hvtType, _hvtSpawnPos, [], 0, "NONE"];						
@@ -155,9 +193,17 @@ switch (_hvtStyle) do {
 		if (count (((AOLocations select _AOIndex) select 2) select 3) > 0) then {_possibleLocTypes pushBack 3};
 		if (count (((AOLocations select _AOIndex) select 2) select 4) > 0) then {_possibleLocTypes pushBack 4};		
 		diag_log format ["_possibleLocTypes for OUTSIDETRAVEL HVT spawn = %1", _possibleLocTypes];
+		if (count _possibleLocTypes == 0) exitWith {
+			_break = true;
+			diag_log "DRO: HVT OUTSIDETRAVEL -- sem pools de posicao validos";
+		};
 		_selectedPos = selectRandom _possibleLocTypes;
 		diag_log format ["_selectedPos for OUTSIDETRAVEL HVT spawn = %1", _selectedPos];
 		_hvtPos = [(((AOLocations select _AOIndex) select 2) select _selectedPos)] call DRO_fnc_selectRemove;
+		if (!(_hvtPos isEqualType []) || {count _hvtPos < 3} || {_hvtPos isEqualTo [0,0,0]}) exitWith {
+			_break = true;
+			diag_log "DRO: HVT OUTSIDETRAVEL -- hvtPos invalid (pool empty or [0,0,0])";
+		};
 	
 		// Get a selection of possible new travel locations if chance allows
 		_travelPositions = [];			
@@ -199,10 +245,14 @@ switch (_hvtStyle) do {
 		_hvtPos set [2, 0];
 		//_hvtChar = _hvtGroup createUnit [_hvtType, _hvtPos, [], 0, "NONE"];
 		_hvtGroup = [_hvtPos, enemySide, _hvtType, [], [1, 1], true, "NONE"] call DRO_fnc_spawnGroupWeighted;
+		if (isNil "_hvtGroup" || {isNull _hvtGroup} || {count (units _hvtGroup) == 0}) exitWith {
+			_break = true;
+			diag_log "DRO: HVT OUTSIDETRAVEL -- spawnGroupWeighted returned empty group";
+		};
 		_hvtChar = ((units _hvtGroup) select 0);
 		_dist = 10;
 		while {([_hvtChar] call DRO_fnc_checkIntersect) && (_dist < 100)} do {
-			[_hvtGroup, (_hvtSpawnPos getPos [_dist, (random 360)])] call DRO_fnc_moveGroup;
+			[_hvtGroup, (_hvtPos getPos [_dist, (random 360)])] call DRO_fnc_moveGroup;
 			_dist = _dist + 5;
 		};
 		/*
