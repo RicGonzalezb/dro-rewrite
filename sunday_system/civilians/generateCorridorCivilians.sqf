@@ -36,7 +36,7 @@ private _usedLocationNames = [];
 	private _aoSize = _aoSizes select _forEachIndex;
 	private _aoIdx = _forEachIndex;
 	private _excludeRadius = _aoSize * 0.6;
-	private _searchRadius = _aoSize + 1500;
+	private _searchRadius = 2000; // teto 2km a partir do CENTRO da AO (Gonza). Era _aoSize+1500. Fase 2 (corredor) NAO alterada.
 
 	private _nearLocs = nearestLocations [_aoPos, ["NameLocal", "NameVillage"], _searchRadius];
 
