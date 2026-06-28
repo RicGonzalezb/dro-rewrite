@@ -400,6 +400,71 @@ class Params
 	};
 };
 
+/* =====================================================================
+   REFERENCIA — server.cfg  (este bloco NAO eh lido pelo description.ext)
+   ---------------------------------------------------------------------
+   class Missions vai no server.cfg do servidor DEDICADO, nao aqui.
+   Copie o conteudo abaixo para o seu server.cfg e ajuste o "template".
+   Os valores sao os indices dos params definidos em class Params acima.
+   Exemplo: override ON + faccoes via params (pula a UI e gera direto).
+
+   class Missions
+   {
+       class DRO_Livonia
+       {
+           template   = "Dynamic Recon Ops ACE - Livonia.Enoch"; // pasta/.pbo em mpmissions, sem .pbo
+           difficulty = "Custom";
+           class Params
+           {
+               // ---- MASTER ----
+               DRO_ParamOverride      = 1;  // 0=usa UI in-game | 1=usa params do lobby
+               // ---- FACTIONS ----
+               DRO_ParamUseFactions   = 1;  // 0=escolhe na UI | 1=usa params e PULA a UI
+               DRO_ParamPlayerFaction = 1;  // 0=Random 1=NATO 2=NATO Pac 3=CSAT 4=CSAT Pac 5=AAF 6=FIA 7=LDF 8=Russia
+               DRO_ParamEnemyFaction  = 7;  // (mesma tabela) ex: 7=LDF
+               DRO_ParamCivFaction    = 0;  // 0=Default(CIV_F) 1=CIV_F 2=CIV_IDAP_F
+               DRO_ParamPlayerAdv1    = 0;  DRO_ParamPlayerAdv2 = 0;  DRO_ParamPlayerAdv3 = 0; // 0=None | 1-8
+               DRO_ParamEnemyAdv1     = 0;  DRO_ParamEnemyAdv2  = 0;  DRO_ParamEnemyAdv3  = 0;
+               // ---- SCENARIO ----
+               DRO_ParamPreset        = 1;  // 1=Recon 2=Sniper 3=Combined
+               DRO_ParamExtendedAO    = 0;  // 0=Enabled 1=Disabled
+               DRO_ParamAISkill       = 2;  // 0=Normal 1=Hard 2=Custom
+               DRO_ParamEnemySize     = 10; // 5,8,10,12,15,17  (=x0.5 .. x1.7)
+               DRO_ParamMines         = 0;  // 0=Disabled 1=Enabled
+               DRO_ParamCivilians     = 0;  // 0=Random 1=Enabled 2=Enabled&Hostile 3=Disabled
+               DRO_ParamCivAgents     = 0;  // 0=Enabled 1=Disabled
+               DRO_ParamStealth       = 0;  // 0=Random 1=Enabled 2=Disabled
+               DRO_ParamRevive        = 3;  // 0=300s 1=120s 2=60s 3=Disabled
+               DRO_ParamStamina       = 0;  // 0=Enabled 1=Disabled
+               DRO_ParamDynSim        = 0;  // 0=Enabled 1=Disabled
+               // ---- ENVIRONMENT ----
+               DRO_ParamTimeOfDay     = 0;  // 0=Random 1=Dawn 2=Morning 3=Midday 4=Afternoon 5=Dusk 6=Evening 7=Midnight
+               DRO_ParamWeather       = 0;  // 0=Random 1=Clear 2=Light 3=Overcast 4=Storm
+               DRO_ParamMonth         = 0;  // 0=Random | 1-12
+               DRO_ParamDay           = 0;  // 0=Random | 1-31
+               DRO_ParamAnimals       = 0;  // 0=Enabled 1=Disabled
+               // ---- OBJECTIVES ----
+               DRO_ParamNumObjectives = 0;  // 0=Random | 1-5
+               DRO_ParamObjHVT        = 0;  // cada tipo: 0=Disabled 1=Enabled
+               DRO_ParamObjPOW        = 1;
+               DRO_ParamObjIntel      = 1;
+               DRO_ParamObjCache      = 0;
+               DRO_ParamObjAsset      = 0;
+               DRO_ParamObjSteal      = 0;
+               DRO_ParamObjClear      = 0;
+               DRO_ParamObjFortify    = 0;
+               DRO_ParamObjDisarm     = 0;
+               DRO_ParamObjProtect    = 0;
+               // ---- GAMEPLAY (params originais) ----
+               Respawn                = 0;  // 0=20s 1=45s 2=90s 3=5min 4=10min 5=20min 6=30min 7=Disabled
+               RespawnPositions       = 0;  // 0=Both 1=Start only 2=Team only
+               Stamina                = 0;  // 0=Enabled 1=Disabled
+               AIWeaponLight          = 1;  // 0=Auto 1=Force On 2=Force Off
+           };
+       };
+   };
+   ===================================================================== */
+
 class RscTitles {
 	class DRO_Splash {
 		idd = -1;

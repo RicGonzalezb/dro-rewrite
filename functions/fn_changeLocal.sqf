@@ -6,15 +6,12 @@ params ["_unit", "_local"];
 		_unit removeAllEventHandlers "Killed";		
 		_handlerDamage = [_unit, ["HandleDamage", DRO_fnc_handleDamage]] remoteExec ["addEventHandler", _unit, true];	
 		_handlerKilled = [_unit, ["Killed", DRO_fnc_handleKilled]] remoteExec ["addEventHandler", _unit, true];
-		_handlerRespawn = [_unit, ["Respawn", {
-			_handlerDamage = (_this select 0) addEventHandler ["HandleDamage", DRO_fnc_handleDamage];
-			_handlerKilled = (_this select 0) addEventHandler ["Killed", DRO_fnc_handleKilled];
-			(_this select 0) setCaptive false;
-			reviveUnits = reviveUnits - [(_this select 1)];
-			reviveUnits pushBack (_this select 0);
-			publicVariable 'reviveUnits';
-		}]] remoteExec ["addEventHandler", _unit, true];		
-		
+		// "Respawn" EH removido (NOTED-1 fix, 2026-06-27):
+		// fn_addReviveToUnit já registra um "Respawn" EH completo (com cleanup de HD/Killed,
+		// DRO_revHandlerIds, actions e re-add) no servidor — cobre tudo que este bloco fazia.
+		// Ambos rodam no servidor (fn_changeLocal é disparado pelo "Local" EH de máquina 0).
+		// Manter os dois causava acumulação após cada troca de localidade → HD/Killed duplicados no respawn.
+
 		private _reviveUnits = reviveUnits;
 		_reviveUnits = _reviveUnits - [_unit];
 		if !((_reviveUnits select 0) getVariable ["rev_downed", false]) then {

@@ -207,6 +207,8 @@ if (player == topUnit) then {
 		call DRO_openSetupMenu;
 
 		// M9: HOME (199) reabre o menu se fechado por ESC sem dar START.
+		// M9 (auditoria leaks): remove EH antigo antes de readicionar (idempotente, NOTED-3).
+		if (!isNil "DRO_setupReopenEH") then { (findDisplay 46) displayRemoveEventHandler ["KeyDown", DRO_setupReopenEH] };
 		DRO_setupReopenEH = (findDisplay 46) displayAddEventHandler ["KeyDown", {
 			params ["_disp", "_key"];
 			if (_key == 199 && {(missionNameSpace getVariable ["factionsChosen", 0]) == 0} && {isNull (findDisplay 52525)}) then {
@@ -217,6 +219,8 @@ if (player == topUnit) then {
 		}];
 
 		// Watcher: avisa quando o menu esta fechado e ainda nao confirmado.
+		// M9 (auditoria leaks): remove PFH antigo antes de recriar (idempotente, NOTED-4).
+		if (!isNil "DRO_setupWatchPFH") then { [DRO_setupWatchPFH] call CBA_fnc_removePerFrameHandler };
 		DRO_setupWatchPFH = [{
 			params ["_a", "_h"];
 			private _layer = "DRO_reopenHint" call BIS_fnc_rscLayer;

@@ -146,6 +146,9 @@ waituntil {
 	sleep 0.01;
 	scriptDone _fire || isNull _provider
 };
+// Guard: if provider died before the close pass, _fire (waitUntil{false}) was never
+// terminated via line 124. Terminate it now so no orphaned thread lingers.
+if (!scriptDone _fire) then { terminate _fire; };
 _provider setVelocity velocity _provider;
 _provider flyInHeight _alt;
 _provider enableAI "move";
