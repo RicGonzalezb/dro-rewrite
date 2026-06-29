@@ -90,12 +90,19 @@ _cfgVeh = configFile >> "CfgVehicles";
 			if (_isPlayerFaction) then {	
 				if (count pGenericNames == 0) then {
 					pGenericNames = ((_cfgVehName >> "genericNames") call BIS_fnc_GetCfgData);
-					pIdentityTypes = ((_cfgVehName >> "identityTypes") call BIS_fnc_GetCfgData);					
+					// Some faction configs declare genericNames as array; >> operator requires string
+					if (typeName pGenericNames == "ARRAY") then {
+						pGenericNames = if (count pGenericNames > 0) then {pGenericNames select 0} else {"CivMen"};
+					};
+					pIdentityTypes = ((_cfgVehName >> "identityTypes") call BIS_fnc_GetCfgData);
 				};
 			} else {
 				if (_isEnemyFaction) then {
 					if (count eGenericNames == 0) then {
 						eGenericNames = ((_cfgVehName >> "genericNames") call BIS_fnc_GetCfgData);
+						if (typeName eGenericNames == "ARRAY") then {
+							eGenericNames = if (count eGenericNames > 0) then {eGenericNames select 0} else {"CivMen"};
+						};
 						eIdentityTypes = ((_cfgVehName >> "identityTypes") call BIS_fnc_GetCfgData);
 					};
 				};

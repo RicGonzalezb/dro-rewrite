@@ -19,6 +19,20 @@ missionNameSpace setVariable ["aoLocationName", "", true];
 missionNameSpace setVariable ["aoLocation", "", true];
 missionNameSpace setVariable ["lobbyComplete", 0, true];
 
+// M10 REQ4: leader handover guard — prevents lobby lock if topUnit disconnects before start
+addMissionEventHandler ["HandleDisconnect", {
+    params ["_unit"];
+    if (!isNil "topUnit" && {_unit isEqualTo topUnit} && {(missionNamespace getVariable ["lobbyComplete", 0]) != 1}) then {
+        private _rem = (call BIS_fnc_listPlayers) - [_unit];
+        if (count _rem > 0) then {
+            topUnit = _rem select 0;
+            publicVariable "topUnit";
+            [] remoteExec ["DRO_fnc_becomeLeader", topUnit];
+        };
+    };
+    false // must return false (HandleDisconnect contract)
+}];
+
 _vn_allowed_radio_backpacks = (missionConfigFile >> "vn_artillery_settings" >> "radio_backpacks") call BIS_fnc_getCfgDataArray;
 missionNameSpace setVariable ["vn_allowed_radio_backpacks", _vn_allowed_radio_backpacks, true];
 _vn_allowed_radio_vehicles = (missionConfigFile >> "vn_artillery_settings" >> "radio_vehicles") call BIS_fnc_getCfgDataArray;

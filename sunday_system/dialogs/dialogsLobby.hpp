@@ -22,6 +22,18 @@ class DRO_lobbyDialog {
 			h = "15 * pixelGridNoUIScale * pixelH";
 			sizeEx = "((pixelH * (pixelGridNoUIScale) * 2) * 5) * 0.5";					
 		};		
+		class lobbyEscHint: sundayText
+		{
+			// M10 REQ1: subtitle - press ESC hint
+			idc = 1099;
+			style = ST_CENTER;
+			text = "Press ESC to exit the Interface";
+			x = "safezoneX + (0 * pixelGridNoUIScale * pixelW)";
+			y = "safezoneY + (11 * pixelGridNoUIScale * pixelH)";
+			w = "40 * pixelGridNoUIScale * pixelW";
+			h = "2.5 * pixelGridNoUIScale * pixelH";
+			sizeEx = "((pixelH * (pixelGridNoUIScale) * 2) * 1.0) * 0.5";
+		};
 		class sundayTitleChoose: sundayHeading
 		{
 			idc = 1101;			
@@ -253,7 +265,7 @@ class DRO_lobbyDialog {
 		class sundayStartButton: DROBigButton
 		{
 			idc = 1601;
-			text = "READY";
+			text = "START MISSION"; // M10 REQ3
 			x = "(safezoneX + safezoneW) - (23 * pixelGridNoUIScale * pixelW)";
 			y = "(safezoneY + safezoneH) - (4 * pixelGridNoUIScale * pixelH)";			
 			w = "23 * pixelGridNoUIScale * pixelW";

@@ -1,0 +1,11 @@
+# Normalize all text files to LF in the repo to avoid CRLF churn.
+* text=auto eol=lf
+
+# Binary assets — never normalize.
+*.paa binary
+*.p3d binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.ogg binary
+*.wss binary

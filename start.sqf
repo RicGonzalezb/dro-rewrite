@@ -578,7 +578,15 @@ for "_i" from 1 to (_numObjs) do {
 		[(AOLocations call BIS_fnc_randomIndex)] call DRO_fnc_selectObjective;	
 	};	
 };
-waitUntil {count allObjectives == _numObjs};
+// Hardening: timeout guard. Objectives are created asynchronously above; if one cannot
+// be placed (faction without usable units, no valid position, or a restrictive objective
+// param combo), allObjectives would never reach _numObjs and this waitUntil would hang
+// forever on the intro camera. Proceed with whatever was created after a safety timeout.
+private _objWaitEnd = time + 90;
+waitUntil { sleep 0.25; (count allObjectives >= _numObjs) || (time > _objWaitEnd) };
+if (count allObjectives < _numObjs) then {
+	diag_log format ["DRO: WARNING - objective generation timed out at %1/%2 after 90s; proceeding with what was created.", count allObjectives, _numObjs];
+};
 {
 	diag_log format ["DRO: objData %1 = %2", _forEachIndex, objData select _forEachIndex];
 } forEach objData;

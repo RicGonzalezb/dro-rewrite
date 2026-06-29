@@ -14,7 +14,7 @@ params ["_unit", "_local"];
 
 		private _reviveUnits = reviveUnits;
 		_reviveUnits = _reviveUnits - [_unit];
-		if !((_reviveUnits select 0) getVariable ["rev_downed", false]) then {
+		if (count _reviveUnits > 0 && {!((_reviveUnits select 0) getVariable ["rev_downed", false])}) then { // audit fix: guard p/ array vazio (grupo de 1 revive unit)
 			if (group _unit != group (_reviveUnits select 0)) then {
 				[_unit] joinSilent group (_reviveUnits select 0);
 			};

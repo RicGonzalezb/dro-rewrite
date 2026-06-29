@@ -17,6 +17,11 @@ if (civiliansAsAgents != 0) exitWith {
 	diag_log "DRO: Corridor/satellite civs skipped — civilians-as-agents is DISABLED";
 };
 
+// audit: bail se nao ha classes de civis (faccao civ sem unidades) — evita selectRandom nil no spawn
+if (isNil "civClasses" || {civClasses isEqualTo []}) exitWith {
+	diag_log "DRO: Corridor/satellite civs skipped — civClasses vazio";
+};
+
 private _useAgents = (civiliansAsAgents == 0);
 diag_log format ["DRO: Generating corridor/satellite civilians v5 (agents=%1, AOs=%2)", _useAgents, count AOLocations];
 

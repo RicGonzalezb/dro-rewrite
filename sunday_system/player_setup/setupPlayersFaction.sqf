@@ -970,6 +970,17 @@ switch (insertType) do {
 		//[(units (grpNetId call BIS_fnc_groupFromNetId)), _insertHeli] spawn sun_groupToVehicle;
 		[(_playerGroupUnique - [objNull]), _insertHeli, true] spawn sun_groupToVehicle;
 	};
+	case 4: {
+		// M11: NONE — sem inserção. Players permanecem na staging area atual.
+		insertType = "NONE";
+		private _ldr = leader (grpNetId call BIS_fnc_groupFromNetId);
+		_randomStartingLocation = getPosATL _ldr; // popula startPos (linha 1076) sem teleportar ninguém
+		// NÃO chamar sun_setPlayerGroup. NÃO criar heli/HALO/veículo. NÃO deletar/recriar campMkr.
+		// Respawn: se campMkr já existe (pré-criado pela missão), registrar posição de respawn.
+		if (getMarkerColor "campMkr" != "" && (["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {
+			respawnNone = [missionNamespace, "campMkr", "Staging"] call BIS_fnc_addRespawnPosition;
+		};
+	};
 };
 
 // Set leader to higher rank to avoid demotion
@@ -1216,14 +1227,17 @@ _iconSide = switch (playersSide) do {
 (grpNetId call BIS_fnc_groupFromNetId) setGroupIdGlobal [playerCallsign];
 
 // Remove arsenal backdrop objects
-sleep 2;
-_backdropList = (getPos logicStartPos) nearObjects 20;
-_backdropList = _backdropList - (units (grpNetId call BIS_fnc_groupFromNetId));
-{
-	if !(_x isKindOf "Module_F") then {
-		deleteVehicle _x;
-	};
-} forEach _backdropList;
+// M11: skip when insertType=="NONE" — players stayed at logicStartPos, staging objects must survive
+if (insertType != "NONE") then {
+	sleep 2;
+	_backdropList = (getPos logicStartPos) nearObjects 20;
+	_backdropList = _backdropList - (units (grpNetId call BIS_fnc_groupFromNetId));
+	{
+		if !(_x isKindOf "Module_F") then {
+			deleteVehicle _x;
+		};
+	} forEach _backdropList;
+};
 
 if (reviveDisabled < 3) then {
 	diag_log "DRO: Revive enabled";
@@ -1232,7 +1246,8 @@ if (reviveDisabled < 3) then {
 };
 
 if (stealthEnabled == 1) then {
-	[] execVM "sunday_system\stealth.sqf";	
+	// stealth.sqf migrado p/ CBA (PFH + waitAndExecute) — sem sleep top-level, roda via call
+	call compile preprocessFileLineNumbers "sunday_system\stealth.sqf";
 }; 
 /*
 // If MCC4 is present re-initialise it for new players

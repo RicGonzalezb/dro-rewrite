@@ -61,6 +61,7 @@ publicVariable "reviveGroup";
 			_allPlayers = _allPlayers - [(_this select 0)];	
 			[(_this select 0)] remoteExec ["DRO_fnc_reviveActionAdd", _allPlayers, true];
 			[(_this select 0)] remoteExec ["DRO_fnc_dragActionAdd", _allPlayers, true];
+			(_this select 0) removeAllEventHandlers "HandleRating"; // audit fix: evita acúmulo de HandleRating a cada respawn
 			[(_this select 0), ["HandleRating", {if ((_this select 1) < 0) then {0}}]] remoteExec ["addEventHandler", (_this select 0), true];
 			[(format ["Revive actions added for unit %1 called for %2", (_this select 0), _allPlayers])] remoteExec ["diag_log", 2];	
 		}]] remoteExec ["addEventHandler", _x, true];

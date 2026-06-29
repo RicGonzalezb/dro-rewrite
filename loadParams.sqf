@@ -10,9 +10,10 @@
 // Prefixo DRO_ em todos os globais conforme padrao do projeto.
 // ============================================================
 
-// Sempre inicializa os dois flags (cobertura do caso override=OFF)
+// Sempre inicializa os flags (cobertura do caso override=OFF)
 DRO_paramOverrideActive = false;
 DRO_paramSkipUI = false;
+DRO_paramSkipTeamPlanning = false;
 
 // ----- Sai imediatamente se override esta desligado -----
 if ((["DRO_ParamOverride", 0] call BIS_fnc_getParamValue) != 1) exitWith {
@@ -20,6 +21,7 @@ if ((["DRO_ParamOverride", 0] call BIS_fnc_getParamValue) != 1) exitWith {
 	// de uma run anterior com override ON num servidor que nao reiniciou a VM.
 	publicVariable "DRO_paramOverrideActive";
 	publicVariable "DRO_paramSkipUI";
+	publicVariable "DRO_paramSkipTeamPlanning";
 	diag_log "DRO M9: param override OFF — usando UI/profile normal.";
 };
 
@@ -33,42 +35,18 @@ diag_log "DRO M9: param override ACTIVE — aplicando parametros do lobby.";
 // Helper local: valida classname em CfgFactionClasses
 private _fnc_validateFaction = {
 	params ["_cn"];
-	if (_cn isEqualTo "") exitWith { false };
+	if (isNil "_cn" || {!(_cn isEqualType "")} || {_cn isEqualTo ""}) exitWith { false }; // audit: cobre nil/tipo invalido (select de map fora de range)
 	(configFile >> "CfgFactionClasses" >> _cn) call BIS_fnc_getCfgIsClass
 };
 
 // Mapa indice->classname para faccoes de combate (player/enemy)
-private _combatFactionMap = [
-	"RANDOM",    // 0 = RANDOM (tratado especialmente abaixo)
-	"BLU_F",     // 1 = NATO
-	"BLU_T_F",   // 2 = NATO (Pacific)
-	"OPF_F",     // 3 = CSAT
-	"OPF_T_F",   // 4 = CSAT (Pacific)
-	"IND_F",     // 5 = AAF
-	"IND_G_F",   // 6 = FIA
-	"IND_L_F",   // 7 = LDF (Contact/Livonia)
-	"OPF_R_F"    // 8 = Russia/Vrana (Contact)
-];
+private _combatFactionMap = ["RANDOM","BLU_CTRG_F","BLU_F","BLU_G_F","BLU_GEN_F","BLU_T_F","BLU_W_F","IND_C_F","IND_E_F","IND_F","IND_G_F","IND_L_F","LOP_AA","LOP_AFR","LOP_AFR_OPF","LOP_AM","LOP_AM_OPF","LOP_BH","LOP_CDF","LOP_ChDKZ","LOP_GRE","LOP_IA","LOP_IRA","LOP_IRAN","LOP_ISTS","LOP_ISTS_OPF","LOP_NAPA","LOP_NK","LOP_PESH","LOP_PESH_IND","LOP_PMC","LOP_RACS","LOP_SLA","LOP_SYR","LOP_TKA","LOP_TRK","LOP_UA","LOP_UKR","LOP_UN","LOP_US","LOP_UVF","OPF_F","OPF_G_F","OPF_GEN_F","OPF_R_F","OPF_T_F","rhs_faction_msv","rhs_faction_rva","rhs_faction_socom","rhs_faction_usaf","rhs_faction_usarmy_d","rhs_faction_usarmy_wd","rhs_faction_usmc_d","rhs_faction_usmc_wd","rhs_faction_usn","rhs_faction_vdv","rhs_faction_vmf","rhs_faction_vv","rhs_faction_vvs","rhsgref_faction_cdf_air","rhsgref_faction_cdf_air_b","rhsgref_faction_cdf_ground","rhsgref_faction_cdf_ground_b","rhsgref_faction_cdf_ng","rhsgref_faction_cdf_ng_b","rhsgref_faction_chdkz","rhsgref_faction_chdkz_g","rhsgref_faction_hidf","rhsgref_faction_nationalist","rhsgref_faction_tla","rhsgref_faction_tla_g","rhsgref_faction_un"];
 
 // Mapa para faccoes avancadas (indice 0 = vazio = NONE)
-private _advFactionMap = [
-	"",          // 0 = None
-	"BLU_F",
-	"BLU_T_F",
-	"OPF_F",
-	"OPF_T_F",
-	"IND_F",
-	"IND_G_F",
-	"IND_L_F",
-	"OPF_R_F"
-];
+private _advFactionMap = ["","BLU_CTRG_F","BLU_F","BLU_G_F","BLU_GEN_F","BLU_T_F","BLU_W_F","IND_C_F","IND_E_F","IND_F","IND_G_F","IND_L_F","LOP_AA","LOP_AFR","LOP_AFR_OPF","LOP_AM","LOP_AM_OPF","LOP_BH","LOP_CDF","LOP_ChDKZ","LOP_GRE","LOP_IA","LOP_IRA","LOP_IRAN","LOP_ISTS","LOP_ISTS_OPF","LOP_NAPA","LOP_NK","LOP_PESH","LOP_PESH_IND","LOP_PMC","LOP_RACS","LOP_SLA","LOP_SYR","LOP_TKA","LOP_TRK","LOP_UA","LOP_UKR","LOP_UN","LOP_US","LOP_UVF","OPF_F","OPF_G_F","OPF_GEN_F","OPF_R_F","OPF_T_F","rhs_faction_msv","rhs_faction_rva","rhs_faction_socom","rhs_faction_usaf","rhs_faction_usarmy_d","rhs_faction_usarmy_wd","rhs_faction_usmc_d","rhs_faction_usmc_wd","rhs_faction_usn","rhs_faction_vdv","rhs_faction_vmf","rhs_faction_vv","rhs_faction_vvs","rhsgref_faction_cdf_air","rhsgref_faction_cdf_air_b","rhsgref_faction_cdf_ground","rhsgref_faction_cdf_ground_b","rhsgref_faction_cdf_ng","rhsgref_faction_cdf_ng_b","rhsgref_faction_chdkz","rhsgref_faction_chdkz_g","rhsgref_faction_hidf","rhsgref_faction_nationalist","rhsgref_faction_tla","rhsgref_faction_tla_g","rhsgref_faction_un"];
 
 // Mapa para faccoes civis
-private _civFactionMap = [
-	"",          // 0 = Default (missao escolhe)
-	"CIV_F",     // 1 = Civilians
-	"CIV_IDAP_F" // 2 = IDAP
-];
+private _civFactionMap = ["","CIV_F","CIV_IDAP_F","LOP_AFR_Civ","LOP_CHR_Civ","LOP_TAK_Civ","Virtual_F"];
 
 // ---- 1. Mission Preset ----
 missionPreset = ["DRO_ParamPreset", 0] call BIS_fnc_getParamValue;
@@ -194,6 +172,28 @@ if (("FORTIFY" in preferredObjectives) || ("DISARM" in preferredObjectives) || (
 diag_log format ["DRO M9: preferredObjectives = %1", preferredObjectives];
 diag_log format ["DRO M9: neutralTasksChosen=%1 noNeutralTasksChosen=%2", neutralTasksChosen, noNeutralTasksChosen];
 
+// ---- Team Planning (insertion + supports) ----
+insertType = ["DRO_ParamInsertType", 0] call BIS_fnc_getParamValue;
+publicVariable "insertType";
+
+customSupports = [];
+if ((["DRO_ParamSupplyDrop", 0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "SUPPLY" };
+if ((["DRO_ParamArtillery",  0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "ARTY" };
+if ((["DRO_ParamCAS",        0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "CAS" };
+if ((["DRO_ParamUAV",        0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "UAV" };
+randomSupports = if (count customSupports > 0) then {1} else {0};
+publicVariable "customSupports";
+publicVariable "randomSupports";
+
+// Insertion position forced random (no map pick via params); starting vehicles left random.
+customPos = [];
+publicVariable "customPos";
+
+// Skip the Team Planning lobby entirely when enabled (initPlayerLocal handles the bypass).
+DRO_paramSkipTeamPlanning = ((["DRO_ParamSkipTeamPlanning", 0] call BIS_fnc_getParamValue) == 1);
+publicVariable "DRO_paramSkipTeamPlanning";
+diag_log format ["DRO M9: insertType=%1, supports=%2, skipTeamPlanning=%3", insertType, customSupports, DRO_paramSkipTeamPlanning];
+
 // ---- 19. AO Location ----
 // Sempre forcado para RANDOM: nao setar customPos nem aoName.
 // O usuario nao tem como escolher AO pelo lobby de todos os modos.
@@ -211,7 +211,7 @@ if ((["DRO_ParamUseFactions", 0] call BIS_fnc_getParamValue) == 1) then {
 	// entre server e client em RANDOM). Cliente recebe os classnames via publicVariable.
 	if (isServer && {(missionNameSpace getVariable ["factionsChosen", 0]) == 0}) then {
 	// ---- Player Faction ----
-	private _pfIdx = ["DRO_ParamPlayerFaction", 0] call BIS_fnc_getParamValue;
+	private _pfIdx = (["DRO_ParamPlayerFaction", 0] call BIS_fnc_getParamValue) max 0 min ((count _combatFactionMap) - 1); // audit: clamp evita select fora de range
 	private _pfCN  = _combatFactionMap select _pfIdx;
 	if (_pfCN isEqualTo "RANDOM" || { !([_pfCN] call _fnc_validateFaction) }) then {
 		// Resolve RANDOM/invalido: escolhe aleatoriamente entre faccoes validas (indices 1..8).
@@ -224,7 +224,7 @@ if ((["DRO_ParamUseFactions", 0] call BIS_fnc_getParamValue) == 1) then {
 	diag_log format ["DRO M9: playersFaction = %1 (param indice %2)", playersFaction, _pfIdx];
 
 	// ---- Enemy Faction ----
-	private _efIdx = ["DRO_ParamEnemyFaction", 0] call BIS_fnc_getParamValue;
+	private _efIdx = (["DRO_ParamEnemyFaction", 0] call BIS_fnc_getParamValue) max 0 min ((count _combatFactionMap) - 1); // audit: clamp
 	private _efCN  = _combatFactionMap select _efIdx;
 	if (_efCN isEqualTo "RANDOM" || { !([_efCN] call _fnc_validateFaction) }) then {
 		// Resolve RANDOM/invalido: escolhe aleatoriamente entre faccoes validas (indices 1..8).
@@ -237,7 +237,7 @@ if ((["DRO_ParamUseFactions", 0] call BIS_fnc_getParamValue) == 1) then {
 	diag_log format ["DRO M9: enemyFaction = %1 (param indice %2)", enemyFaction, _efIdx];
 
 	// ---- Civilian Faction ----
-	private _cfIdx = ["DRO_ParamCivFaction", 0] call BIS_fnc_getParamValue;
+	private _cfIdx = (["DRO_ParamCivFaction", 0] call BIS_fnc_getParamValue) max 0 min ((count _civFactionMap) - 1); // audit: clamp
 	private _cfCN  = _civFactionMap select _cfIdx;
 	if (_cfCN isEqualTo "" || { !([_cfCN] call _fnc_validateFaction) }) then {
 		// Default (0) ou classname invalido: usa CIV_F se existir, senao primeira civil valida do mapa.

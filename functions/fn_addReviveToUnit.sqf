@@ -41,6 +41,8 @@ params ["_unit", "_unitOld"];
 			// --- Re-add Event Handlers ---
 			_newUnit addEventHandler ["HandleDamage", DRO_fnc_handleDamage];
 			_newUnit addEventHandler ["Killed", DRO_fnc_handleKilled];
+			_newUnit removeAllEventHandlers "HandleRating"; // paridade com initRevive: clampa rating negativo, sem acumular
+			_newUnit addEventHandler ["HandleRating", {if ((_this select 1) < 0) then {0}}];
 			_newUnit setCaptive false;
 			reviveUnits = reviveUnits - [_oldUnit];
 			reviveUnits pushBack _newUnit;
@@ -58,6 +60,8 @@ params ["_unit", "_unitOld"];
 	};
 	_unit setCaptive false;
 	reviveUnits pushBack _unit;
+	// HandleRating: clampa rating negativo p/ evitar loop de heal/kill da IA (paridade com initRevive)
+	[_unit, ["HandleRating", {if ((_this select 1) < 0) then {0}}]] remoteExec ["addEventHandler", _unit, true];
 	
 	private _allPlayers = allPlayers;
 	_allPlayers = _allPlayers - [_unit];	

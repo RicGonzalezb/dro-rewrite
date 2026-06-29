@@ -9,6 +9,9 @@ if (count pUAVClasses > 0) then {
 };
 
 _uavClass = selectRandom _availableUAVs;
+if (isNil "_uavClass") exitWith {
+	diag_log "DRO: uavPatrol - no UAV plane available for this faction; skipping UAV support.";
+};
 _uavPos = _center;
 _uavPos set [2, 1300];
 _spawn = [_uavPos, 0, _uavClass, playersSide] call BIS_fnc_spawnVehicle;

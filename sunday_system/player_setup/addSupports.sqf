@@ -183,6 +183,8 @@ if (_casChance > _supplyChance) then {
 	};
 };
 
-if (_uavChance >_supplyChance) then {
+// Capability guard: only run the UAV patrol if the faction actually has a UAV plane.
+// The Team Planning UI disables the UAV button in this case; the param path does not, so guard here.
+if (_uavChance > _supplyChance && {({_x isKindOf "Plane"} count pUAVClasses) > 0}) then {
 	[] execVM "sunday_system\player_setup\uavPatrol.sqf";
-};	
+};

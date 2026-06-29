@@ -72,10 +72,10 @@ menuSliderCurrent = 0;
 	((findDisplay 626262) displayCtrl (ctrlIDC _x)) ctrlCommit 0.3;
 } forEach (allControls findDisplay 626262);
 
-if (player getVariable ['startReady', false]) then {
-	((findDisplay 626262) displayCtrl 1601) ctrlSetEventHandler ["MouseEnter", "(_this select 0) ctrlsettextcolor [0.04, 0.7, 0.4, 1]"];
-	((findDisplay 626262) displayCtrl 1601) ctrlSetEventHandler ["MouseExit", "(_this select 0) ctrlsettextcolor [0.05, 1, 0.5, 1]"];
-	((findDisplay 626262) displayCtrl 1601) ctrlSetTextColor [0.05, 1, 0.5, 1];
+// M10 REQ3: hide START MISSION button for non-leaders
+if (player != topUnit) then {
+	((findDisplay 626262) displayCtrl 1601) ctrlShow false;
+	((findDisplay 626262) displayCtrl 1601) ctrlEnable false;
 };
 
 {
@@ -118,6 +118,7 @@ lbAdd [6009, "Random"];
 lbAdd [6009, "Ground"];
 lbAdd [6009, "Air - HALO"];
 lbAdd [6009, "Air - Helicopter"];
+lbAdd [6009, "None"]; // M11: índice 4 — sem inserção (players ficam na staging area)
 if (player == _dialogPlayer) then {
 	lbSetCurSel [6009, insertType];
 };
@@ -248,4 +249,8 @@ if (((missionNameSpace getVariable "lobbyComplete") != 1)) then {
 			player switchCamera playerCameraView;
 		};
 	};	
+};
+// M10 REQ1: hint for any player who ESC'd the lobby before mission start
+if ((missionNamespace getVariable ["lobbyComplete", 0]) != 1) then {
+	hintSilent "Use 'Open Team Planning' scroll action to configure and start the mission";
 };

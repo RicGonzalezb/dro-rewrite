@@ -12,7 +12,7 @@ class EditorData
 	};
 	class ItemIDProvider
 	{
-		nextID=1224;
+		nextID=1226;
 	};
 	class MarkerIDProvider
 	{
@@ -24,10 +24,10 @@ class EditorData
 	};
 	class Camera
 	{
-		pos[]={6849.4722,303.73596,1061.3319};
-		dir[]={-0.17764208,-0.48835248,0.85438824};
-		up[]={-0.099411115,0.87264848,0.47812822};
-		aside[]={0.9790718,-4.6661444e-07,0.20356658};
+		pos[]={6841.9912,293.76102,1080.5619};
+		dir[]={0.22139426,-0.25414875,-0.94149029};
+		up[]={0.058177792,0.9671647,-0.24740474};
+		aside[]={-0.97345471,2.2514723e-07,-0.22890982};
 	};
 };
 binarizationWanted=0;
@@ -180,7 +180,7 @@ class ScenarioData
 };
 class CustomAttributes
 {
-	class Category0
+	class Category1
 	{
 		name="Multiplayer";
 		class Attribute0
@@ -339,7 +339,7 @@ class CustomAttributes
 		};
 		nAttributes=11;
 	};
-	class Category1
+	class Category2
 	{
 		name="Scenario";
 		class Attribute0

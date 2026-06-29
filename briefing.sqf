@@ -36,11 +36,15 @@ if (count "campMkr" > 0) then {
 		case "HALO": {
 			if (AOLocType == "NameLocal") then {
 				_textLocation = format ["<br /><br />Fireteam %5 will insert via HALO at the marked <marker name=%4>drop point</marker>. From there they will perform a patrol into %1 at <marker name=%3>this location</marker>. Check task list for objectives.", aoName, AOBriefingLocType, "centerMkr","campMkr", playerCallsign];
-			} else {	
+			} else {
 				_textLocation = format ["<br /><br />Fireteam %5 will insert via HALO at the marked <marker name=%4>drop point</marker>. From there they will perform a patrol into the %2 of <marker name=%3>%1</marker>. Check task list for objectives.", aoName, AOBriefingLocType, "centerMkr","campMkr", playerCallsign];
 			};
 		};
-	};	
+		case "NONE": {
+			// M11: sem inserção — players operam a partir da staging area atual
+			_textLocation = format ["<br /><br />Fireteam %1 will operate from their current staging position. Check task list for objectives.", playerCallsign];
+		};
+	};
 };
 
 // Enemy makeup diary entry

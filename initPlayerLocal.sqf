@@ -15,7 +15,7 @@ removeWeaponItemEverywhere = compileFinal "_this select 0 removePrimaryWeaponIte
 
 if (!hasInterface || isDedicated) exitWith {};
 
-player setVariable ['startReady', false, true];
+// M10 REQ3: startReady removed — leader-only START button replaces per-player ready toggle
 playerCameraView = cameraView;
 loadoutSavingStarted = false;
 
@@ -340,27 +340,44 @@ diag_log format ["DRO: Player %1 cam terminated", player];
 
 
 //waitUntil{(missionNameSpace getVariable ["dro_introCamComplete", 0]) == 1};
-// Open map
-_mapOpen = openMap [true, false];
-mapAnimAdd [0, 0.05, markerPos "centerMkr"];
-mapAnimCommit;
-cutText ["", "BLACK IN", 1];
-hintSilent "Close map when ready to access loadout menu";
-diag_log format ["DRO: Player %1 map initialized", player];
+// Team Planning lobby — bypassed entirely when DRO_paramSkipTeamPlanning is set.
+if (!(missionNamespace getVariable ["DRO_paramSkipTeamPlanning", false])) then {
+	// Open map
+	_mapOpen = openMap [true, false];
+	mapAnimAdd [0, 0.05, markerPos "centerMkr"];
+	mapAnimCommit;
+	cutText ["", "BLACK IN", 1];
+	hintSilent "Close map when ready to access loadout menu";
+	diag_log format ["DRO: Player %1 map initialized", player];
 
-waitUntil {!visibleMap};
-diag_log format ["DRO: Player %1 map closed", player];
-hintSilent "";
+	waitUntil {!visibleMap};
+	diag_log format ["DRO: Player %1 map closed", player];
+	hintSilent "";
 
-cutText ["", "BLACK FADED"];
+	cutText ["", "BLACK FADED"];
 
-// Open lobby
-_handle = CreateDialog "DRO_lobbyDialog";
-diag_log format ["DRO: Player %1 created DRO_lobbyDialog: %2", player, _handle];
-[] execVM "sunday_system\dialogs\populateLobby.sqf";
-
-sleep 0.5;
-cutText ["", "BLACK IN", 1];
+	// Open lobby — M10 REQ2 hotfix: only the leader (topUnit) auto-opens Team Planning.
+	// Non-leaders assume their unit directly and are pointed at the Arsenal scroll action.
+	// Both keep the "Open Team Planning" / "Open Arsenal" addActions below.
+	if (player == topUnit) then {
+		_handle = CreateDialog "DRO_lobbyDialog";
+		diag_log format ["DRO: Player %1 created DRO_lobbyDialog: %2", player, _handle];
+		[] execVM "sunday_system\dialogs\populateLobby.sqf";
+		sleep 0.5;
+		cutText ["", "BLACK IN", 1];
+	} else {
+		cutText ["", "BLACK IN", 1];
+		hintSilent "Use 'Open Arsenal' scroll action to customize your gear";
+	};
+} else {
+	// Skip Team Planning: AO intro cam already played; go straight to the mission.
+	// Leader marks the lobby complete so the server (start.sqf) proceeds to player setup.
+	cutText ["", "BLACK IN", 1];
+	if (player == topUnit) then {
+		missionNamespace setVariable ["lobbyComplete", 1, true];
+		diag_log "DRO: Team Planning skipped (param) - lobbyComplete set by leader";
+	};
+};
 
 _actionID = player addAction ["Open Team Planning", 
 	{
@@ -394,28 +411,18 @@ _CHZ_AIACEArsenal = [
 	[_x, 0, ["ACE_MainActions"], _CHZ_AIACEArsenal] call ACE_interact_menu_fnc_addActionToObject;
 } forEach units player;
 
-while {
-	((missionNameSpace getVariable ["lobbyComplete", 0]) == 0)
-} do {
-	sleep 0.2;	
-	if ((getMarkerColor "campMkr" == "")) then {
-		((findDisplay 626262) displayCtrl 6006) ctrlSetText "Insertion position: RANDOM";
-	} else {
-		((findDisplay 626262) displayCtrl 6006) ctrlSetText format ["Insertion position: %1", (mapGridPosition (getMarkerPos 'campMkr'))];			
-	};
-	{
-		if (_x getVariable ["startReady", false] OR !isPlayer _x) then {
-			((findDisplay 626262) displayCtrl (_x getVariable "unitNameTagIDC")) ctrlSetTextColor [0.05, 1, 0.5, 1];
-		} else {
-			((findDisplay 626262) displayCtrl (_x getVariable "unitNameTagIDC")) ctrlSetTextColor [1, 1, 1, 1];
+// M10 REQ2+REQ3: Only leader runs cosmetic loop; non-leader skips to waitUntil
+// startReady coloring removed (REQ3); ready-count removed (REQ3 — leader button sets lobbyComplete directly)
+if (player == topUnit) then {
+	while {((missionNameSpace getVariable ["lobbyComplete", 0]) == 0)} do {
+		sleep 0.2;
+		if (!isNull (findDisplay 626262)) then {
+			if ((getMarkerColor "campMkr" == "")) then {
+				((findDisplay 626262) displayCtrl 6006) ctrlSetText "Insertion position: RANDOM";
+			} else {
+				((findDisplay 626262) displayCtrl 6006) ctrlSetText format ["Insertion position: %1", (mapGridPosition (getMarkerPos 'campMkr'))];
+			};
 		};
-	} forEach (units group player);
-	if (player == topUnit) then {
-		_allHCs = entities "HeadlessClient_F";
-		_allHPs = allPlayers - _allHCs;
-		if (({(_x getVariable ["startReady", false])} count _allHPs) >= count _allHPs) then {
-			missionNameSpace setVariable ['lobbyComplete', 1, true];	
-		};	
 	};
 };
 
@@ -439,11 +446,14 @@ player removeAction _actionID2;
 
 cutText ["", "BLACK FADED"];
 
-(format ["DRO: Player %1 preparing to terminate camera %2", player, camLobby]) remoteExec ["diag_log", 2, false];
-camLobby cameraEffect ["terminate","back"];
-camUseNVG false;
-camDestroy camLobby;
-(format ["DRO: Player %1 terminated camera %2", player, camLobby]) remoteExec ["diag_log", 2, false];
+// M10 REQ2 / skip: guard — non-leader or skipped Team Planning may never have created camLobby
+if (!isNil "camLobby") then {
+	(format ["DRO: Player %1 preparing to terminate camera %2", player, camLobby]) remoteExec ["diag_log", 2, false];
+	camLobby cameraEffect ["terminate","back"];
+	camUseNVG false;
+	camDestroy camLobby;
+	(format ["DRO: Player %1 terminated camera %2", player, camLobby]) remoteExec ["diag_log", 2, false];
+};
 player switchCamera playerCameraView;
 (format ["DRO: Player %1 switched to cameraView %2", player, cameraView]) remoteExec ["diag_log", 2, false];
 

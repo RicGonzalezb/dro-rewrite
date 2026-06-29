@@ -101,6 +101,13 @@ class Params
 		texts[] = {"Disabled (use UI)", "Enabled"};
 		default = 0;
 	};
+	class DRO_ParamSkipTeamPlanning
+	{
+		title = "Skip Team Planning lobby (insertion/supports via params)";
+		values[] = {0,1};
+		texts[] = {"Disabled (show lobby)", "Enabled"};
+		default = 0;
+	};
 
 	// ---- Scenario ----
 	class DRO_HdrScenario
@@ -318,6 +325,50 @@ class Params
 		default = 0;
 	};
 
+	// ---- Insertion & Supports (used when DRO_ParamOverride==1; a skipped lobby uses these) ----
+	class DRO_HdrInsertion
+	{
+		title = "===== INSERTION & SUPPORTS =====";
+		values[] = {0};
+		texts[] = {"(section header)"};
+		default = 0;
+	};
+	class DRO_ParamInsertType
+	{
+		title = "Insertion Type";
+		values[] = {0,1,2,3,4};
+		texts[] = {"Random","Ground","Air - HALO","Air - Helicopter","None"};
+		default = 0;
+	};
+	class DRO_ParamSupplyDrop
+	{
+		title = "Support: Supply Drop";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamArtillery
+	{
+		title = "Support: Artillery";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamCAS
+	{
+		title = "Support: CAS";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+	class DRO_ParamUAV
+	{
+		title = "Support: UAV";
+		values[] = {0,1};
+		texts[] = {"Disabled","Enabled"};
+		default = 0;
+	};
+
 	// ---- Factions (usados apenas quando DRO_ParamUseFactions==1) ----
 	// Indice 0 = RANDOM. Indices 1-8 = classnames vanilla + Contact.
 	// loadParams.sqf valida existencia em CfgFactionClasses antes de aplicar.
@@ -335,70 +386,171 @@ class Params
 		texts[] = {"Disabled (choose on UI)", "Enabled"};
 		default = 0;
 	};
-	class DRO_ParamPlayerFaction
-	{
-		title = "Player Faction";
-		values[] = {0,1,2,3,4,5,6,7,8};
-		texts[] = {"Random","NATO (BLU_F)","NATO Pacific (BLU_T_F)","CSAT (OPF_F)","CSAT Pacific (OPF_T_F)","AAF (IND_F)","FIA (IND_G_F)","LDF (IND_L_F)","Russia (OPF_R_F)"};
-		default = 0;
-	};
-	class DRO_ParamEnemyFaction
-	{
-		title = "Enemy Faction";
-		values[] = {0,1,2,3,4,5,6,7,8};
-		texts[] = {"Random","NATO (BLU_F)","NATO Pacific (BLU_T_F)","CSAT (OPF_F)","CSAT Pacific (OPF_T_F)","AAF (IND_F)","FIA (IND_G_F)","LDF (IND_L_F)","Russia (OPF_R_F)"};
-		default = 0;
-	};
-	class DRO_ParamCivFaction
-	{
-		title = "Civilian Faction";
-		values[] = {0,1,2};
-		texts[] = {"Default","Civilians (CIV_F)","IDAP (CIV_IDAP_F)"};
-		default = 0;
-	};
-	class DRO_ParamPlayerAdv1
-	{
-		title = "Player Adv Faction 1";
-		values[] = {0,1,2,3,4,5,6,7,8};
-		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
-		default = 0;
-	};
-	class DRO_ParamPlayerAdv2
-	{
-		title = "Player Adv Faction 2";
-		values[] = {0,1,2,3,4,5,6,7,8};
-		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
-		default = 0;
-	};
-	class DRO_ParamPlayerAdv3
-	{
-		title = "Player Adv Faction 3";
-		values[] = {0,1,2,3,4,5,6,7,8};
-		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
-		default = 0;
-	};
-	class DRO_ParamEnemyAdv1
-	{
-		title = "Enemy Adv Faction 1";
-		values[] = {0,1,2,3,4,5,6,7,8};
-		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
-		default = 0;
-	};
-	class DRO_ParamEnemyAdv2
-	{
-		title = "Enemy Adv Faction 2";
-		values[] = {0,1,2,3,4,5,6,7,8};
-		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
-		default = 0;
-	};
-	class DRO_ParamEnemyAdv3
-	{
-		title = "Enemy Adv Faction 3";
-		values[] = {0,1,2,3,4,5,6,7,8};
-		texts[] = {"None","NATO","NATO Pacific","CSAT","CSAT Pacific","AAF","FIA","LDF","Russia"};
-		default = 0;
-	};
+	class DRO_ParamPlayerFaction {
+	  title = "Player Faction";
+	  values[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71};
+	  texts[] = {"Random","CTRG (BLU_CTRG_F)","NATO (BLU_F)","FIA (BLU_G_F)","Gendarmerie (BLU_GEN_F)","NATO (Pacific) (BLU_T_F)","NATO (Woodland) (BLU_W_F)","Syndikat (IND_C_F)","LDF (IND_E_F)","AAF (IND_F)","FIA (IND_G_F)","Looters (IND_L_F)","Afghan National Army and Police (LOP_AA)","African Militia (LOP_AFR)","African Militia (LOP_AFR_OPF)","Middle Eastern Militia (LOP_AM)","Middle Eastern Militia (LOP_AM_OPF)","Boko Haram (LOP_BH)","CDF (Project OPFOR) (LOP_CDF)","ChDKZ (Project OPFOR) (LOP_ChDKZ)","Hellenic Armed Forces (LOP_GRE)","Iraqi Armed Forces (LOP_IA)","Irish Republican Army (LOP_IRA)","Iranian Armed Forces (LOP_IRAN)","Islamic State (LOP_ISTS)","Islamic State (LOP_ISTS_OPF)","Chernarussian National Insurgents (LOP_NAPA)","Korean People's Army (LOP_NK)","Kurdish Peshmerga Forces (LOP_PESH)","Kurdish Peshmerga Forces (LOP_PESH_IND)","Private Military Company (LOP_PMC)","Royal Army Corps of Sahrani (LOP_RACS)","Sahrani Liberation Army (LOP_SLA)","Syrian Armed Forces (LOP_SYR)","Takistani Armed Forces (LOP_TKA)","Turkish Armed Forces (LOP_TRK)","Ultranationalists (LOP_UA)","Ukrainian Armed Forces (LOP_UKR)","United Nations (LOP_UN)","United Armed Forces of Novorossiya (LOP_US)","Ulster Volunteer Force (LOP_UVF)","CSAT (OPF_F)","FIA (OPF_G_F)","Gendarmerie (OPF_GEN_F)","Spetsnaz (OPF_R_F)","CSAT (Pacific) (OPF_T_F)","Russia (MSV) (rhs_faction_msv)","Russia (RVA) (rhs_faction_rva)","USA (SOCOM) (rhs_faction_socom)","USA (USAF) (rhs_faction_usaf)","USA (Army - D) (rhs_faction_usarmy_d)","USA (Army - W) (rhs_faction_usarmy_wd)","USA (USMC - D) (rhs_faction_usmc_d)","USA (USMC - W) (rhs_faction_usmc_wd)","USA (Navy) (rhs_faction_usn)","Russia (VDV) (rhs_faction_vdv)","Russia (VMF) (rhs_faction_vmf)","Russia (VV) (rhs_faction_vv)","Russia (VVS - Grey) (rhs_faction_vvs)","CDF (Air Forces) (rhsgref_faction_cdf_air)","CDF (Air Forces) (rhsgref_faction_cdf_air_b)","CDF (Ground Forces) (rhsgref_faction_cdf_ground)","CDF (Ground Forces) (rhsgref_faction_cdf_ground_b)","CDF (National Guard) (rhsgref_faction_cdf_ng)","CDF (National Guard) (rhsgref_faction_cdf_ng_b)","ChDKZ (rhsgref_faction_chdkz)","ChDKZ (rhsgref_faction_chdkz_g)","Horizon Islands Defence Force (rhsgref_faction_hidf)","NAPA (rhsgref_faction_nationalist)","Tanoan Liberation Army (rhsgref_faction_tla)","Tanoan Liberation Army (rhsgref_faction_tla_g)","CDF (UN) (rhsgref_faction_un)"};
+	  default = 0;
+	 };
+	 class DRO_ParamEnemyFaction {
+	  title = "Enemy Faction";
+	  values[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71};
+	  texts[] = {"Random","CTRG (BLU_CTRG_F)","NATO (BLU_F)","FIA (BLU_G_F)","Gendarmerie (BLU_GEN_F)","NATO (Pacific) (BLU_T_F)","NATO (Woodland) (BLU_W_F)","Syndikat (IND_C_F)","LDF (IND_E_F)","AAF (IND_F)","FIA (IND_G_F)","Looters (IND_L_F)","Afghan National Army and Police (LOP_AA)","African Militia (LOP_AFR)","African Militia (LOP_AFR_OPF)","Middle Eastern Militia (LOP_AM)","Middle Eastern Militia (LOP_AM_OPF)","Boko Haram (LOP_BH)","CDF (Project OPFOR) (LOP_CDF)","ChDKZ (Project OPFOR) (LOP_ChDKZ)","Hellenic Armed Forces (LOP_GRE)","Iraqi Armed Forces (LOP_IA)","Irish Republican Army (LOP_IRA)","Iranian Armed Forces (LOP_IRAN)","Islamic State (LOP_ISTS)","Islamic State (LOP_ISTS_OPF)","Chernarussian National Insurgents (LOP_NAPA)","Korean People's Army (LOP_NK)","Kurdish Peshmerga Forces (LOP_PESH)","Kurdish Peshmerga Forces (LOP_PESH_IND)","Private Military Company (LOP_PMC)","Royal Army Corps of Sahrani (LOP_RACS)","Sahrani Liberation Army (LOP_SLA)","Syrian Armed Forces (LOP_SYR)","Takistani Armed Forces (LOP_TKA)","Turkish Armed Forces (LOP_TRK)","Ultranationalists (LOP_UA)","Ukrainian Armed Forces (LOP_UKR)","United Nations (LOP_UN)","United Armed Forces of Novorossiya (LOP_US)","Ulster Volunteer Force (LOP_UVF)","CSAT (OPF_F)","FIA (OPF_G_F)","Gendarmerie (OPF_GEN_F)","Spetsnaz (OPF_R_F)","CSAT (Pacific) (OPF_T_F)","Russia (MSV) (rhs_faction_msv)","Russia (RVA) (rhs_faction_rva)","USA (SOCOM) (rhs_faction_socom)","USA (USAF) (rhs_faction_usaf)","USA (Army - D) (rhs_faction_usarmy_d)","USA (Army - W) (rhs_faction_usarmy_wd)","USA (USMC - D) (rhs_faction_usmc_d)","USA (USMC - W) (rhs_faction_usmc_wd)","USA (Navy) (rhs_faction_usn)","Russia (VDV) (rhs_faction_vdv)","Russia (VMF) (rhs_faction_vmf)","Russia (VV) (rhs_faction_vv)","Russia (VVS - Grey) (rhs_faction_vvs)","CDF (Air Forces) (rhsgref_faction_cdf_air)","CDF (Air Forces) (rhsgref_faction_cdf_air_b)","CDF (Ground Forces) (rhsgref_faction_cdf_ground)","CDF (Ground Forces) (rhsgref_faction_cdf_ground_b)","CDF (National Guard) (rhsgref_faction_cdf_ng)","CDF (National Guard) (rhsgref_faction_cdf_ng_b)","ChDKZ (rhsgref_faction_chdkz)","ChDKZ (rhsgref_faction_chdkz_g)","Horizon Islands Defence Force (rhsgref_faction_hidf)","NAPA (rhsgref_faction_nationalist)","Tanoan Liberation Army (rhsgref_faction_tla)","Tanoan Liberation Army (rhsgref_faction_tla_g)","CDF (UN) (rhsgref_faction_un)"};
+	  default = 0;
+	 };
+	 class DRO_ParamCivFaction {
+	  title = "Civilian Faction";
+	  values[] = {0,1,2,3,4,5,6};
+	  texts[] = {"Default","Civilians (CIV_F)","IDAP (CIV_IDAP_F)","Civilians (African) (LOP_AFR_Civ)","Civilians (Eastern European) (LOP_CHR_Civ)","Civilians (Middle Eastern) (LOP_TAK_Civ)","Virtual (Virtual_F)"};
+	  default = 0;
+	 };
+	 class DRO_ParamPlayerAdv1 {
+	  title = "Player Adv Faction 1";
+	  values[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71};
+	  texts[] = {"None","CTRG","NATO","FIA","Gendarmerie","NATO (Pacific)","NATO (Woodland)","Syndikat","LDF","AAF","FIA","Looters","Afghan National Army and Police","African Militia","African Militia","Middle Eastern Militia","Middle Eastern Militia","Boko Haram","CDF (Project OPFOR)","ChDKZ (Project OPFOR)","Hellenic Armed Forces","Iraqi Armed Forces","Irish Republican Army","Iranian Armed Forces","Islamic State","Islamic State","Chernarussian National Insurgents","Korean People's Army","Kurdish Peshmerga Forces","Kurdish Peshmerga Forces","Private Military Company","Royal Army Corps of Sahrani","Sahrani Liberation Army","Syrian Armed Forces","Takistani Armed Forces","Turkish Armed Forces","Ultranationalists","Ukrainian Armed Forces","United Nations","United Armed Forces of Novorossiya","Ulster Volunteer Force","CSAT","FIA","Gendarmerie","Spetsnaz","CSAT (Pacific)","Russia (MSV)","Russia (RVA)","USA (SOCOM)","USA (USAF)","USA (Army - D)","USA (Army - W)","USA (USMC - D)","USA (USMC - W)","USA (Navy)","Russia (VDV)","Russia (VMF)","Russia (VV)","Russia (VVS - Grey)","CDF (Air Forces)","CDF (Air Forces)","CDF (Ground Forces)","CDF (Ground Forces)","CDF (National Guard)","CDF (National Guard)","ChDKZ","ChDKZ","Horizon Islands Defence Force","NAPA","Tanoan Liberation Army","Tanoan Liberation Army","CDF (UN)"};
+	  default = 0;
+	 };
+	 class DRO_ParamPlayerAdv2 {
+	  title = "Player Adv Faction 2";
+	  values[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71};
+	  texts[] = {"None","CTRG","NATO","FIA","Gendarmerie","NATO (Pacific)","NATO (Woodland)","Syndikat","LDF","AAF","FIA","Looters","Afghan National Army and Police","African Militia","African Militia","Middle Eastern Militia","Middle Eastern Militia","Boko Haram","CDF (Project OPFOR)","ChDKZ (Project OPFOR)","Hellenic Armed Forces","Iraqi Armed Forces","Irish Republican Army","Iranian Armed Forces","Islamic State","Islamic State","Chernarussian National Insurgents","Korean People's Army","Kurdish Peshmerga Forces","Kurdish Peshmerga Forces","Private Military Company","Royal Army Corps of Sahrani","Sahrani Liberation Army","Syrian Armed Forces","Takistani Armed Forces","Turkish Armed Forces","Ultranationalists","Ukrainian Armed Forces","United Nations","United Armed Forces of Novorossiya","Ulster Volunteer Force","CSAT","FIA","Gendarmerie","Spetsnaz","CSAT (Pacific)","Russia (MSV)","Russia (RVA)","USA (SOCOM)","USA (USAF)","USA (Army - D)","USA (Army - W)","USA (USMC - D)","USA (USMC - W)","USA (Navy)","Russia (VDV)","Russia (VMF)","Russia (VV)","Russia (VVS - Grey)","CDF (Air Forces)","CDF (Air Forces)","CDF (Ground Forces)","CDF (Ground Forces)","CDF (National Guard)","CDF (National Guard)","ChDKZ","ChDKZ","Horizon Islands Defence Force","NAPA","Tanoan Liberation Army","Tanoan Liberation Army","CDF (UN)"};
+	  default = 0;
+	 };
+	 class DRO_ParamPlayerAdv3 {
+	  title = "Player Adv Faction 3";
+	  values[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71};
+	  texts[] = {"None","CTRG","NATO","FIA","Gendarmerie","NATO (Pacific)","NATO (Woodland)","Syndikat","LDF","AAF","FIA","Looters","Afghan National Army and Police","African Militia","African Militia","Middle Eastern Militia","Middle Eastern Militia","Boko Haram","CDF (Project OPFOR)","ChDKZ (Project OPFOR)","Hellenic Armed Forces","Iraqi Armed Forces","Irish Republican Army","Iranian Armed Forces","Islamic State","Islamic State","Chernarussian National Insurgents","Korean People's Army","Kurdish Peshmerga Forces","Kurdish Peshmerga Forces","Private Military Company","Royal Army Corps of Sahrani","Sahrani Liberation Army","Syrian Armed Forces","Takistani Armed Forces","Turkish Armed Forces","Ultranationalists","Ukrainian Armed Forces","United Nations","United Armed Forces of Novorossiya","Ulster Volunteer Force","CSAT","FIA","Gendarmerie","Spetsnaz","CSAT (Pacific)","Russia (MSV)","Russia (RVA)","USA (SOCOM)","USA (USAF)","USA (Army - D)","USA (Army - W)","USA (USMC - D)","USA (USMC - W)","USA (Navy)","Russia (VDV)","Russia (VMF)","Russia (VV)","Russia (VVS - Grey)","CDF (Air Forces)","CDF (Air Forces)","CDF (Ground Forces)","CDF (Ground Forces)","CDF (National Guard)","CDF (National Guard)","ChDKZ","ChDKZ","Horizon Islands Defence Force","NAPA","Tanoan Liberation Army","Tanoan Liberation Army","CDF (UN)"};
+	  default = 0;
+	 };
+	 class DRO_ParamEnemyAdv1 {
+	  title = "Enemy Adv Faction 1";
+	  values[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71};
+	  texts[] = {"None","CTRG","NATO","FIA","Gendarmerie","NATO (Pacific)","NATO (Woodland)","Syndikat","LDF","AAF","FIA","Looters","Afghan National Army and Police","African Militia","African Militia","Middle Eastern Militia","Middle Eastern Militia","Boko Haram","CDF (Project OPFOR)","ChDKZ (Project OPFOR)","Hellenic Armed Forces","Iraqi Armed Forces","Irish Republican Army","Iranian Armed Forces","Islamic State","Islamic State","Chernarussian National Insurgents","Korean People's Army","Kurdish Peshmerga Forces","Kurdish Peshmerga Forces","Private Military Company","Royal Army Corps of Sahrani","Sahrani Liberation Army","Syrian Armed Forces","Takistani Armed Forces","Turkish Armed Forces","Ultranationalists","Ukrainian Armed Forces","United Nations","United Armed Forces of Novorossiya","Ulster Volunteer Force","CSAT","FIA","Gendarmerie","Spetsnaz","CSAT (Pacific)","Russia (MSV)","Russia (RVA)","USA (SOCOM)","USA (USAF)","USA (Army - D)","USA (Army - W)","USA (USMC - D)","USA (USMC - W)","USA (Navy)","Russia (VDV)","Russia (VMF)","Russia (VV)","Russia (VVS - Grey)","CDF (Air Forces)","CDF (Air Forces)","CDF (Ground Forces)","CDF (Ground Forces)","CDF (National Guard)","CDF (National Guard)","ChDKZ","ChDKZ","Horizon Islands Defence Force","NAPA","Tanoan Liberation Army","Tanoan Liberation Army","CDF (UN)"};
+	  default = 0;
+	 };
+	 class DRO_ParamEnemyAdv2 {
+	  title = "Enemy Adv Faction 2";
+	  values[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71};
+	  texts[] = {"None","CTRG","NATO","FIA","Gendarmerie","NATO (Pacific)","NATO (Woodland)","Syndikat","LDF","AAF","FIA","Looters","Afghan National Army and Police","African Militia","African Militia","Middle Eastern Militia","Middle Eastern Militia","Boko Haram","CDF (Project OPFOR)","ChDKZ (Project OPFOR)","Hellenic Armed Forces","Iraqi Armed Forces","Irish Republican Army","Iranian Armed Forces","Islamic State","Islamic State","Chernarussian National Insurgents","Korean People's Army","Kurdish Peshmerga Forces","Kurdish Peshmerga Forces","Private Military Company","Royal Army Corps of Sahrani","Sahrani Liberation Army","Syrian Armed Forces","Takistani Armed Forces","Turkish Armed Forces","Ultranationalists","Ukrainian Armed Forces","United Nations","United Armed Forces of Novorossiya","Ulster Volunteer Force","CSAT","FIA","Gendarmerie","Spetsnaz","CSAT (Pacific)","Russia (MSV)","Russia (RVA)","USA (SOCOM)","USA (USAF)","USA (Army - D)","USA (Army - W)","USA (USMC - D)","USA (USMC - W)","USA (Navy)","Russia (VDV)","Russia (VMF)","Russia (VV)","Russia (VVS - Grey)","CDF (Air Forces)","CDF (Air Forces)","CDF (Ground Forces)","CDF (Ground Forces)","CDF (National Guard)","CDF (National Guard)","ChDKZ","ChDKZ","Horizon Islands Defence Force","NAPA","Tanoan Liberation Army","Tanoan Liberation Army","CDF (UN)"};
+	  default = 0;
+	 };
+	 class DRO_ParamEnemyAdv3 {
+	  title = "Enemy Adv Faction 3";
+	  values[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71};
+	  texts[] = {"None","CTRG","NATO","FIA","Gendarmerie","NATO (Pacific)","NATO (Woodland)","Syndikat","LDF","AAF","FIA","Looters","Afghan National Army and Police","African Militia","African Militia","Middle Eastern Militia","Middle Eastern Militia","Boko Haram","CDF (Project OPFOR)","ChDKZ (Project OPFOR)","Hellenic Armed Forces","Iraqi Armed Forces","Irish Republican Army","Iranian Armed Forces","Islamic State","Islamic State","Chernarussian National Insurgents","Korean People's Army","Kurdish Peshmerga Forces","Kurdish Peshmerga Forces","Private Military Company","Royal Army Corps of Sahrani","Sahrani Liberation Army","Syrian Armed Forces","Takistani Armed Forces","Turkish Armed Forces","Ultranationalists","Ukrainian Armed Forces","United Nations","United Armed Forces of Novorossiya","Ulster Volunteer Force","CSAT","FIA","Gendarmerie","Spetsnaz","CSAT (Pacific)","Russia (MSV)","Russia (RVA)","USA (SOCOM)","USA (USAF)","USA (Army - D)","USA (Army - W)","USA (USMC - D)","USA (USMC - W)","USA (Navy)","Russia (VDV)","Russia (VMF)","Russia (VV)","Russia (VVS - Grey)","CDF (Air Forces)","CDF (Air Forces)","CDF (Ground Forces)","CDF (Ground Forces)","CDF (National Guard)","CDF (National Guard)","ChDKZ","ChDKZ","Horizon Islands Defence Force","NAPA","Tanoan Liberation Army","Tanoan Liberation Army","CDF (UN)"};
+	  default = 0;
+	 };
+
 };
+
+/* =====================================================================
+   FACTION PARAMS GENERATOR  (optional tool, run it whenever you want)
+   ---------------------------------------------------------------------
+   Detects ALL installed factions (vanilla + mods) and produces the two
+   ready-to-paste blocks — making modded factions available in the LOBBY
+   PARAMETERS tab (the in-game UI/sundayDialog already detects them on its
+   own; this is only for the Parameters tab, which is static config).
+
+   HOW TO USE:
+   1. Start any mission with the faction mods loaded.
+   2. Open the Debug Console (Editor: ESC > Debug Console; MP: as admin).
+   3. Paste the WHOLE SQF code between the <CODE> markers below and Execute.
+   4. The output goes to the clipboard (Ctrl+V) and to the .rpt.
+   5. BLOCK A -> replace, here in description.ext, the 9 faction classes
+      (from class DRO_ParamPlayerFaction to class DRO_ParamEnemyAdv3).
+   6. BLOCK B -> replace, in loadParams.sqf, the 3 map lines
+      (_combatFactionMap / _advFactionMap / _civFactionMap).
+   7. Save and reload the mission. New factions show in Lobby > Parameters.
+
+   NOTE: params are INDEX-based (alphabetical by classname). If you
+   REGENERATE after adding mods, the indices shift — re-check the values
+   in server.cfg after regenerating.
+   ---------------------------------------------------------------------
+   <CODE>
+
+   _dq = toString [34];
+   _nl = toString [10];
+
+   _sideOf = {
+       params ["_facCfg"];
+       if (isNumber (_facCfg >> "side")) exitWith { getNumber (_facCfg >> "side") };
+       private _t = toLower getText (_facCfg >> "side");
+       if ((_t find "west") >= 0) exitWith {1};
+       if ((_t find "east") >= 0) exitWith {0};
+       if (((_t find "guer") >= 0) || ((_t find "ind") >= 0)) exitWith {2};
+       if ((_t find "civ") >= 0) exitWith {3};
+       -1
+   };
+
+   _factions = [];
+   _seen = [];
+   {
+       private _cn = configName _x;
+       if (getNumber (_x >> "scope") == 2 && {_cn isKindOf "Man"}) then {
+           private _fac = getText (_x >> "faction");
+           if (_fac != "" && {!(_fac in _seen)}) then {
+               _seen pushBack _fac;
+               private _facCfg = configFile >> "CfgFactionClasses" >> _fac;
+               if (isClass _facCfg) then {
+                   private _name = getText (_facCfg >> "displayName");
+                   if (_name isEqualTo "") then { _name = _fac };
+                   private _sn = [_facCfg] call _sideOf;
+                   if (_sn in [0,1,2,3]) then { _factions pushBack [_fac, _name, _sn] };
+               };
+           };
+       };
+   } forEach ("(configName _x) isKindOf 'AllVehicles'" configClasses (configFile >> "CfgVehicles"));
+
+   _factions = [_factions, [], { _x select 0 }, "ASCEND"] call BIS_fnc_sortBy;
+   _combat = _factions select { (_x select 2) != 3 };
+   _civ    = _factions select { (_x select 2) == 3 };
+
+   _quote = { private _arr = _this; (_arr apply { _dq + _x + _dq }) joinString "," };
+   _seq   = { private _n = _this; private _r = []; for "_i" from 0 to (_n - 1) do { _r pushBack str _i }; _r joinString "," };
+
+   _mainNames = ["Random"]  + (_combat apply { (_x select 1) + " (" + (_x select 0) + ")" });
+   _advNames  = ["None"]    + (_combat apply { _x select 1 });
+   _civNames  = ["Default"] + (_civ    apply { (_x select 1) + " (" + (_x select 0) + ")" });
+   _combatMap = ["RANDOM"]  + (_combat apply { _x select 0 });
+   _advMap    = [""]        + (_combat apply { _x select 0 });
+   _civMap    = [""]        + (_civ    apply { _x select 0 });
+
+   _specs = [
+       ["DRO_ParamPlayerFaction","Player Faction",_mainNames],
+       ["DRO_ParamEnemyFaction","Enemy Faction",_mainNames],
+       ["DRO_ParamCivFaction","Civilian Faction",_civNames],
+       ["DRO_ParamPlayerAdv1","Player Adv Faction 1",_advNames],
+       ["DRO_ParamPlayerAdv2","Player Adv Faction 2",_advNames],
+       ["DRO_ParamPlayerAdv3","Player Adv Faction 3",_advNames],
+       ["DRO_ParamEnemyAdv1","Enemy Adv Faction 1",_advNames],
+       ["DRO_ParamEnemyAdv2","Enemy Adv Faction 2",_advNames],
+       ["DRO_ParamEnemyAdv3","Enemy Adv Faction 3",_advNames]
+   ];
+
+   _lines = [""];
+   {
+      _x params ["_cls","_title","_names"];
+       _lines pushBack ("	class " + _cls + " {");
+       _lines pushBack ("		title = " + _dq + _title + _dq + ";");
+       _lines pushBack ("		values[] = {" + ((count _names) call _seq) + "};");
+       _lines pushBack ("		texts[] = {" + (_names call _quote) + "};");
+       _lines pushBack "		default = 0;";
+       _lines pushBack "	};";
+   } forEach _specs;
+
+   _lines pushBack "";
+   _lines pushBack "// ===== BLOCK B -> loadParams.sqf (replaces the 3 maps) =====";
+   _lines pushBack ("private _combatFactionMap = [" + (_combatMap call _quote) + "];");
+   _lines pushBack ("private _advFactionMap = [" + (_advMap call _quote) + "];");
+   _lines pushBack ("private _civFactionMap = [" + (_civMap call _quote) + "];");
+
+   _out = _lines joinString _nl;
+   copyToClipboard _out;
+   diag_log _out;
+   hint format ["DRO: %1 combat factions + %2 civilian factions generated. Output on clipboard (Ctrl+V) and in the .rpt.", (count _combatMap) - 1, (count _civMap) - 1];
+
+   </CODE>
+   ===================================================================== */
 
 /* =====================================================================
    REFERENCIA — server.cfg  (este bloco NAO eh lido pelo description.ext)
@@ -1102,6 +1254,7 @@ class CfgFunctions
             class lobbyChangeLabel {};
             class lobbyMapPreview {};
             class lobbyReadyButton {};
+            class becomeLeader {}; // M10 REQ4
             class localBuildingPatrol {};
             class loopSounds {};
             class menuMap {};

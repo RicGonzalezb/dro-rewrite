@@ -36,7 +36,7 @@ params ["_unit"];
 	[_unitNew, _firstName, _lastName, _speaker, _face] remoteExec ['DRO_fnc_setNameMP', 0, true];
 	diag_log "DRO: reset - names set";
 	
-	_unitNew joinAsSilent [_playerGroup, _id];
+	_unitNew joinAsSilent [playerGroup, _id]; // audit fix: era _playerGroup (local undefined no CfgFunctions) → global playerGroup
 	diag_log format ["DRO: reset - unit %1 joined to group %2 in position %3", _unitNew, _playerGroup, _id];
 	
 	_unitNew setUnitLoadout _loadout;

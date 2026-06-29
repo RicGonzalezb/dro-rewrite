@@ -35,7 +35,12 @@ if ((configfile >> "CfgPatches" >> "ace_medical") call BIS_fnc_getCfgIsClass) th
 	publicVariable "reviveDisabled";
 };
 
-missionAIWeaponLight = profileNamespace getVariable ["DRO_missionAIWeaponLight", 1];
+// enableGunLights needs a STRING mode; map the stored index (0/1/2) to it so this global
+// is never a raw number. Was causing 'enablegunlights: Type Number, expected String' in MP
+// when this client publicVariable raced ahead of start.sqf's string conversion.
+private _aiwl = profileNamespace getVariable ["DRO_missionAIWeaponLight", 1];
+if (_aiwl isEqualType 0) then { _aiwl = ["Auto", "ForceOn", "ForceOFF"] select (_aiwl max 0 min 2); };
+missionAIWeaponLight = _aiwl;
 publicVariable "missionAIWeaponLight";
 staminaDisabled = profileNamespace getVariable ["DRO_staminaDisabled", 0];
 publicVariable "staminaDisabled";

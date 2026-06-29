@@ -31,14 +31,15 @@ if (!isNull (_this select 0)) then {
 	// Open arsenal
 	if (isClass (configFile >> "CfgPatches" >> "ace_main")) then {
 		closeDialog 1;
+		sleep 0.02;
 		[_unit, _unit, true] call ACE_arsenal_fnc_openBox;
-		systemChat "Clicou";
+		//systemChat "Clicou";
 		
 		waitUntil {sleep 0.02;  !isNull (findDisplay 1127001)};
-		systemChat "Abriu Arsenal";
+		//systemChat "Abriu Arsenal";
 		
 		waitUntil {sleep 0.02;  isNull (findDisplay 1127001)};
-		systemChat "FECHOU Arsenal";
+		//systemChat "FECHOU Arsenal";
 		
 	} else {
 		["Open", true] call BIS_fnc_arsenal;		
