@@ -168,9 +168,9 @@ if (player == topUnit) then {
 	[] call compile preprocessFileLineNumbers "loadProfile.sqf";
 	[] call compile preprocessFileLineNumbers "loadParams.sqf";
 
-	if (DRO_paramOverrideActive && DRO_paramSkipUI) then {
-		// ESTADO #2: faccoes via params, pula o dialogo de pre-geracao.
-		diag_log "DRO M9: skip pre-gen UI (faccoes via params).";
+	if (DRO_paramSkipUI) then {
+		// Both scenario AND factions come from params -> nothing to configure -> skip the sunday dialog.
+		diag_log "DRO: sunday dialog skipped (scenario + factions via params).";
 	} else {
 		// ESTADO #3 ou Vanilla. Funcao reutilizavel para (re)abrir o menu.
 		DRO_openSetupMenu = {
@@ -179,26 +179,31 @@ if (player == topUnit) then {
 			createDialog "sundayDialog";
 			menuComplete = false;
 			[] execVM "sunday_system\dialogs\populateStartupMenu.sqf";
-			if (DRO_paramOverrideActive) then {
+			if (DRO_scenarioFromParams || DRO_factionsFromParams) then {
 				[] spawn {
 					waitUntil { !isNil "menuComplete" && {menuComplete} };
 					disableSerialization;
-					menuSliderArray = [["INFO", 1140]];
+					// Rebuild tab list: drop scenario tabs if scenario is param'd, drop the advanced-factions tab if factions are param'd.
+					private _arr = [["INFO", 1140]];
+					if (!DRO_scenarioFromParams) then { _arr append [["SCENARIO", 2000], ["ENVIRONMENT", 3000], ["OBJECTIVES", 4000]]; };
+					if (!DRO_factionsFromParams) then { _arr pushBack ["ADVANCED FACTIONS", 5000]; };
+					menuSliderArray = _arr;
 					menuSliderCurrent = 0;
-					{
-						((findDisplay 52525) displayCtrl _x) ctrlEnable false;
-						((findDisplay 52525) displayCtrl _x) ctrlShow false;
-					} forEach [1150, 1151, 1143];
+					// Lock the always-visible faction bar when factions come from params.
+					if (DRO_factionsFromParams) then {
+						{ ((findDisplay 52525) displayCtrl _x) ctrlEnable false; } forEach [1301, 1311, 1321];
+					};
+					private _msg = if (DRO_scenarioFromParams) then {
+						"Scenario / Environment / Objectives are server-defined. Choose factions and press START."
+					} else {
+						"Factions are server-defined. Configure the scenario and press START."
+					};
 					private _n = (findDisplay 52525) displayCtrl 1144;
-					_n ctrlSetStructuredText (parseText (
-						"<t size='1.15' shadow='1'>SERVER-DEFINED SETUP</t><br/><br/>"
-						+ "<t size='0.95'>Mission settings have been pre-configured by the server.</t><br/><br/>"
-						+ "<t size='0.95'>Only faction selection remains available — choose your factions above and press START.</t>"
-					));
+					_n ctrlSetStructuredText (parseText ("<t size='1.15' shadow='1'>SERVER-DEFINED SETUP</t><br/><br/><t size='0.95'>" + _msg + "</t>"));
 					_n ctrlSetFade 0;
 					_n ctrlShow true;
 					_n ctrlCommit 0;
-					diag_log "DRO M9: UI travada na aba INFO.";
+					diag_log "DRO: sunday dialog locked per sphere.";
 				};
 			};
 		};

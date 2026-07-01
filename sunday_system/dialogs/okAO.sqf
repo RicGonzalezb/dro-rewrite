@@ -1,3 +1,5 @@
+// Skip faction reading when factions come from params (loadParams already set them).
+if (!(missionNamespace getVariable ["DRO_factionsFromParams", false])) then {
 _playersIndex = lbCurSel 1301;
 _enemyIndex = lbCurSel 1311;
 _civIndex = lbCurSel 1321;
@@ -37,24 +39,28 @@ diag_log format ["DRO: okAO.sqf: player %2 playersFaction = %1", playersFaction,
 diag_log format ["DRO: okAO.sqf: player %2 playersFactionAdv = %1", playersFactionAdv, player];
 diag_log format ["DRO: okAO.sqf: player %2 enemyFaction = %1", enemyFaction, player];
 diag_log format ["DRO: okAO.sqf: player %2 enemyFactionAdv = %1", enemyFactionAdv, player];
+}; // end faction-reading (skipped when factions via params)
 
 missionNameSpace setVariable ["factionsChosen", 1, true];
 
 diag_log format ["DRO: okAO.sqf: player %2 factionsChosen set to %1 and broadcast", (missionNameSpace getVariable ['factionsChosen', -1]), player];
 
-aiMultiplier = (round (((sliderPosition 2041)/10) * (10 ^ 1)) / (10 ^ 1));
-if (aiMultiplier < 1.25) then {
-	if (count playableUnits > 8) then {
-		aiMultiplier = (aiMultiplier * (1 + ((count playableUnits * 0.28) / 10)));
+// Skip scenario-derived values (enemy size, neutral tasks) when scenario comes from params.
+if (!(missionNamespace getVariable ["DRO_scenarioFromParams", false])) then {
+	aiMultiplier = (round (((sliderPosition 2041)/10) * (10 ^ 1)) / (10 ^ 1));
+	if (aiMultiplier < 1.25) then {
+		if (count playableUnits > 8) then {
+			aiMultiplier = (aiMultiplier * (1 + ((count playableUnits * 0.28) / 10)));
+		};
 	};
-};
-publicVariable "aiMultiplier";
+	publicVariable "aiMultiplier";
 
-if (('FORTIFY' in preferredObjectives) || ('DISARM' in preferredObjectives) || ('PROTECTCIV' in preferredObjectives)) then {
-	neutralTasksChosen = true
-} else {
-	if (count preferredObjectives > 0) then {
-		noNeutralTasksChosen = true;
+	if (('FORTIFY' in preferredObjectives) || ('DISARM' in preferredObjectives) || ('PROTECTCIV' in preferredObjectives)) then {
+		neutralTasksChosen = true
+	} else {
+		if (count preferredObjectives > 0) then {
+			noNeutralTasksChosen = true;
+		};
 	};
 };
 

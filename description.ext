@@ -27,7 +27,7 @@ class Params
 	{
 		title = "===== DRO — GAMEPLAY =====";
 		values[] = {0};
-		texts[] = {"(section header)"};
+		texts[] = {""};
 		default = 0;
 	};
 	class Respawn
@@ -88,33 +88,40 @@ class Params
 	// ---- Cabecalho-divisor (param dummy, ignorado pelo loadParams) ----
 	class DRO_HdrMaster
 	{
-		title = "===== PARAMETERS OVERRIDE — MASTER =====";
+		title = "=============== PARAMETERS OVERRIDE — TOGGLES ===============";
 		values[] = {0};
-		texts[] = {"(section header)"};
+		texts[] = {""};
 		default = 0;
 	};
 	// ---- Toggles-mestre ----
 	class DRO_ParamOverride
 	{
-		title = "Use Lobby Parameters only";
+		title = "Override Scenario / Environment / Objectives parameters";
 		values[] = {0,1};
-		texts[] = {"Disabled (use UI)", "Enabled"};
+		texts[] = {"Disabled (use Mission UI)", "Enabled"};
+		default = 0;
+	};
+	class DRO_ParamUseFactions
+	{
+		title = "Override FACTIONS parameters";
+		values[] = {0,1};
+		texts[] = {"Disabled (choose on UI)", "Enabled"};
 		default = 0;
 	};
 	class DRO_ParamSkipTeamPlanning
 	{
 		title = "Skip Team Planning lobby (insertion/supports via params)";
 		values[] = {0,1};
-		texts[] = {"Disabled (show lobby)", "Enabled"};
+		texts[] = {"Disabled (Show Team Planning)", "Enabled"};
 		default = 0;
 	};
 
 	// ---- Scenario ----
 	class DRO_HdrScenario
 	{
-		title = "===== SCENARIO =====";
+		title = "=============== SCENARIO ===============";
 		values[] = {0};
-		texts[] = {"(section header)"};
+		texts[] = {""};
 		default = 0;
 	};
 	class DRO_ParamPreset
@@ -198,9 +205,9 @@ class Params
 	// ---- Environment ----
 	class DRO_HdrEnvironment
 	{
-		title = "===== ENVIRONMENT =====";
+		title = "=============== ENVIRONMENT ===============";
 		values[] = {0};
-		texts[] = {"(section header)"};
+		texts[] = {""};
 		default = 0;
 	};
 	class DRO_ParamTimeOfDay
@@ -242,9 +249,9 @@ class Params
 	// ---- Objectives ----
 	class DRO_HdrObjectives
 	{
-		title = "===== OBJECTIVES =====";
+		title = "=============== OBJECTIVES ===============";
 		values[] = {0};
-		texts[] = {"(section header)"};
+		texts[] = {""};
 		default = 0;
 	};
 	class DRO_ParamNumObjectives
@@ -328,9 +335,9 @@ class Params
 	// ---- Insertion & Supports (used when DRO_ParamOverride==1; a skipped lobby uses these) ----
 	class DRO_HdrInsertion
 	{
-		title = "===== INSERTION & SUPPORTS =====";
+		title = "=============== INSERTION & SUPPORTS ===============";
 		values[] = {0};
-		texts[] = {"(section header)"};
+		texts[] = {""};
 		default = 0;
 	};
 	class DRO_ParamInsertType
@@ -374,16 +381,9 @@ class Params
 	// loadParams.sqf valida existencia em CfgFactionClasses antes de aplicar.
 	class DRO_HdrFactions
 	{
-		title = "===== FACTIONS =====";
+		title = "=============== FACTIONS ===============";
 		values[] = {0};
-		texts[] = {"(section header)"};
-		default = 0;
-	};
-	class DRO_ParamUseFactions
-	{
-		title = "Factions Via Parameters Toggle (skips UI)";
-		values[] = {0,1};
-		texts[] = {"Disabled (choose on UI)", "Enabled"};
+		texts[] = {""};
 		default = 0;
 	};
 	class DRO_ParamPlayerFaction {

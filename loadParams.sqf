@@ -10,27 +10,27 @@
 // Prefixo DRO_ em todos os globais conforme padrao do projeto.
 // ============================================================
 
-// Sempre inicializa os flags (cobertura do caso override=OFF)
-DRO_paramOverrideActive = false;
-DRO_paramSkipUI = false;
-DRO_paramSkipTeamPlanning = false;
-
-// ----- Sai imediatamente se override esta desligado -----
-if ((["DRO_ParamOverride", 0] call BIS_fnc_getParamValue) != 1) exitWith {
-	// M9 hotfix #2: broadcast do estado OFF para nao sobrar valor stale (true)
-	// de uma run anterior com override ON num servidor que nao reiniciou a VM.
-	publicVariable "DRO_paramOverrideActive";
-	publicVariable "DRO_paramSkipUI";
-	publicVariable "DRO_paramSkipTeamPlanning";
-	diag_log "DRO M9: param override OFF — usando UI/profile normal.";
-};
-
-// =========================================================
-// Override ATIVO — sobrescrever globais a partir dos params
-// =========================================================
-DRO_paramOverrideActive = true;
+// ----- Independent sphere flags (no master toggle) -----
+// Each lobby toggle governs only its own sphere:
+//   DRO_ParamOverride         -> Scenario / Environment / Objectives
+//   DRO_ParamUseFactions      -> Factions
+//   DRO_ParamSkipTeamPlanning -> Insertion / Supports (+ skip Team Planning lobby)
+DRO_scenarioFromParams    = ((["DRO_ParamOverride", 0] call BIS_fnc_getParamValue) == 1);
+DRO_factionsFromParams    = ((["DRO_ParamUseFactions", 0] call BIS_fnc_getParamValue) == 1);
+DRO_paramSkipTeamPlanning = ((["DRO_ParamSkipTeamPlanning", 0] call BIS_fnc_getParamValue) == 1);
+// Derived: any sphere active; whole sunday dialog skippable only when BOTH scenario AND factions are param-driven.
+DRO_paramOverrideActive = (DRO_scenarioFromParams || DRO_factionsFromParams || DRO_paramSkipTeamPlanning);
+DRO_paramSkipUI         = (DRO_scenarioFromParams && DRO_factionsFromParams);
+publicVariable "DRO_scenarioFromParams";
+publicVariable "DRO_factionsFromParams";
+publicVariable "DRO_paramSkipTeamPlanning";
 publicVariable "DRO_paramOverrideActive";
-diag_log "DRO M9: param override ACTIVE — aplicando parametros do lobby.";
+publicVariable "DRO_paramSkipUI";
+
+if (!DRO_paramOverrideActive) exitWith {
+	diag_log "DRO M9: nenhum toggle de param ativo — usando UI/profile normal.";
+};
+diag_log format ["DRO M9: spheres - scenario=%1 factions=%2 insertion=%3", DRO_scenarioFromParams, DRO_factionsFromParams, DRO_paramSkipTeamPlanning];
 
 // Helper local: valida classname em CfgFactionClasses
 private _fnc_validateFaction = {
@@ -48,6 +48,8 @@ private _advFactionMap = ["","BLU_CTRG_F","BLU_F","BLU_G_F","BLU_GEN_F","BLU_T_F
 // Mapa para faccoes civis
 private _civFactionMap = ["","CIV_F","CIV_IDAP_F","LOP_AFR_Civ","LOP_CHR_Civ","LOP_TAK_Civ","Virtual_F"];
 
+// ===== Scenario / Environment / Objectives sphere (DRO_scenarioFromParams) =====
+if (DRO_scenarioFromParams) then {
 // ---- 1. Mission Preset ----
 missionPreset = ["DRO_ParamPreset", 0] call BIS_fnc_getParamValue;
 publicVariable "missionPreset";
@@ -171,41 +173,38 @@ if (("FORTIFY" in preferredObjectives) || ("DISARM" in preferredObjectives) || (
 
 diag_log format ["DRO M9: preferredObjectives = %1", preferredObjectives];
 diag_log format ["DRO M9: neutralTasksChosen=%1 noNeutralTasksChosen=%2", neutralTasksChosen, noNeutralTasksChosen];
+}; // end Scenario sphere
 
-// ---- Team Planning (insertion + supports) ----
-insertType = ["DRO_ParamInsertType", 0] call BIS_fnc_getParamValue;
-publicVariable "insertType";
+// ===== Insertion & Supports sphere (DRO_paramSkipTeamPlanning) =====
+if (DRO_paramSkipTeamPlanning) then {
+	insertType = ["DRO_ParamInsertType", 0] call BIS_fnc_getParamValue;
+	publicVariable "insertType";
 
-customSupports = [];
-if ((["DRO_ParamSupplyDrop", 0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "SUPPLY" };
-if ((["DRO_ParamArtillery",  0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "ARTY" };
-if ((["DRO_ParamCAS",        0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "CAS" };
-if ((["DRO_ParamUAV",        0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "UAV" };
-randomSupports = if (count customSupports > 0) then {1} else {0};
-publicVariable "customSupports";
-publicVariable "randomSupports";
+	customSupports = [];
+	if ((["DRO_ParamSupplyDrop", 0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "SUPPLY" };
+	if ((["DRO_ParamArtillery",  0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "ARTY" };
+	if ((["DRO_ParamCAS",        0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "CAS" };
+	if ((["DRO_ParamUAV",        0] call BIS_fnc_getParamValue) == 1) then { customSupports pushBackUnique "UAV" };
+	randomSupports = if (count customSupports > 0) then {1} else {0};
+	publicVariable "customSupports";
+	publicVariable "randomSupports";
 
-// Insertion position forced random (no map pick via params); starting vehicles left random.
-customPos = [];
-publicVariable "customPos";
-
-// Skip the Team Planning lobby entirely when enabled (initPlayerLocal handles the bypass).
-DRO_paramSkipTeamPlanning = ((["DRO_ParamSkipTeamPlanning", 0] call BIS_fnc_getParamValue) == 1);
-publicVariable "DRO_paramSkipTeamPlanning";
-diag_log format ["DRO M9: insertType=%1, supports=%2, skipTeamPlanning=%3", insertType, customSupports, DRO_paramSkipTeamPlanning];
+	// Insertion position forced random (no map pick via params); starting vehicles left random.
+	customPos = [];
+	publicVariable "customPos";
+	diag_log format ["DRO M9: insertion sphere - insertType=%1, supports=%2", insertType, customSupports];
+};
 
 // ---- 19. AO Location ----
 // Sempre forcado para RANDOM: nao setar customPos nem aoName.
 // O usuario nao tem como escolher AO pelo lobby de todos os modos.
 
 // =========================================================
-// Faccoes — somente se DRO_ParamUseFactions == 1
+// Factions sphere (DRO_factionsFromParams)
 // =========================================================
-if ((["DRO_ParamUseFactions", 0] call BIS_fnc_getParamValue) == 1) then {
+if (DRO_factionsFromParams) then {
 
-	DRO_paramSkipUI = true;
-	publicVariable "DRO_paramSkipUI";
-	diag_log "DRO M9: DRO_ParamUseFactions=1 — faccoes via params, UI sera pulada.";
+	diag_log "DRO M9: factions sphere - resolvendo faccoes via params.";
 
 	// M9 fix: resolver faccoes UMA vez, somente no servidor (selectRandom diverge
 	// entre server e client em RANDOM). Cliente recebe os classnames via publicVariable.
@@ -277,11 +276,11 @@ if ((["DRO_ParamUseFactions", 0] call BIS_fnc_getParamValue) == 1) then {
 	diag_log format ["DRO M9: playersFactionAdv = %1", playersFactionAdv];
 	diag_log format ["DRO M9: enemyFactionAdv = %1", enemyFactionAdv];
 
-	// Destrava o servidor (replica missionNameSpace setVariable de okAO.sqf).
-	// Guard: nao regredir se factionsChosen ja foi setado.
-	if ((missionNameSpace getVariable ["factionsChosen", 0]) == 0) then {
+	// Destrava o servidor SO se o dialogo sunday for pulado por completo (scenario tambem via params).
+	// Senao (so faccoes via param, scenario via UI), okAO seta factionsChosen apos o lider dar START.
+	if (DRO_scenarioFromParams && {(missionNameSpace getVariable ["factionsChosen", 0]) == 0}) then {
 		missionNameSpace setVariable ["factionsChosen", 1, true];
-		diag_log "DRO M9: factionsChosen = 1 (set by loadParams — faccoes via param).";
+		diag_log "DRO M9: factionsChosen = 1 (loadParams — scenario+factions via param, dialogo pulado).";
 	};
 	};
 };
