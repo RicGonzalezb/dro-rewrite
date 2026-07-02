@@ -13,6 +13,9 @@ DRO_aceFatigue = isClass (configFile >> "CfgPatches" >> "ace_advanced_fatigue");
 // provides lambs_wp_fnc_* (taskGarrison/taskPatrol/taskDefend/taskCQB/etc.).
 DRO_lambsLoaded = isClass (configFile >> "CfgPatches" >> "lambs_main");
 DRO_lambsWP     = isClass (configFile >> "CfgPatches" >> "lambs_wp");
+// Master toggle for our LAMBS integration (lobby param DRO_ParamLambsReinforce, default Enabled).
+// Active only when the param is Enabled AND the mod is actually loaded.
+DRO_lambsCompat = DRO_lambsLoaded && ((["DRO_ParamLambsReinforce", 1] call BIS_fnc_getParamValue) == 1);
 
 // =====================================================================
 // LEGACY ALIASES — mantidos para retrocompatibilidade com eventuais

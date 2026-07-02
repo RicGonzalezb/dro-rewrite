@@ -32,7 +32,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 4) > 0) then {
 		};
 	};
 	// LAMBS soft-compat: emplacement guard leader broadcasts contact at radio range.
-	if (DRO_lambsLoaded && {!isNil "_leader"}) then {
+	if (DRO_lambsCompat && {!isNil "_leader"}) then {
 		_leader setVariable ["lambs_danger_dangerRadio", true, true];
 	};
 

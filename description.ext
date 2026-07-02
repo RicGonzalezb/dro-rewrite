@@ -58,6 +58,13 @@ class Params
 		texts[] = {"Auto", "Force On","Force Off"};
 		default = 1;
 	};
+	class DRO_ParamLambsReinforce
+	{
+		title = "Activate LAMBS Reinforcing Groups and Garrisons Radio (if loaded)";
+		values[] = {0,1};
+		texts[] = {"Disabled", "Enabled"};
+		default = 1;
+	};
 	/*
 	class SOGPFRadioSupport
 	//((["SOGPFRadioSupport", 1] call BIS_fnc_getParamValue) == 1)
@@ -1345,24 +1352,4 @@ class CfgFunctions
             class selectReactiveObjective { file = "sunday_system\objectives\selectReactiveTask.sqf"; };
         };
 
-        // -------------------------------------------------
-        // Faction / class definitions
-        // -------------------------------------------------
-        class factions
-        {
-            class defineFactionClasses { file = "sunday_system\fnc_lib\defineFactionClasses.sqf"; };
-        };
-
-        // -------------------------------------------------
-        // Enemy generation (individual spawners)
-        // -------------------------------------------------
-        class enemies_gen
-        {
-            class generateRoadblock { file = "sunday_system\generate_enemies\generateRoadblock.sqf"; };
-            class generateBunker { file = "sunday_system\generate_enemies\generateBunker.sqf"; };
-            class generateBarrier { file = "sunday_system\generate_enemies\generateBarrier.sqf"; };
-            class generateEmplacement { file = "sunday_system\generate_enemies\generateEmplacement.sqf"; };
-            class spawnEnemyCompound { file = "sunday_system\generate_enemies\generateCompound.sqf"; };
-        };
-    };
-};
+        // -----------------------------

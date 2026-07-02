@@ -201,7 +201,7 @@ if (count eCarClasses > 0) then {
 					[_spawnedSquad, _campPos] call bis_fnc_taskDefend;	
 					// LAMBS soft-compat: camp leader broadcasts contact at radio range.
 					// Camps are anchored outposts, so their alarm should reach distant patrols.
-					if (DRO_lambsLoaded && {!isNull _spawnedSquad}) then {
+					if (DRO_lambsCompat && {!isNull _spawnedSquad}) then {
 						(leader _spawnedSquad) setVariable ["lambs_danger_dangerRadio", true, true];
 					};
 					enemyAlertableGroups pushBack _spawnedSquad;
@@ -260,7 +260,7 @@ if (count _patrolGroups > 0) then {
 		// Applied only to _patrolGroups (roaming inf + vehicle patrols), so garrisons,
 		// camps and static POI guards stay anchored to their objective. Groups are
 		// server-local here (spawn side), so the group variable is set where it belongs.
-		if (DRO_lambsLoaded && {!isNull _thisGroup}) then {
+		if (DRO_lambsCompat && {!isNull _thisGroup}) then {
 			_thisGroup setVariable ["lambs_danger_enableGroupReinforce", true, true];
 		};
 		_startPos = (getPos (leader _thisGroup));
