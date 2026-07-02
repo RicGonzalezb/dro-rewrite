@@ -22,7 +22,15 @@ if (count _groupArray > 0) then {
 		if (_useRandomPos) then {
 			_targetPos = [[_target]] call BIS_fnc_randomPos;
 		};
-		[_x, _targetPos] call BIS_fnc_taskAttack;	
+		if (DRO_lambsCompat) then {
+			// LAMBS soft-compat: aggressive pursuit that re-centers on the nearest player each
+			// cycle. Vanilla taskAttack targets a stale fixed position, but players are moving
+			// during extraction. Range widened to 1500 so AO-wide alertable groups still acquire;
+			// tunable. Server-local groups, so this runs where the AI is local (execVM = scheduled).
+			[_x, 1500] spawn lambs_wp_fnc_taskRush;
+		} else {
+			[_x, _targetPos] call BIS_fnc_taskAttack;
+		};
 		sleep _delay;	
 	} forEach _groupArray;
 };
