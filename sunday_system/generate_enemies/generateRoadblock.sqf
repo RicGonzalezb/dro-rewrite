@@ -54,6 +54,11 @@ if (count (((AOLocations select _AOIndex) select 2) select 1) > 0) then {
 			};
 		};
 	} forEach _guardPositions;	
+	// LAMBS soft-compat: roadblock guard leader broadcasts contact at radio range.
+	if (DRO_lambsLoaded && {!isNil "_leader"}) then {
+		_leader setVariable ["lambs_danger_dangerRadio", true, true];
+	};
+
 	
 	if (count eStaticClasses > 0) then {
 		if ((random 1) > 0.6) then {

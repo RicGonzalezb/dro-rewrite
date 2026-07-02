@@ -31,6 +31,11 @@ if (count (((AOLocations select _AOIndex) select 2) select 4) > 0) then {
 			[_guardUnit, (selectRandom ["STAND", "STAND_IA", "KNEEL", "WATCH", "WATCH1", "WATCH2"]), "ASIS"] call BIS_fnc_ambientAnimCombat;
 		};
 	};
+	// LAMBS soft-compat: emplacement guard leader broadcasts contact at radio range.
+	if (DRO_lambsLoaded && {!isNil "_leader"}) then {
+		_leader setVariable ["lambs_danger_dangerRadio", true, true];
+	};
+
 	// Create Marker
 	_markerName = format["emplaceMkr%1", floor(random 10000)];
 	_markerEmplace = createMarker [_markerName, _pos];			

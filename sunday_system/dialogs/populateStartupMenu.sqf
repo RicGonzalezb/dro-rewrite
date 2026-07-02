@@ -59,6 +59,7 @@ _index = lbAdd [2106, "3"];
 ["MAIN", 2050, false] call DRO_fnc_switchButton;
 ["MAIN", 2060, false] call DRO_fnc_switchButton;
 ["MAIN", 2065, false] call DRO_fnc_switchButton;
+["MAIN", 2085, false] call DRO_fnc_switchButton;
 ["MAIN", 2070, false] call DRO_fnc_switchButton;
 ["MAIN", 2080, false] call DRO_fnc_switchButton;
 ["MAIN", 2090, false] call DRO_fnc_switchButton;
@@ -324,14 +325,14 @@ if ((configfile >> "CfgMods" >> "vn") call BIS_fnc_getCfgIsClass) then {
 		_warningList = composeText [_warningList, lineBreak, "SOG PF Radio Support is available to everyone."];
 	};
 };
-if ((configfile >> "CfgPatches" >> "ace_medical") call BIS_fnc_getCfgIsClass) then {
+if (DRO_aceMedical) then {
 	if (!isNil "ace_medical_statemachine_cardiacArrestTime") then {
 		if (ace_medical_statemachine_cardiacArrestTime > 0) then {
 			_warningList = composeText [_warningList, lineBreak, "ACE Medical is enabled, Sunday Revive is default disabled."];
 		};
 	};
 };
-if ((configfile >> "CfgPatches" >> "ace_advanced_fatigue") call BIS_fnc_getCfgIsClass) then {
+if (DRO_aceFatigue) then {
 	if (!isNil "ace_advanced_fatigue_enabled") then {
 		if ((ace_advanced_fatigue_enabled) && ((["Stamina", 0] call BIS_fnc_getParamValue) == 0)) then {
 			_warningList = composeText [_warningList, lineBreak, "ACE Advanced Fatigue is enabled, DRO stamina is default enabled."];

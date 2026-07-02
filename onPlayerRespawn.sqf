@@ -28,9 +28,11 @@ player setUnitTrait ["engineer", true];
 player setUnitTrait ["explosiveSpecialist", true];
 player setUnitTrait ["UAVHacker", true];
 
-player setUnitTrait ["ACE_medical_medicClass", true, true];
-player setUnitTrait ["ACE_IsEngineer", true, true];
-player setUnitTrait ["ACE_isEOD", true, true];
+if (DRO_aceMedical) then {
+	player setUnitTrait ["ACE_medical_medicClass", true, true];
+	player setUnitTrait ["ACE_IsEngineer", true, true];
+	player setUnitTrait ["ACE_isEOD", true, true];
+};
 
 if ((["SOGPFRadioSupportTrait", 0] call BIS_fnc_getParamValue) == 1) then {
 	player setUnitTrait ["vn_artillery", true, true];
@@ -46,7 +48,7 @@ if ((["Stamina", 0] call BIS_fnc_getParamValue) > 0) then {
 };
 
 //fix for sometimes strange respawn circumstances
-if ((configfile >> "CfgPatches" >> "ace_medical") call BIS_fnc_getCfgIsClass) then {	
+if (DRO_aceMedical) then {
 	[player] call ACE_medical_treatment_fnc_fullHealLocal;
 };
 

@@ -1,3 +1,19 @@
+// ACE mod detection — computed once per machine at earliest common entry point.
+// CfgPatches is machine-local but deterministic (MP enforces identical mods),
+// so no publicVariable is needed; JIP clients compute their own on connect.
+DRO_aceLoaded  = isClass (configFile >> "CfgPatches" >> "ace_main");
+DRO_aceMedical = isClass (configFile >> "CfgPatches" >> "ace_medical");
+DRO_aceArsenal = isClass (configFile >> "CfgPatches" >> "ace_arsenal");
+DRO_aceFatigue = isClass (configFile >> "CfgPatches" >> "ace_advanced_fatigue");
+
+// LAMBS Danger detection — soft compatibility (used only if the mod is loaded).
+// Same rationale/locality as the ACE flags above: CfgPatches is machine-local
+// but deterministic across MP clients, so no publicVariable / JIP handling needed.
+// DRO_lambsLoaded = core mod present; DRO_lambsWP = waypoint/task module that
+// provides lambs_wp_fnc_* (taskGarrison/taskPatrol/taskDefend/taskCQB/etc.).
+DRO_lambsLoaded = isClass (configFile >> "CfgPatches" >> "lambs_main");
+DRO_lambsWP     = isClass (configFile >> "CfgPatches" >> "lambs_wp");
+
 // =====================================================================
 // LEGACY ALIASES — mantidos para retrocompatibilidade com eventuais
 // scripts externos ou mods que referenciem os nomes antigos (sun_*,

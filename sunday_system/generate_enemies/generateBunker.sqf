@@ -44,6 +44,12 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 			};
 		} forEach _guardPositions;
 		
+		// LAMBS soft-compat: bunker garrison leader broadcasts contact at radio range.
+		// Set on the corner-guard group before _bunkerGroup is reused by the switch below.
+		if (DRO_lambsLoaded && {count (units _bunkerGroup) > 0}) then {
+			(leader _bunkerGroup) setVariable ["lambs_danger_dangerRadio", true, true];
+		};
+
 		_numBunkerGuards = (_numBunkerGuards - (count units _bunkerGroup)) max 0;
 		
 		switch (_bunkerType) do {

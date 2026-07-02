@@ -603,6 +603,32 @@ class sundayDialog {
 						};
 					};		
 				};
+				class ArsenalSwitchButton: RscControlsGroupNoScrollbars {
+					idc = 2085;
+					y = "52 * pixelGridNoUIScale * pixelH";
+					class Controls {
+						class SwitchPic: sundaySelButtonPic
+						{			
+							idc = 2086;
+							text = "a3\ui_f\data\map\vehicleicons\iconcrateammo_ca.paa";							
+						};
+						class SwitchTitle: sundaySelButtonTitle
+						{			
+							idc = 2087;	
+							text = "ARSENAL";
+						};
+						class SwitchText: sundaySelButtonSelect
+						{			
+							idc = 2088;
+							text = "";
+						};
+						class SwitchButton: sundaySelButton {
+							idc = 2089;
+							action = "['MAIN', 2085] call DRO_fnc_switchButton";
+							tooltip = "Enable or disable ACE Arsenal access: insertion arsenal crates, the staging area 'Open ACE Arsenal' action, and the ORBAT arsenal button in Team Planning.";
+						};
+					};		
+				};
 			};
 		
 		};

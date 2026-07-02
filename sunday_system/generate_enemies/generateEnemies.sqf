@@ -199,6 +199,11 @@ if (count eCarClasses > 0) then {
 					_spawnedSquad = [_campPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI]] call DRO_fnc_spawnGroupWeighted;			
 					waitUntil {!isNil "_spawnedSquad"};
 					[_spawnedSquad, _campPos] call bis_fnc_taskDefend;	
+					// LAMBS soft-compat: camp leader broadcasts contact at radio range.
+					// Camps are anchored outposts, so their alarm should reach distant patrols.
+					if (DRO_lambsLoaded && {!isNull _spawnedSquad}) then {
+						(leader _spawnedSquad) setVariable ["lambs_danger_dangerRadio", true, true];
+					};
 					enemyAlertableGroups pushBack _spawnedSquad;
 					_markerName = format["campMkr%1", floor(random 10000)];
 					_markerCamp = createMarker [_markerName, _campPos];			
@@ -251,6 +256,13 @@ if (count _patrolGroups > 0) then {
 	_availableTravelPositions = _availableTravelPositions + travelPosPOIMil;
 	{
 		_thisGroup = _x;
+		// LAMBS soft-compat: mark mobile patrols as reinforcement responders.
+		// Applied only to _patrolGroups (roaming inf + vehicle patrols), so garrisons,
+		// camps and static POI guards stay anchored to their objective. Groups are
+		// server-local here (spawn side), so the group variable is set where it belongs.
+		if (DRO_lambsLoaded && {!isNull _thisGroup}) then {
+			_thisGroup setVariable ["lambs_danger_enableGroupReinforce", true, true];
+		};
 		_startPos = (getPos (leader _thisGroup));
 		if (count _availableTravelPositions > 0) then {
 			_thesePositions = _availableTravelPositions;

@@ -32,6 +32,11 @@ _thisBuilding = _this select 0;
 	
 	if (!isNil "_leader") then {
 		enemySemiAlertableGroups pushBack (group _leader);
+		// LAMBS soft-compat: garrison leader broadcasts contact at radio range so distant
+		// reinforcement-enabled patrols are summoned when the garrisoned objective is engaged.
+		if (DRO_lambsLoaded) then {
+			_leader setVariable ["lambs_danger_dangerRadio", true, true];
+		};
 	};
 	enemyPosCollection pushBack (getPos _thisBuilding);
 	if (!isNil "_leader") then { group _leader } else { grpNull }

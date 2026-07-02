@@ -65,9 +65,11 @@ if (count _respawnPos > 0) then {
 	_unit setUnitTrait ["explosiveSpecialist", true];
 	_unit setUnitTrait ["UAVHacker", true];
 
-	_unit setUnitTrait ["ACE_medical_medicClass", true, true];
-	_unit setUnitTrait ["ACE_IsEngineer", true, true];
-	_unit setUnitTrait ["ACE_isEOD", true, true];
+	if (DRO_aceMedical) then {
+		_unit setUnitTrait ["ACE_medical_medicClass", true, true];
+		_unit setUnitTrait ["ACE_IsEngineer", true, true];
+		_unit setUnitTrait ["ACE_isEOD", true, true];
+	};
 	
 	if ((["SOGPFRadioSupportTrait", 0] call BIS_fnc_getParamValue) == 1) then {
 		_unit setUnitTrait ["vn_artillery", true, true];

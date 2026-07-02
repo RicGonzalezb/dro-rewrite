@@ -42,7 +42,7 @@ markerArsenal setMarkerColor markerColorPlayers;
 markerArsenal setMarkerType "mil_flag";
 markerArsenal setMarkerText "Arsenal";
 
-if (isClass (configFile >> "CfgPatches" >> "ace_main")) then {
+if (DRO_aceArsenal) then {
 	[_arsenal, true, true] call ace_arsenal_fnc_initBox;
 	_arsenal addAction ["Arsenal", "[(_this select 0), (_this select 1), true] call ace_arsenal_fnc_openBox", nil, 6];
 	

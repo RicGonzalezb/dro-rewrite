@@ -31,9 +31,9 @@ private ["_unit", "_medic"];
 	} else {
 		if ("FirstAidKit" in (items _medic) OR "gm_ge_army_burnBandage" in (items _medic) OR "gm_gc_army_gauzeBandage" in (items _medic) OR "gm_ge_army_gauzeBandage" in (items _medic) OR "gm_ge_army_gauzeCompress" in (items _medic)) then {
 			_medic removeItem "FirstAidKit";
-			if !(isClass(configFile >> "CfgPatches" >> "ace_medical")) then {_unit setDamage 0.4};					
+			if !(DRO_aceMedical) then {_unit setDamage 0.4};
 		} else {
-			if !(isClass(configFile >> "CfgPatches" >> "ace_medical")) then {_unit setDamage 0.75};			
+			if !(DRO_aceMedical) then {_unit setDamage 0.75};
 		};
 	};
 

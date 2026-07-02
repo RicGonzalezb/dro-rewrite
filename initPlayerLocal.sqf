@@ -190,8 +190,43 @@ if (player == topUnit) then {
 					menuSliderArray = _arr;
 					menuSliderCurrent = 0;
 					// Lock the always-visible faction bar when factions come from params.
+					private _resolvedFactionsMsg = "";
 					if (DRO_factionsFromParams) then {
 						{ ((findDisplay 52525) displayCtrl _x) ctrlEnable false; } forEach [1301, 1311, 1321];
+						// Reflect the server-resolved factions (RANDOM already rolled by loadParams.sqf) in the
+						// locked listboxes, instead of leaving fn_clearData.sqf's default selection on screen.
+						private _selByData = {
+							params ["_idc", "_cn"];
+							private _sel = -1;
+							for "_i" from 0 to ((lbSize _idc) - 1) do {
+								if ((lbData [_idc, _i]) isEqualTo _cn) exitWith { _sel = _i };
+							};
+							if (_sel >= 0) then { lbSetCurSel [_idc, _sel]; };
+							_sel
+						};
+						// playersFaction / enemyFaction / civFaction are publicVariable'd by the server in loadParams.sqf;
+						// wait briefly (bounded, no new spawn) so we don't select against a nil value on a slow client.
+						private _waitCounter = 0;
+						waitUntil {
+							_waitCounter = _waitCounter + 1;
+							(!isNil "playersFaction" && !isNil "enemyFaction" && !isNil "civFaction") || _waitCounter > 100
+						};
+						private _pfCN = missionNamespace getVariable ["playersFaction", ""];
+						private _efCN = missionNamespace getVariable ["enemyFaction", ""];
+						private _cfCN = missionNamespace getVariable ["civFaction", ""];
+						private _pfName = if (_pfCN != "") then { getText (configFile >> "CfgFactionClasses" >> _pfCN >> "displayName") } else { "-" };
+						private _efName = if (_efCN != "") then { getText (configFile >> "CfgFactionClasses" >> _efCN >> "displayName") } else { "-" };
+						private _cfName = if (_cfCN != "") then { getText (configFile >> "CfgFactionClasses" >> _cfCN >> "displayName") } else { "None" };
+						if (_pfCN != "") then {
+							if (([1301, _pfCN] call _selByData) < 0) then { _pfName = _pfCN + " (unavailable in list)"; };
+						};
+						if (_efCN != "") then {
+							if (([1311, _efCN] call _selByData) < 0) then { _efName = _efCN + " (unavailable in list)"; };
+						};
+						if (_cfCN != "") then {
+							if (([1321, _cfCN] call _selByData) < 0) then { _cfName = _cfCN + " (unavailable in list)"; };
+						};
+						_resolvedFactionsMsg = format ["<br/><br/><t size='0.9'>Player: %1 | Enemy: %2 | Civ: %3</t>", _pfName, _efName, _cfName];
 					};
 					private _msg = if (DRO_scenarioFromParams) then {
 						"Scenario / Environment / Objectives are server-defined. Choose factions and press START."
@@ -199,7 +234,7 @@ if (player == topUnit) then {
 						"Factions are server-defined. Configure the scenario and press START."
 					};
 					private _n = (findDisplay 52525) displayCtrl 1144;
-					_n ctrlSetStructuredText (parseText ("<t size='1.15' shadow='1'>SERVER-DEFINED SETUP</t><br/><br/><t size='0.95'>" + _msg + "</t>"));
+					_n ctrlSetStructuredText (parseText ("<t size='1.15' shadow='1'>SERVER-DEFINED SETUP</t><br/><br/><t size='0.95'>" + _msg + "</t>" + _resolvedFactionsMsg));
 					_n ctrlSetFade 0;
 					_n ctrlShow true;
 					_n ctrlCommit 0;
@@ -235,7 +270,7 @@ if (player == topUnit) then {
 				[_h] call CBA_fnc_removePerFrameHandler;
 			};
 			if (isNull (findDisplay 52525)) then {
-				_layer cutText ["Menu de configuracao fechado - pressione HOME para reabri-lo", "PLAIN", 0, true];
+				_layer cutText ["Mission config Menu closed - press HOME open it", "PLAIN", 0, true];
 			} else {
 				_layer cutText ["", "PLAIN", 0];
 			};
@@ -391,30 +426,33 @@ _actionID = player addAction ["Open Team Planning",
 	}, nil, 6
 ];
 
-//add ACE Arsenal to action menu
-_actionID2 = player addAction ["<t color='#FFDF00'>Open ACE Arsenal</t>", 
-	{
-		[player, player, true] call ACE_arsenal_fnc_openBox;
-	}, nil, 7
-];
+//add ACE Arsenal to action menu (skip when Arsenal toggle is disabled)
+_actionID2 = -1;
+if (((missionNamespace getVariable ["arsenalEnabled", 0]) != 1) && DRO_aceArsenal) then {
+	_actionID2 = player addAction ["<t color='#FFDF00'>Open ACE Arsenal</t>", 
+		{
+			[player, player, true] call ACE_arsenal_fnc_openBox;
+		}, nil, 7
+	];
 
-//add ACE Arsenal to interaction on team members
-_CHZ_AIACEArsenal = [
-	"AIACEArsenal",
-	"Change Equipment",
-	"",
+	//add ACE Arsenal to interaction on team members
+	_CHZ_AIACEArsenal = [
+		"AIACEArsenal",
+		"Change Equipment",
+		"",
+		{
+			params ["_target", "_player", "_params"];
+			[_target, _target, true] call ACE_arsenal_fnc_openBox;
+		},
+		{
+			(isPlayer _player) && (!(isPlayer _target)) && (_target in (units _player)) && (alive _target) && 
+			[_player, _target, []] call ACE_common_fnc_canInteractWith
+		}
+	] call ACE_interact_menu_fnc_createAction;
 	{
-		params ["_target", "_player", "_params"];
-		[_target, _target, true] call ACE_arsenal_fnc_openBox;
-	},
-	{
-		(isPlayer _player) && (!(isPlayer _target)) && (_target in (units _player)) && (alive _target) && 
-		[_player, _target, []] call ACE_common_fnc_canInteractWith
-	}
-] call ACE_interact_menu_fnc_createAction;
-{
-	[_x, 0, ["ACE_MainActions"], _CHZ_AIACEArsenal] call ACE_interact_menu_fnc_addActionToObject;
-} forEach units player;
+		[_x, 0, ["ACE_MainActions"], _CHZ_AIACEArsenal] call ACE_interact_menu_fnc_addActionToObject;
+	} forEach units player;
+};
 
 // M10 REQ2+REQ3: Only leader runs cosmetic loop; non-leader skips to waitUntil
 // startReady coloring removed (REQ3); ready-count removed (REQ3 — leader button sets lobbyComplete directly)
@@ -469,9 +507,11 @@ enableSentences true;
 cutText ["", "BLACK IN", 3];
 
 //remove ACE Arsenal interaction from team members on lobby complete
-{
-	[_x, 0, ["ACE_MainActions", "AIACEArsenal"]] call ACE_interact_menu_fnc_removeActionFromObject;
-} forEach units player;
+if (DRO_aceArsenal) then {
+	{
+		[_x, 0, ["ACE_MainActions", "AIACEArsenal"]] call ACE_interact_menu_fnc_removeActionFromObject;
+	} forEach units player;
+};
 
 // Mission info readout
 [] call fnc_missionText;

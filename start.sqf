@@ -163,7 +163,7 @@ diag_log "DRO: Factions chosen";
 
 // Force Sunday Revive disabled if ACE3 has cardiac arrest time greater than zero
 if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7) then {
-	if ((configfile >> "CfgPatches" >> "ace_medical") call BIS_fnc_getCfgIsClass) then {	
+	if (DRO_aceMedical) then {
 		if (!isNil "ace_medical_statemachine_cardiacArrestTime") then {
 			if (ace_medical_statemachine_cardiacArrestTime > 0) then {
 				reviveDisabled = 3;
@@ -175,7 +175,7 @@ if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7) then {
 
 // Force A3 Stamina enabled if ACE3 Adv Fatigue enabled
 if ((["Stamina", 0] call BIS_fnc_getParamValue) > 0) then {
-	if ((configfile >> "CfgPatches" >> "ace_advanced_fatigue") call BIS_fnc_getCfgIsClass) then {
+	if (DRO_aceFatigue) then {
 		if (!isNil "ace_advanced_fatigue_enabled") then {
 			if (ace_advanced_fatigue_enabled) then {
 				staminaDisabled = 0;

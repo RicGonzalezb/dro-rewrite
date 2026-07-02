@@ -24,10 +24,12 @@ civiliansEnabled = profileNamespace getVariable ["DRO_civiliansEnabled", 0];
 publicVariable "civiliansEnabled";
 civiliansAsAgents = profileNamespace getVariable ["DRO_civiliansAsAgents", 0];
 publicVariable "civiliansAsAgents";
+arsenalEnabled = profileNamespace getVariable ["DRO_arsenalEnabled", 0];
+publicVariable "arsenalEnabled";
 stealthEnabled = profileNamespace getVariable ["DRO_stealthEnabled", 0];
 publicVariable "stealthEnabled";
 
-if ((configfile >> "CfgPatches" >> "ace_medical") call BIS_fnc_getCfgIsClass) then {
+if (DRO_aceMedical) then {
 	reviveDisabled = profileNamespace getVariable ["DRO_reviveDisabled", 3];
 	publicVariable "reviveDisabled";
 } else {

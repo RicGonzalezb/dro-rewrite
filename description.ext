@@ -42,7 +42,7 @@ class Params
 		title = "Respawn Positions";
 		values[] = {0,1,2};
 		texts[] = {"Both", "Starting location only", "Team only"};
-		default = 0;
+		default = 1;
 	};
 	class Stamina
 	{
@@ -169,6 +169,13 @@ class Params
 	class DRO_ParamCivAgents
 	{
 		title = "Civilians as Agents";
+		values[] = {0,1};
+		texts[] = {"Enabled","Disabled"};
+		default = 0;
+	};
+	class DRO_ParamArsenal
+	{
+		title = "Arsenal";
 		values[] = {0,1};
 		texts[] = {"Enabled","Disabled"};
 		default = 0;
@@ -572,10 +579,13 @@ class Params
                DRO_ParamOverride      = 1;  // 0=usa UI in-game | 1=usa params do lobby
                // ---- FACTIONS ----
                DRO_ParamUseFactions   = 1;  // 0=escolhe na UI | 1=usa params e PULA a UI
-               DRO_ParamPlayerFaction = 1;  // 0=Random 1=NATO 2=NATO Pac 3=CSAT 4=CSAT Pac 5=AAF 6=FIA 7=LDF 8=Russia
-               DRO_ParamEnemyFaction  = 7;  // (mesma tabela) ex: 7=LDF
-               DRO_ParamCivFaction    = 0;  // 0=Default(CIV_F) 1=CIV_F 2=CIV_IDAP_F
-               DRO_ParamPlayerAdv1    = 0;  DRO_ParamPlayerAdv2 = 0;  DRO_ParamPlayerAdv3 = 0; // 0=None | 1-8
+               // Faccoes: indices 0-71 (0=Random). Tabela COMPLETA e autoritativa em class Params acima
+               // (DRO_ParamPlayerFaction). Os indices DEPENDEM dos mods instalados — regenere com o gerador
+               // de faccoes (bloco comentado mais acima) se mudar os mods, senao os indices deslocam.
+               DRO_ParamPlayerFaction = 2;  // ex: 2=NATO (BLU_F)
+               DRO_ParamEnemyFaction  = 8;  // ex: 8=LDF (IND_E_F)   [ATENCAO: a tabela mudou; antes 7=LDF, hoje 7=Syndikat]
+               DRO_ParamCivFaction    = 0;  // 0=Default | 1..6 (ver class Params: CIV_F, IDAP, LOP_AFR/CHR/TAK, Virtual)
+               DRO_ParamPlayerAdv1    = 0;  DRO_ParamPlayerAdv2 = 0;  DRO_ParamPlayerAdv3 = 0; // faccoes advanced: 0=None (ver class Params p/ indices)
                DRO_ParamEnemyAdv1     = 0;  DRO_ParamEnemyAdv2  = 0;  DRO_ParamEnemyAdv3  = 0;
                // ---- SCENARIO ----
                DRO_ParamPreset        = 1;  // 1=Recon 2=Sniper 3=Combined
@@ -585,6 +595,7 @@ class Params
                DRO_ParamMines         = 0;  // 0=Disabled 1=Enabled
                DRO_ParamCivilians     = 0;  // 0=Random 1=Enabled 2=Enabled&Hostile 3=Disabled
                DRO_ParamCivAgents     = 0;  // 0=Enabled 1=Disabled
+               DRO_ParamArsenal       = 0;  // 0=Enabled 1=Disabled
                DRO_ParamStealth       = 0;  // 0=Random 1=Enabled 2=Disabled
                DRO_ParamRevive        = 3;  // 0=300s 1=120s 2=60s 3=Disabled
                DRO_ParamStamina       = 0;  // 0=Enabled 1=Disabled
@@ -607,6 +618,13 @@ class Params
                DRO_ParamObjFortify    = 0;
                DRO_ParamObjDisarm     = 0;
                DRO_ParamObjProtect    = 0;
+               // ---- INSERTION & SUPPORTS (usados quando DRO_ParamOverride==1; uma lobby pulada usa estes) ----
+               DRO_ParamSkipTeamPlanning = 0;  // 0=mostra a lobby de Team Planning | 1=pula (aplica os params abaixo direto)
+               DRO_ParamInsertType    = 0;  // 0=Random 1=Ground 2=Air-HALO 3=Air-Helicopter 4=None
+               DRO_ParamSupplyDrop    = 0;  // 0=Disabled 1=Enabled
+               DRO_ParamArtillery     = 0;  // 0=Disabled 1=Enabled
+               DRO_ParamCAS           = 0;  // 0=Disabled 1=Enabled
+               DRO_ParamUAV           = 0;  // 0=Disabled 1=Enabled
                // ---- GAMEPLAY (params originais) ----
                Respawn                = 0;  // 0=20s 1=45s 2=90s 3=5min 4=10min 5=20min 6=30min 7=Disabled
                RespawnPositions       = 0;  // 0=Both 1=Start only 2=Team only
@@ -1286,6 +1304,7 @@ class CfgFunctions
             class setSkillAction {};
             class spawnEnemyGarrison {};
             class spawnGroupWeighted {};
+            class spawnInsertArsenal {}; // M11 — insertion arsenal crate for HALO/HELI/NONE
             class stringCommaList {};
             class suicideActionAdd {};
             class supplyBox {};

@@ -85,6 +85,10 @@ publicVariable "civiliansEnabled";
 civiliansAsAgents = ["DRO_ParamCivAgents", 0] call BIS_fnc_getParamValue;
 publicVariable "civiliansAsAgents";
 
+// ---- 7b. Arsenal ----
+arsenalEnabled = ["DRO_ParamArsenal", 0] call BIS_fnc_getParamValue;
+publicVariable "arsenalEnabled";
+
 // ---- 8. Stealth ----
 stealthEnabled = ["DRO_ParamStealth", 0] call BIS_fnc_getParamValue;
 publicVariable "stealthEnabled";

@@ -29,7 +29,7 @@ if (!isNull (_this select 0)) then {
 	};
 	
 	// Open arsenal
-	if (isClass (configFile >> "CfgPatches" >> "ace_main")) then {
+	if (DRO_aceArsenal) then {
 		closeDialog 1;
 		sleep 0.02;
 		[_unit, _unit, true] call ACE_arsenal_fnc_openBox;

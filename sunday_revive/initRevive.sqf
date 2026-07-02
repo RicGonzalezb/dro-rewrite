@@ -1,5 +1,5 @@
 //handle if someone has revive enabled and also enables revive via the main menu
-if ((configfile >> "CfgPatches" >> "ace_medical") call BIS_fnc_getCfgIsClass) then {	
+if (DRO_aceMedical) then {
 	if (!isNil "ace_medical_statemachine_cardiacArrestTime") then {
 		if (ace_medical_statemachine_cardiacArrestTime > 0) then {
 			reviveDisabled = 3;

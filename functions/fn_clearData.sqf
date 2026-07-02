@@ -20,9 +20,10 @@
 	["MAIN", 2050, 0] call DRO_fnc_switchButtonSet;		
 	["MAIN", 2060, 0] call DRO_fnc_switchButtonSet;
 	["MAIN", 2065, 0] call DRO_fnc_switchButtonSet;
+	["MAIN", 2085, 0] call DRO_fnc_switchButtonSet;
 	["MAIN", 2070, 0] call DRO_fnc_switchButtonSet;
 	
-	if (isClass (configfile >> "CfgPatches" >> "ace_medical")) then {
+	if (DRO_aceMedical) then {
 		["MAIN", 2080, 3] call DRO_fnc_switchButtonSet;
 	} else {
 		["MAIN", 2080, 0] call DRO_fnc_switchButtonSet;

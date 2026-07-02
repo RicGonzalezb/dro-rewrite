@@ -622,38 +622,11 @@ switch (insertType) do {
 					diag_log "DRO: unable to create respawn marker for vehicle";
 				};
 				
-				_boxLocation = _randomStartingLocation findEmptyPosition [0, 20, "B_supplyCrate_F"];
-				if (count _boxLocation > 0) then {
-					_box = createVehicle ["B_supplyCrate_F", _boxLocation, [], 0, "NONE"];
-					_box = [_box] call sun_checkVehicleSpawn;
-					clearWeaponCargoGlobal _box;
-					clearMagazineCargoGlobal _box;
-					clearItemCargoGlobal _box;
-
-					_box addMagazineCargoGlobal ["SatchelCharge_Remote_Mag", 2];
-					_box addMagazineCargoGlobal ["DemoCharge_Remote_Mag", 4];
-					_box addItemCargoGlobal ["Medikit", 1];
-					_box addItemCargoGlobal ["FirstAidKit", 10];
-					_box addItemCargoGlobal ["Toolkit", 1];
-					_box addItemCargoGlobal ["MineDetector", 1];
-
-					{
-						_magazines = magazinesAmmoFull _x;
-						{
-							_box addMagazineCargoGlobal [(_x select 0), 2];
-						} forEach _magazines;	
-					} forEach (units (grpNetId call BIS_fnc_groupFromNetId));
-					
-					if (isClass (configFile >> "CfgPatches" >> "ace_main")) then {
-						[_box, player, true] call ACE_arsenal_fnc_openBox;
-					} else {
-						["AmmoboxInit", [_box, true]] spawn BIS_fnc_arsenal;
-					};				
-					[_box] spawn {
-						waitUntil {(missionNameSpace getVariable ["playersReady", 0]) == 1};
-						[(_this select 0)] call sun_supplyBox;
-					};
-				};
+				// M11: standardized on DRO_fnc_spawnInsertArsenal (shared with HALO/HELI/NONE).
+				// Was inline here using ACE_arsenal_fnc_openBox (no-op server-side, `player`
+				// is objNull on a dedicated server) and a legacy spawn+waitUntil for the
+				// rearm action; the shared function uses initBox + CBA_fnc_waitUntilAndExecute.
+				_box = [_randomStartingLocation] call DRO_fnc_spawnInsertArsenal;
 				// FOB marker
 				deleteMarker "campMkr";
 				_campName = format ["FOB %1", ([FOBNames] call sun_selectRemove)];
@@ -801,10 +774,13 @@ switch (insertType) do {
 		markerPlayerStart setMarkerType "mil_end";
 		markerPlayerStart setMarkerText "Drop Point";
 		
-		if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {	
+		if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {
 			respawnHALO = [missionNamespace, "campMkr", "Landing Zone"] call BIS_fnc_addRespawnPosition;
 		};
-		
+
+		// M11: insertion arsenal crate at the drop point, so JIP players can adjust loadouts.
+		[_randomStartingLocation] call DRO_fnc_spawnInsertArsenal;
+
 		//[_airStartPos] remoteExec ["sun_newUnits", s1];
 		//[_airStartPos] call sun_setPlayerGroup;
 		[_airStartPos] remoteExec ["sun_setPlayerGroup"];
@@ -961,7 +937,10 @@ switch (insertType) do {
 		if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {
 			respawnHeli = [missionNamespace, "campMkr", _campName] call BIS_fnc_addRespawnPosition;
 		};
-		
+
+		// M11: insertion arsenal crate at the LZ, so JIP players can adjust loadouts.
+		[_randomStartingLocation] call DRO_fnc_spawnInsertArsenal;
+
 		//[getPos logicStartPos] remoteExec ["sun_newUnits", s1];
 		//[getPos logicStartPos] call sun_setPlayerGroup;
 		[getPos logicStartPos] remoteExec ["sun_setPlayerGroup"];
@@ -980,6 +959,9 @@ switch (insertType) do {
 		if (getMarkerColor "campMkr" != "" && (["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {
 			respawnNone = [missionNamespace, "campMkr", "Staging"] call BIS_fnc_addRespawnPosition;
 		};
+
+		// M11: insertion arsenal crate at the staging area, so JIP players can adjust loadouts.
+		[_randomStartingLocation] call DRO_fnc_spawnInsertArsenal;
 	};
 };
 
@@ -1185,9 +1167,11 @@ if (isMultiplayer) then {
 	[_thisUnit, ["explosiveSpecialist", true]] remoteExec ["setUnitTrait", _thisUnit];
 	[_thisUnit, ["UAVHacker", true]] remoteExec ["setUnitTrait", _thisUnit];
 	
-	[_thisUnit, ["ACE_medical_medicClass", true, true]] remoteExec ["setUnitTrait", _thisUnit];
-	[_thisUnit, ["ACE_IsEngineer", true, true]] remoteExec ["setUnitTrait", _thisUnit];
-	[_thisUnit, ["ACE_isEOD", true, true]] remoteExec ["setUnitTrait", _thisUnit];
+	if (DRO_aceMedical) then {
+		[_thisUnit, ["ACE_medical_medicClass", true, true]] remoteExec ["setUnitTrait", _thisUnit];
+		[_thisUnit, ["ACE_IsEngineer", true, true]] remoteExec ["setUnitTrait", _thisUnit];
+		[_thisUnit, ["ACE_isEOD", true, true]] remoteExec ["setUnitTrait", _thisUnit];
+	};
 	
 	[_thisUnit, 0] remoteExec ["setCaptive", _thisUnit];
 	

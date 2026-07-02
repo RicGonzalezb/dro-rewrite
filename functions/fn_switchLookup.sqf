@@ -29,6 +29,11 @@ params ["_table", "_idc"];
 					_return pushBack civiliansAsAgents;
 					_return pushBack ["ENABLED", "DISABLED"];
 				};
+				case 2085: {
+					_return pushBack "arsenalEnabled";
+					_return pushBack arsenalEnabled;
+					_return pushBack ["ENABLED", "DISABLED"];
+				};
 				case 2070: {
 					_return pushBack "stealthEnabled";
 					_return pushBack stealthEnabled;

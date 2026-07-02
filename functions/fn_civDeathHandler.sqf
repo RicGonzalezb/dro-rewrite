@@ -4,7 +4,7 @@ params ["_unit"];
 	
 		//LordShade modified for ACE3 killer detection
 		_condition = (group (_this select 1) == (grpNetId call BIS_fnc_groupFromNetId));
-		if (isClass (configfile >> "CfgPatches" >> "ace_medical")) then {
+		if (DRO_aceMedical) then {
 			_condition = (group((_this select 0) getVariable ["ace_medical_lastDamageSource", (_this select 0)]) == (grpNetId call BIS_fnc_groupFromNetId));
 		};
 		
