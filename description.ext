@@ -603,6 +603,7 @@ class Params
                DRO_ParamCivilians     = 0;  // 0=Random 1=Enabled 2=Enabled&Hostile 3=Disabled
                DRO_ParamCivAgents     = 0;  // 0=Enabled 1=Disabled
                DRO_ParamArsenal       = 0;  // 0=Enabled 1=Disabled
+               DRO_ParamLambsReinforce = 1;  // 0=Disabled 1=Enabled (LAMBS reforco + radio, se o mod carregado)
                DRO_ParamStealth       = 0;  // 0=Random 1=Enabled 2=Disabled
                DRO_ParamRevive        = 3;  // 0=300s 1=120s 2=60s 3=Disabled
                DRO_ParamStamina       = 0;  // 0=Enabled 1=Disabled
@@ -1352,4 +1353,4 @@ class CfgFunctions
             class selectReactiveObjective { file = "sunday_system\objectives\selectReactiveTask.sqf"; };
         };
 
-        // -----------------------------
+        // ------------------

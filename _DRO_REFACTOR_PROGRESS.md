@@ -2521,3 +2521,8 @@ Nesta sessão a ferramenta Edit TRUNCOU o fim dos 6 arquivos editados (init.sqf,
 - RECUPERAÇÃO: reconstrução via escrita atômica Python (write temp + fsync + os.replace), baseline HEAD (+ topo intacto do working pro init.sqf, flags ACE uncommitted). Verificados: cauda, chaves, marcadores.
 - RECOMENDAÇÃO: neste mount, verificar cauda + chaves após QUALQUER escrita; preferir escrita atômica; **adicionar os `.md` ao git** (hoje são untracked — o commit-checkpoint NÃO os salvou, então continuam sem rede de segurança); manter o git destravado.
 - ESTADO: `.git/index.lock` removido pelo Gonza; código (ACE + Arsenal toggle + LAMBS) commitado como checkpoint 2026-07-01. Os `.md` seguem fora do git.
+
+
+### Flag mestre da integração LAMBS (lobby param) — 2026-07-01
+Adicionado param de lobby `DRO_ParamLambsReinforce` (title "Activate LAMBS Reinforced Groups and Radio (if loaded)", values {0,1}, default 1=Enabled), em `description.ext` logo ACIMA do bloco SOGPF. Só no lobby — nada na UI de missão.
+Global `DRO_lambsCompat = DRO_lambsLoaded && ((["DRO_ParamLambsReinforce",1] call BIS_fnc_getParamValue)==1)` em `init.sqf` (após os flags DRO_lambs*). Todos os sites de integração (reforço em `_patrolGroups` + dangerRadio em garrison/camp/roadblock/bunker/emplacement) agora gateiam por `DRO_lambsCompat` em vez de `DRO_lambsLoaded`. Os flags `DRO_lambsLoaded`/`DRO_lambsWP` seguem como detecção pura do mod (uso futuro independente do toggle). Referência do param também no bloco comentado de server.cfg dentro do `description.ext` (após `DRO_ParamArsenal`).
