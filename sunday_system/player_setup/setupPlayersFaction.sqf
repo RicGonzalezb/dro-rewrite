@@ -272,7 +272,7 @@ switch (insertType) do {
 				({ isOnRoad _x } count _pts) > 0
 			};
 			private _roadTries = 0;
-			while { ([_randomStartingLocation] call _roadNear) && (_roadTries < 20) } do {
+			while { (_roadTries < 20) && (([_randomStartingLocation] call _roadNear) || {((_randomStartingLocation select 0) < 80) || ((_randomStartingLocation select 0) > (worldSize - 80)) || ((_randomStartingLocation select 1) < 80) || ((_randomStartingLocation select 1) > (worldSize - 80))}) } do {
 				_randomStartingLocation = [_center, (aoSize+500), (aoSize+1500), 8, 0, 0.25, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
 				_roadTries = _roadTries + 1;
 			};
@@ -406,6 +406,8 @@ switch (insertType) do {
 									deleteVehicle _x;
 									_objVehWork setVehicleLock "LOCKED";
 									_objVehWork setDamage 0.8;
+									_objVehWork allowDamage false; // no spawn-collision explosion; restore after it settles
+									[{ if (!isNull (_this select 0)) then { (_this select 0) allowDamage true; }; }, [_objVehWork], 12] call CBA_fnc_waitAndExecute;
 									_class = (selectRandom pInfClasses);
 									{
 										if (["engineer", _x, false] call BIS_fnc_inString) then {
@@ -583,6 +585,8 @@ switch (insertType) do {
 						diag_log format ["DRO: spawning insert vehicle %1 at %2 with %3 roles", _x, _vehLocation, _vehRoles];
 						if (!isNil "_vehLocation" && count _vehLocation > 0) then {
 							_veh = createVehicle [_x, _vehLocation, [], 0, "NONE"];
+							_veh allowDamage false; // no spawn-collision explosion; restore after it settles
+							[{ if (!isNull (_this select 0)) then { (_this select 0) allowDamage true; }; }, [_veh], 12] call CBA_fnc_waitAndExecute;
 							_veh respawnVehicle	[30];
 							_rolesFilled = _rolesFilled + _vehRoles;
 						};
@@ -610,6 +614,8 @@ switch (insertType) do {
 								_veh = createVehicle [(selectRandom _padTypes), _vehLocation, [], 0, "NONE"];
 							};
 							_veh = createVehicle [_vehClass, _vehLocation, [], 0, "NONE"];
+							_veh allowDamage false; // no spawn-collision explosion; restore after it settles
+							[{ if (!isNull (_this select 0)) then { (_this select 0) allowDamage true; }; }, [_veh], 12] call CBA_fnc_waitAndExecute;
 							_veh respawnVehicle	[30];
 							_rolesFilled = _rolesFilled + _vehRoles;
 						};
