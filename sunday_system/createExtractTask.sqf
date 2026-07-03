@@ -67,7 +67,7 @@ switch (_extractStyle) do {
 			if (enemyCommsActive) then {
 				diag_log 'DRO: Reinforcing due to mission completion';
 				//[(leader (grpNetId call BIS_fnc_groupFromNetId)), [2,4]] execVM 'sunday_system\reinforce.sqf';
-				[_playerGroupLeader, [2,4]] execVM 'sunday_system\reinforce.sqf';
+				[_playerGroupLeader, [2,4], "RUSH"] execVM 'sunday_system\reinforce.sqf';
 			};
 			// Make existing enemies close in on players
 			diag_log "DRO: Init staggered attack";
@@ -114,7 +114,7 @@ switch (_extractStyle) do {
 			if (enemyCommsActive) then {
 				diag_log 'DRO: Reinforcing due to mission completion';
 				//[(leader (grpNetId call BIS_fnc_groupFromNetId)), [2,4]] execVM 'sunday_system\reinforce.sqf';
-				[_playerGroupLeader, [2,4]] execVM 'sunday_system\reinforce.sqf';
+				[_playerGroupLeader, [2,4], "RUSH"] execVM 'sunday_system\reinforce.sqf';
 			};
 			// Make existing enemies close in on players
 			diag_log "DRO: Init staggered attack";	
@@ -185,7 +185,7 @@ switch (_extractStyle) do {
 			if (!stealthActive) then {
 				if (enemyCommsActive) then {
 					diag_log "DRO: Reinforcing due to mission completion";
-					[_playerGroupLeader, [2,4]] execVM "sunday_system\reinforce.sqf";
+					[_playerGroupLeader, [2,4], "RUSH"] execVM "sunday_system\reinforce.sqf";
 				};
 				diag_log "DRO: Init staggered attack";
 				[30] execVM "sunday_system\generate_enemies\staggeredAttack.sqf";
@@ -259,7 +259,7 @@ switch (_extractStyle) do {
 		
 		// Send new enemies to chase players if stealth is not maintained
 		diag_log 'DRO: Reinforcing due to mission completion';
-		[_avgPos, [3,5]] execVM 'sunday_system\reinforce.sqf';
+		[_avgPos, [3,5], "RUSH"] execVM 'sunday_system\reinforce.sqf';
 		if (!stealthActive) then {
 			if (enemyCommsActive) then {
 				

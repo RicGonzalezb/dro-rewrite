@@ -38,7 +38,12 @@ if (isNil "DRO_stealthMonitorPFH") then {
 					[{
 						params ["_grp"];
 						while {(count (waypoints _grp)) > 0} do { deleteWaypoint ((waypoints _grp) select 0); };
-						[_grp, getPos (leader (grpNetId call BIS_fnc_groupFromNetId))] call BIS_fnc_taskAttack;
+						if (DRO_lambsCompat) then {
+							// LAMBS soft-compat: HUNT — QRF methodically closes on the just-detected intruders.
+							[_grp, 1000] spawn lambs_wp_fnc_taskHunt;
+						} else {
+							[_grp, getPos (leader (grpNetId call BIS_fnc_groupFromNetId))] call BIS_fnc_taskAttack;
+						};
 					}, [_x], (_forEachIndex * 30)] call CBA_fnc_waitAndExecute;
 				} forEach _grpArray;
 			};

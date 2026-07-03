@@ -21,5 +21,5 @@ if (((AOLocations select 0) select 4) == 0) then {
 		enemyCommsActive &&
 		!stealthActive
 		
-	", "diag_log 'DRO: Reinforcing due to player incursion'; [getPos thisTrigger, [1,2]] execVM 'sunday_system\reinforce.sqf';", ""];	
+	", "diag_log 'DRO: Reinforcing due to player incursion'; [getPos thisTrigger, [1,2], 'HUNT'] execVM 'sunday_system\reinforce.sqf';", ""];	
 };

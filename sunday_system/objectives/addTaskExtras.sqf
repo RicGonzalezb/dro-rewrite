@@ -47,7 +47,7 @@ switch (_reinfType) do {
 			reinforceChance = ((reinforceChance + 0.1) * aiMultiplier);
 			if ((random 1) < reinforceChance) then {
 				if (!stealthActive && enemyCommsActive) then {
-					[_objectivePos, [1,2]] execVM "sunday_system\reinforce.sqf";
+					[_objectivePos, [1,2], "HUNT"] execVM "sunday_system\reinforce.sqf";
 				};
 			};
 		}, 10, [_objectivePos, _thisTask]] call CBA_fnc_addPerFrameHandler;

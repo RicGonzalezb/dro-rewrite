@@ -1,4 +1,4 @@
-params ["_target", "_numbers"];
+params ["_target", "_numbers", ["_pursuitStyle", "VANILLA"]];
 // _target can be marker name string or unit
 
 _min = round ((_numbers select 0) * aiMultiplier);
@@ -11,6 +11,20 @@ _targetPos = switch (typeName _target) do {
 	case "STRING": {getMarkerPos _target};
 	case "OBJECT": {getPos _target};
 	case "ARRAY": {_target};
+};
+
+// LAMBS soft-compat pursuit: pick a task by style (gated by DRO_lambsCompat); else vanilla taskAttack.
+// Ranges tuned for reinforce.sqf spawn distances (~900-3000m); tunable.
+private _fnc_pursue = {
+	params ["_grp", "_pos", "_style"];
+	if (isNull _grp) exitWith {};
+	if (!DRO_lambsCompat) exitWith { [_grp, _pos] call BIS_fnc_taskAttack; };
+	switch (_style) do {
+		case "RUSH":  { [_grp, 2000] spawn lambs_wp_fnc_taskRush; };
+		case "HUNT":  { [_grp, 2500] spawn lambs_wp_fnc_taskHunt; };
+		case "CREEP": { [_grp, 800] spawn lambs_wp_fnc_taskCreep; };
+		default { [_grp, _pos] call BIS_fnc_taskAttack; };
+	};
 };
 
 _bestDist = ((AOLocations select 0) select 0) distance _targetPos;
@@ -81,7 +95,7 @@ for "_i" from 1 to _numReinforcements do {
 					_reinfGroup = [_spawnPos, enemySide, eInfClassesForWeights, eInfClassWeights, [_minAI,_maxAI], false] call DRO_fnc_spawnGroupWeighted;
 					// M6: !isNil não captura grpNull; guard reforçado.
 					if (!isNil "_reinfGroup" && {!isNull _reinfGroup}) then {
-						[_reinfGroup, _targetPos] call BIS_fnc_taskAttack;
+						[_reinfGroup, _targetPos, _pursuitStyle] call _fnc_pursue;
 						//[_reinfGroup, _targetPos, [50, 300], "FULL"] execVM "sunday_system\orders\patrolArea.sqf";											
 						diag_log format ["REINFORCEMENT: Infantry group %1 spawned at %2",_reinfGroup, _spawnPos];
 					};
@@ -163,7 +177,7 @@ for "_i" from 1 to _numReinforcements do {
 						_reinfVeh = createVehicle [_vehType, _spawnPos, [], 0, "NONE"];
 						[_reinfVeh, enemySide, false] call DRO_fnc_createVehicleCrew;
 						waitUntil {!isNull (driver _reinfVeh)};
-						[group(driver _reinfVeh), _targetPos] call BIS_fnc_taskAttack;						
+						[group(driver _reinfVeh), _targetPos, _pursuitStyle] call _fnc_pursue;						
 						
 						diag_log format ["REINFORCEMENT: Car attack group %1 spawned at %2; inserting at %3",_reinfVeh, _spawnPos, _targetPos];
 						if (count _styles > 1) then {

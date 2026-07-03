@@ -27,9 +27,15 @@ params ["_pos", ["_spawnPosOverride", []]];
 		if (isNil "_spawnedSquad" || {isNull _spawnedSquad}) exitWith {
 			diag_log "DRO: triggerAmbushSpawn — spawnGroupWeighted retornou nil/grpNull, abortando ambush.";
 		};
-		_spawnedSquad setBehaviour "AWARE";
-		_spawnedSquad setSpeedMode "FULL";
-		{_x doMove (_pos getPos [10, (random 360)])} forEach (units _spawnedSquad);		
+		if (DRO_lambsCompat) then {
+			// LAMBS soft-compat: CREEP — stalk from the hidden spawn, close in, then unleash.
+			// Matches the ambush intent (group spawned outside player LOS). Range ~800 covers the 250-450m spawn.
+			[_spawnedSquad, 800] spawn lambs_wp_fnc_taskCreep;
+		} else {
+			_spawnedSquad setBehaviour "AWARE";
+			_spawnedSquad setSpeedMode "FULL";
+			{_x doMove (_pos getPos [10, (random 360)])} forEach (units _spawnedSquad);
+		};
 		/*
 		_wpStart = _spawnedSquad addWaypoint[(getPos (leader _spawnedSquad)), 0];
 		_wpStart setWaypointBehaviour "AWARE";	
