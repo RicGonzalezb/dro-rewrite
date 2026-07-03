@@ -1335,6 +1335,8 @@ class CfgFunctions
             class generatePlayerIdentities {};
             class chooseObjectivesPOWClass {};
             class setupReinforcementTrigger {};
+            class findSeaCorridor {}; // sea insert corridor finder (custom-point aware)
+            class resolveInsertType {}; // resolves raw insert-type selection (random pool incl. SEA)
         };
 
         // -------------------------------------------------

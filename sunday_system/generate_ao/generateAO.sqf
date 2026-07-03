@@ -24,15 +24,21 @@ if (getMarkerColor "aoSelectMkr" == "") then {
 	_firstLocList = nearestLocations [[_worldCenter, _worldCenter], ["NameLocal","NameVillage","NameCity", "NameCityCapital","Airport","Strategic","StrongpointArea"], _size];
 	_randomLoc = [_firstLocList] call DRO_fnc_selectRemove;
 		
-	while {		
-		(((getPos _randomLoc) select 0) < aoSize) ||
-		(((getPos _randomLoc) select 1) < aoSize) ||
-		(((getPos _randomLoc) select 0) > (_size-aoSize)) ||
-		(((getPos _randomLoc) select 1) > (_size-aoSize)) ||
-		(((getPos _randomLoc) distance logicStartPos) < 700)
-		
+	while {
+		!(isNull _randomLoc) && {
+			(((getPos _randomLoc) select 0) < aoSize) ||
+			(((getPos _randomLoc) select 1) < aoSize) ||
+			(((getPos _randomLoc) select 0) > (_size-aoSize)) ||
+			(((getPos _randomLoc) select 1) > (_size-aoSize)) ||
+			(((getPos _randomLoc) distance logicStartPos) < 700)
+		}
 	} do {
 		_randomLoc = [_firstLocList] call DRO_fnc_selectRemove;
+	};
+	// Bound guard: if the candidate pool drained without a valid pick,
+	// fall back to nearest location (prevents infinite loop on getPos objNull).
+	if (isNull _randomLoc) then {
+		_randomLoc = nearestLocation [logicStartPos, ""];
 	};
 	aoName = text _randomLoc;
 	if (isNil aoName) then { aoName = text ((nearestLocations [(getPos _randomLoc), ["NameLocal", "NameVillage", "NameCity", "NameCityCapital", "Airport"], 2000]) select 0) + " " + "Strongpoint" };

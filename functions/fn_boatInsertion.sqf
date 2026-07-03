@@ -93,6 +93,8 @@ waitUntil { sleep 0.5; (({!isNull objectParent _x} count _players) >= (count _pl
 		_wp setWaypointBehaviour "CARELESS";
 	} forEach DRO_seaCorridor;
 	private _thisDrop = _dropPos getPos [abs _off, _bearing];
+	// Offset can push the target onto land or into a deep pocket; fall back to the validated base drop.
+	if (!(surfaceIsWater _thisDrop) || {(getTerrainHeightASL _thisDrop) < -4}) then { _thisDrop = +_dropPos; };
 	private _wpD = _bg addWaypoint [_thisDrop, 0];
 	_wpD setWaypointType "MOVE";
 	_wpD setWaypointSpeed "LIMITED";
@@ -101,7 +103,8 @@ waitUntil { sleep 0.5; (({!isNull objectParent _x} count _players) >= (count _pl
 
 // Nearest DRY LAND from the drop toward the AO — the beach the squad wades onto. This becomes
 // the landing (beach) / respawn point and where the insertion arsenal spawns (like other insert types).
-private _landDir = [_dropPos, centerPos] call BIS_fnc_dirTo;
+private _landRef = missionNamespace getVariable ["DRO_seaOrigin", centerPos];
+private _landDir = [_dropPos, _landRef] call BIS_fnc_dirTo;
 private _land = [];
 private _ld = 0;
 while { (count _land == 0) && (_ld <= 500) } do {
@@ -147,7 +150,27 @@ if (isNil "DRO_seaInsertPFH") then {
 			if (!isNull _boat && {alive _boat} && {!(_boat getVariable ["DRO_seaEjected", false])}) then {
 				_remaining = _remaining + 1;
 				private _drop = _boat getVariable ["DRO_seaDrop", _spawnPos];
-				if ((((_boat distance2D _drop) < 50) && {(getTerrainHeightASL (getPos _boat)) > -3.5}) || {(time - _t0) > 300}) then {
+				private _bpos = getPos _boat;
+				private _depth = getTerrainHeightASL _bpos;
+				private _dist = _boat distance2D _drop;
+				private _spd = speed _boat;
+				// Stall tracking: boats often refuse the last shallow metres and stop short of the drop.
+				// Detect the stall and eject there instead of idling until the timeout.
+				private _last = _boat getVariable ["DRO_seaLastPos", _bpos];
+				private _moved = _bpos distance2D _last;
+				_boat setVariable ["DRO_seaLastPos", _bpos];
+				private _stall = _boat getVariable ["DRO_seaStall", 0];
+				if ((_spd < 3) && (_moved < 4)) then { _stall = _stall + 1; } else { _stall = 0; };
+				_boat setVariable ["DRO_seaStall", _stall];
+				private _pastSpawn = (_boat distance2D _spawnPos) > 120;
+				private _arrived   = (_dist < 50) && (_depth > -3);
+				private _wadeable  = (_depth > -2) && (_dist < 160);   // disembark once in <=2m water
+				private _stuckNear = (_stall >= 3) && _pastSpawn && ((_depth > -3) || (_dist < 140));
+				// [DIAG - remove after tuning] per-boat eject state each tick.
+				diag_log format ["DRO SEA eject-check boat=%1 dist=%2 depth=%3 spd=%4 stall=%5 arr=%6 wade=%7 stuck=%8", _boat, round _dist, (round (_depth*10))/10, round _spd, _stall, _arrived, _wadeable, _stuckNear];
+				// Decelerate on approach so the boat noses into the shallows instead of ramming/grounding.
+				if (_dist < 140) then { _boat limitSpeed (8 max (_dist * 0.25)); };
+				if (_arrived || _wadeable || _stuckNear || {(time - _t0) > 180}) then {
 					{
 						if (_x != (driver _boat)) then {
 							[_x, ["GetOut", _boat]] remoteExec ["action", _x];
@@ -155,12 +178,23 @@ if (isNil "DRO_seaInsertPFH") then {
 						};
 					} forEach (crew _boat);
 					_boat setVariable ["DRO_seaEjected", true, true];
+					_boat limitSpeed 300;   // release the approach cap for the RTB run
 					private _g = group (driver _boat);
 					while {count (waypoints _g) > 0} do { deleteWaypoint ((waypoints _g) select 0); };
 					private _wb = _g addWaypoint [_spawnPos, 0];
 					_wb setWaypointType "MOVE";
 					_wb setWaypointSpeed "FULL";
 					_wb setWaypointStatements ["true", "{deleteVehicle _x} forEach (crew (vehicle this)); deleteVehicle (vehicle this);"];
+					// Guaranteed cleanup: the RTB waypoint statement only fires if the boat reaches spawn.
+					// If it gets stuck (obstacle/pathing), delete it, its crew and its group anyway after a timeout.
+					[{
+						params ["_boat", "_grp"];
+						if (!isNull _boat) then {
+							{ deleteVehicle _x } forEach (crew _boat);
+							deleteVehicle _boat;
+						};
+						if (!isNull _grp) then { deleteGroup _grp };
+					}, [_boat, _g], 300] call CBA_fnc_waitAndExecute;
 				};
 			};
 		} forEach _boats;

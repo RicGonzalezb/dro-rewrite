@@ -2613,3 +2613,110 @@ Após a geração de objetivos, computa e publica:
 - MP: pathing dos barcos pelo corredor, eject via `remoteExec` "GetOut", override do skip (mexe na feature Skip Team Planning validada em MP).
 - Confirmar em jogo: arsenal na praia, respawn/JIP em terra, piloto da facção certa e invulnerável.
 - SP em mapa costeiro: OK (Altis validado). Livonia (landlocked): corretamente NÃO oferece Sea-Boat.
+
+---
+
+## Bugs latentes — varredura e fix — 2026-07-03 (Master/Opus)
+
+Revisão dos 3 "bugs latentes" herdados do audit M6. **2 de 3 já estavam corrigidos** (PROGRESS estava fora de sincronia com o codigo — o M7 resolveu sem atualizar a seção do M6):
+
+- **`fn_checkVehicleSpawn.sqf:6-11`** — JA CORRIGIDO no hotfix M6. `params [["_vehicle", objNull], ["_vehicleType", ""]]` + guard `if (_vehicleType isEqualTo "") exitWith { _vehicle = objNull }`. Nada a fazer.
+- **`reinforce.sqf` (CARTRANSPORT/CAR/HELI)** — JA CORRIGIDO no "M7 fix" (linhas 133, 176, 216). Os três sites de `DRO_fnc_selectRemove` sobre `enemyGVPool`/`enemyGVTPool`/`enemyHeliPool` têm guard `isEqualTo objNull || isEqualTo ""`. Nada a fazer.
+
+### Fix aplicado: `generate_ao/generateAO.sqf` — while da seleção de AO (linhas 27-36)
+
+**Bug real:** o `while` que rejeita localizações na borda do mapa drena `_firstLocList` via `DRO_fnc_selectRemove`. Se a lista esvaziasse, `selectRemove` retorna `objNull`, `getPos objNull` = `[0,0,0]`, e `0 < aoSize` fica sempre TRUE → **loop infinito** (trava silenciosa na câmera de geração da AO, não crash). Probabilidade baixíssima (raio de busca = worldSize inteiro, lista ~= todas as locations do mapa), mas modo de falha feio e guard trivial.
+
+**Mudança:**
+- Condição do while ganhou guard de curto-circuito: `!(isNull _randomLoc) && { <condicao original> }`. Happy-path idêntico (location válida → isNull false → avalia condição original).
+- Após o loop, fallback: `if (isNull _randomLoc) then { _randomLoc = nearestLocation [logicStartPos, ""]; };` — se o pool drenar, pega a location mais próxima do logicStartPos (sempre válida) em vez de travar.
+
+**Verificação (escrita atômica + re-leitura):** 0 bytes CR; balanço `{}` `()` `[]` = 0 (delta zero, esperado); cauda do arquivo intacta (`diag_log "DRO: Completed AO generation"`); região editada conferida por leitura.
+
+**Pendências:** comportamento não testável em SP trivialmente (só dispara com pool drenado — improvável). Fix é defensivo, sem impacto no happy-path. **Gonza: `git add -f` no generateAO.sqf e neste .md antes de commitar.**
+
+---
+
+## Sea insert — desembarque: drop pra margem + ejeção por parada — 2026-07-03 (Master/Opus)
+
+**Sintoma (Gonza, print):** assault boats param em água funda, antes da margem, e ninguém desembarca. Praia lisa, sem obstáculos. Diagnóstico: caso "barco para antes do drop".
+
+**Causa:** a IA de barco para nos últimos metros rasos e estaciona curto do drop. A ejeção antiga (fn_boatInsertion) exigia `distance2D<50` E `depth>-3.5` ao mesmo tempo, com fallback só de 300s → barco parado até 5 min sem ejetar. Somava com drop base às vezes offshore e offset `_thisDrop` não validado.
+
+**Fix (A+B):**
+- **B — drop pra margem (`start.sqf`, dentro do `if (_foundDrop)`):** após achar a célula rasa base, caminha em passos de 5m na direção da terra (`dirTo centerPos`) e guarda a ÚLTIMA célula de água flutuável (depth <= -0.4) antes da praia/terra. `_dropPos` refinado alimenta spawn/corredor/`DRO_seaDropPos`.
+- **B2 — validação do offset (`fn_boatInsertion.sqf` L95):** `_thisDrop` (drop base + offset perpendicular) revalidado; se cair em terra ou depth<-4, fallback pro `_dropPos` base.
+- **A — ejeção robusta (`fn_boatInsertion.sqf` PFH):** detector de parada por barco (`DRO_seaLastPos`/`DRO_seaStall`). Ejeta quando: `_arrived` (dist<60 & depth>-4) OU `_wadeable` (depth>-3.2 & dist<160) OU `_stuckNear` (parado >=3 ticks, já saiu do spawn, depth>-4.5 ou dist<160) OU timeout reduzido 300→180s. O `_stuckNear` é o que realmente garante o desembarque.
+
+**DIAG temporário:** `diag_log "DRO SEA eject-check ..."` por barco/tick (dist/depth/spd/stall/flags) pra afinar limiares. **REMOVER após tuning.**
+
+**Verificação:** escrita atômica; balanço `{}()[]`=0 nos dois arquivos; sem CR; caudas intactas; regiões relidas.
+
+**Pendente (Gonza, SP):** rodar sea insert, confirmar desembarque perto da margem, e colar as linhas `DRO SEA eject-check` do .rpt pra afinarmos (esp. em que `dist`/`depth` os barcos param). `git add -f start.sqf functions/fn_boatInsertion.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Sea insert — cleanup garantido do barco RTB — 2026-07-03 (Master/Opus)
+
+Após ejetar, o piloto leva o barco de volta ao spawn e a statement do waypoint deletava crew+barco NA CHEGADA. Problema: se o barco empaca (obstáculo/pathing) nunca chega -> nunca deleta; e o PFH monitor já se auto-removeu (`_remaining==0`) -> sem vigia -> barco preso pra sempre.
+
+**Fix (`fn_boatInsertion.sqf`, após setWaypointStatements do RTB):** backstop `CBA_fnc_waitAndExecute` de 120s que deleta barco + crew + grupo mesmo se não chegar (guard `isNull`). Happy-path continua deletando na chegada (~73s); o backstop cobre os presos e ainda limpa o grupo vazio deixado pelo happy-path. Escrita atômica; balanço `{}()[]`=0; sem CR.
+
+---
+
+## Sea insert — respeitar o ponto de inserção custom (Team Planning) — 2026-07-03 (Master/Opus)
+
+**Bug (Gonza):** o "set insertion point" do Team Planning vale pra todos os tipos menos SEA — o corredor de barco era sempre calculado do `centerPos` na geração, ignorando `customPos`.
+
+**Fix — extração + re-semeadura:**
+- **NOVO `functions/fn_findSeaCorridor.sqf`** (registrado em description.ext, `class core > class findSeaCorridor {}`): função PURA `_origin call DRO_fnc_findSeaCorridor` que roda todo o algoritmo (drop raso mais próximo do seed que conecta ao mar via flood BFS -> refino shoreward até a última célula flutuável -> spawn reverso offshore com corredor todo-água) e RETORNA `[viable, spawn, drop, corridor, origin]`. Não publica nada — o caller comita. Map-agnóstica.
+- **`start.sqf`:** bloco inline do corredor (~150 linhas) substituído por `centerPos call DRO_fnc_findSeaCorridor` + commit dos globais `DRO_sea*`. Nova global `DRO_seaOrigin` (seed usado). Comportamento default idêntico ao anterior; o lobby continua gated por `DRO_seaInsertViable`.
+- **`setupPlayersFaction.sqf` (ambos call sites SEA, "SEA" e index 5):** antes de chamar `boatInsertion`, se `_customStart && count customPos > 0`, re-semeia com `customPos call DRO_fnc_findSeaCorridor`; se viável, sobrescreve e re-publica os `DRO_sea*`. Se o ponto custom não tem corredor viável (ex: fundo demais / sem mar próximo), mantém o corredor default (fallback silencioso). Atende os 3 passos do Gonza: (1) acha a margem a partir do ponto, (2) ajusta pro cell flutuável, (3) calcula spawn reverso.
+- **`fn_boatInsertion.sqf`:** o ponto de praia/respawn (`_land`) agora deriva de `DRO_seaOrigin` (custom ou centro) em vez de `centerPos` fixo.
+
+**Verificação:** escrita atômica nos 5 arquivos; balanço `{}()[]`=0 em todos; sem CR; description.ext balanceado; regiões conferidas por grep.
+
+**Pendente (Gonza, MP/SP):** testar SEA com ponto custom setado (barcos devem nascer offshore do ponto e desembarcar lá) e SEM ponto (default do centro, inalterado). Colar diag `DRO: SEA insert (custom)` / `(default)` do .rpt. `git add -f functions/fn_findSeaCorridor.sqf description.ext start.sqf functions/fn_boatInsertion.sqf sunday_system/player_setup/setupPlayersFaction.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+---
+
+## Sea insert — aviso de ponto inviável + profundidade 2m + desaceleração — 2026-07-03 (Master/Opus)
+
+Três ajustes pedidos pelo Gonza:
+
+1. **Aviso ao player (não silencioso), antes do start.** Em `sunday_system/dialogs/selectStart.sqf` (handler do onMapSingleClick, ainda no Team Planning), após setar `customPos`, roda `(_pos call DRO_fnc_findSeaCorridor) select 0`. Se não-viável -> `systemChat` + `hint` avisando que SEA insert cairia no corredor default. Roda client-side, usa os globais `DRO_seaDropMaxRadius`/`DRO_seaInsertMaxDist` já publicados na geração (função pura, sem sleep). Feedback ao vivo a cada clique no mapa. O fallback default em `setupPlayersFaction` continua existindo como rede — mas agora o jogador é avisado antes.
+2. **Profundidade de desembarque 3.2/3.5m -> 2m** (`fn_boatInsertion.sqf`): `_wadeable` agora `_depth > -2` (regra principal de desembarque, "em <=2m ejeta"). `_arrived` afrouxado p/ `-3` (sanity no drop), `_stuckNear` give-up de `-4.5` -> `-3`, dist de 160 -> 140.
+3. **Desaceleração na aproximação** (`fn_boatInsertion.sqf`, PFH): `if (_dist < 140) then { _boat limitSpeed (8 max (_dist*0.25)); }` — cap de velocidade que rampa de ~35km/h a 140m até ~8km/h junto ao drop, pra o barco encostar sem ramar/encalhar. Cap liberado (`limitSpeed 300`) no momento da ejeção, antes do RTB.
+
+**Verificação:** escrita atômica; balanço `{}()[]`=0 nos 2 arquivos; sem CR; regiões conferidas.
+
+**Pendente (Gonza):** testar (a) ponto custom em terra/sem mar -> deve avisar no Team Planning; (b) desembarque agora perto de ~2m; (c) barco desacelerando na chegada. Diag `DRO SEA eject-check` ainda ativo pra tunar. `git add -f functions/fn_boatInsertion.sqf sunday_system/dialogs/selectStart.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Sea insert — aviso via cutText (correção) — 2026-07-03 (Master/Opus)
+O aviso de ponto inviável (selectStart.sqf) foi trocado de `systemChat`+`hint` para `cutText` vermelho (`size='1.5'`, `align='center'`, `shadow='1'`): "Bad sea insertion point / select another insertion position". Nota: Gonza pediu "1.5" no texto embora o snippet colado tivesse `size='2'` — usado 1.5. `git add -f sunday_system/dialogs/selectStart.sqf`.
+
+---
+
+## Sea insert — trava do ponto custom movida pro START + Random pode dar SEA — 2026-07-03 (Master/Opus)
+
+**Correção de escopo (Gonza):** o aviso no clique do `selectStart` estava errado — a seleção de ponto é genérica (todos os tipos). A trava tem que ser no START, concluída antes do que o START dispara, e só quando o tipo efetivo for SEA (explícito OU random->SEA).
+
+**Ordem mapeada:** (1) Team Planning define `customPos` (selectStart) + tipo no listbox 6009; (2) líder aperta START -> `fn_lobbyReadyButton` (dialogsLobby.hpp:274) seta `lobbyComplete=1`; (3) `start.sqf:869` waitUntil -> (4) execVM setupPlayersFaction resolve random + switch. Choke da trava = passo 2. (`okArsenal.sqf` também completa o lobby, mas é fluxo de arsenal sem team planning -> sem `customPos` -> sem validacao SEA necessária.)
+
+**Achado:** o Random NUNCA dava SEA (`[1,3] call BIS_fnc_randomInt`). Gonza escolheu: Random passa a poder dar SEA quando o corredor for viável.
+
+**Fix:**
+- **NOVO `functions/fn_resolveInsertType.sqf`** (registrado em CfgFunctions core): resolve a seleção crua -> tipo concreto. Random agora sorteia `[1,2,3]` + `5` (se `DRO_seaInsertViable`). Mantém o downgrade de heli(3)->ground/halo sob mods IF/SPE. Idempotente pra valores já resolvidos.
+- **`fn_lobbyReadyButton.sqf`:** ao apertar START, resolve o tipo efetivo; se `==5 && count customPos>0 && !viável`, dispara o `cutText` vermelho e `exitWith` SEM setar `lobbyComplete` (nada do passo 3-4 roda; insertType fica cru pra re-press re-resolver). Senão, trava o tipo resolvido (`publicVariable insertType`) e completa o lobby.
+- **`setupPlayersFaction.sqf` (34-42):** bloco de random trocado por `insertType = insertType call DRO_fnc_resolveInsertType; publicVariable`. Idempotente (no-op se o START já travou). Cobre também o caminho okArsenal (insertType ainda 0).
+- **`selectStart.sqf`:** aviso on-click removido.
+
+**Verificação:** escrita atômica nos 5; balanço `{}()[]`=0; sem CR; regiões conferidas.
+
+**Pontos de atenção (Gonza):**
+1. Peso do random: SEA entra com peso igual (25% cada entre 1/2/3/5 quando viável). Ajustável.
+2. Ao bloquear, se o botão START fecha o diálogo do lobby, o jogador vê o cutText mas precisa reabrir via scroll "Open Team Planning" (hint M10 REQ1 já existe) pra trocar o ponto. Se não fechar, o lobby fica aberto. Confirmar em teste.
+3. Random->SEA usa `DRO_seaInsertViable` (default do centro) pra decidir se SEA entra no pool; a validação do ponto custom é separada (no START). Edge: ponto custom ótimo mas centro sem mar -> SEA não entra no random (só se escolhido explícito).
+
+`git add -f functions/fn_resolveInsertType.sqf description.ext functions/fn_lobbyReadyButton.sqf sunday_system/player_setup/setupPlayersFaction.sqf sunday_system/dialogs/selectStart.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Hotfix — findSeaCorridor getPos "Type Number" (call sites sem `[]`) — 2026-07-03 (Master/Opus)
+RPT (Altis): `Error getpos: Type Number, expected Array,Object` em fn_findSeaCorridor:74 (`_origin getPos [_r,_deg]`). Causa: `pos call fnc` passa `_this = [x,y,z]`, e `params [["_origin",...]]` lê o array como lista de args -> `_origin = x` (número). Fix: envelopar o argumento nos 6 call sites -> `[centerPos]`/`[customPos]`/`[insertType] call ...` (start.sqf:624, setupPlayersFaction:36/680/934, fn_lobbyReadyButton:7/11). Lição: função CfgFunctions que recebe UMA posição precisa ser chamada com `[pos] call`, nunca `pos call`.

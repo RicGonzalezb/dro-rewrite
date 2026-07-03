@@ -614,138 +614,25 @@ if (count allObjectives < _numObjs) then {
 // No exitWith inside loops (SQF footgun) — flags gate early termination.
 // ============================================================
 DRO_seaInsertMaxDist = 800;
-DRO_seaDropMaxRadius = aoSize + 600;   // max distance drop point may be from AO centre (tunable; keeps landings near the objective, like the heli LZ)
-DRO_seaInsertViable = false;
-DRO_seaSpawnPos = [];
-DRO_seaDropPos = [];
-DRO_seaCorridor = [];
-[] call {
-	private _fnc_lineIsWater = {
-		params ["_a", "_b", ["_step", 40]];
-		private _d = _a distance2D _b;
-		private _dir = [_a, _b] call BIS_fnc_dirTo;
-		private _n = (ceil (_d / _step)) max 1;
-		private _ok = true;
-		for "_i" from 0 to _n do {
-			if (_ok) then {
-				private _sp = _a getPos [(_d * _i / _n), _dir];
-				if (!surfaceIsWater _sp) then { _ok = false; };
-			};
-		};
-		_ok
-	};
+DRO_seaDropMaxRadius = aoSize + 800;   // max distance drop point may be from the seed point (tunable)
+publicVariable "DRO_seaInsertMaxDist";
+publicVariable "DRO_seaDropMaxRadius";
 
-	private _maxScan = DRO_seaDropMaxRadius;
-	// Sea vs lake test: BFS flood over 100m water cells from _p; true if the body reaches the
-	// map edge (= sea). Stops early on edge, or on a cell cap (a body that big is treated as sea).
-	private _fnc_waterReachesEdge = {
-		params ["_p"];
-		private _cell = 100;
-		private _ws = worldSize;
-		private _margin = 200;
-		private _cap = 1500;
-		private _sx = (floor ((_p select 0) / _cell)) * _cell + (_cell / 2);
-		private _sy = (floor ((_p select 1) / _cell)) * _cell + (_cell / 2);
-		private _open = [[_sx, _sy]];
-		private _seen = createHashMap;
-		_seen set [format ["%1_%2", _sx, _sy], true];
-		private _reached = false;
-		private _cnt = 0;
-		while {(count _open > 0) && (!_reached) && (_cnt < _cap)} do {
-			private _c = _open deleteAt 0;
-			_cnt = _cnt + 1;
-			private _cx = _c select 0;
-			private _cy = _c select 1;
-			if ((_cx < _margin) || (_cx > (_ws - _margin)) || (_cy < _margin) || (_cy > (_ws - _margin))) then {
-				_reached = true;
-			} else {
-				{
-					private _nx = _cx + (_x select 0);
-					private _ny = _cy + (_x select 1);
-					private _k = format ["%1_%2", _nx, _ny];
-					if (isNil {_seen get _k}) then {
-						_seen set [_k, true];
-						if (surfaceIsWater [_nx, _ny, 0]) then { _open pushBack [_nx, _ny]; };
-					};
-				} forEach [[_cell, 0], [-_cell, 0], [0, _cell], [0, -_cell]];
-			};
-		};
-		_reached || (_cnt >= _cap)
-	};
-
-	// 1. Nearest shallow-water shore point to the AO center that is SEA (connects to the map edge,
-	//    not a landlocked lake). Flood-checks each shallow candidate, capped at _maxFloods.
-	private _dropPos = [];
-	private _foundDrop = false;
-	private _floods = 0;
-	private _maxFloods = 8;
-	private _r = 200;
-	while {(!_foundDrop) && (_r <= _maxScan) && (_floods < _maxFloods)} do {
-		private _deg = 0;
-		while {(!_foundDrop) && (_deg < 360) && (_floods < _maxFloods)} do {
-			private _pp = centerPos getPos [_r, _deg];
-			if (surfaceIsWater _pp) then {
-				private _depth = getTerrainHeightASL _pp;
-				if ((_depth < 0) && (_depth > -3)) then {
-					_floods = _floods + 1;
-					if ([_pp] call _fnc_waterReachesEdge) then {
-						_dropPos = [_pp select 0, _pp select 1, 0];
-						_foundDrop = true;
-					};
-				};
-			};
-			_deg = _deg + 20;
-		};
-		_r = _r + 100;
-	};
-
-	// 2. Offshore spawn within maxDist with an all-water corridor to the drop.
-	if (_foundDrop) then {
-		private _seaward = [centerPos, _dropPos] call BIS_fnc_dirTo;
-		private _bestDist = 0;
-		private _bestSpawn = [];
-		{
-			private _deg = _seaward + _x;
-			private _clearTo = 0;
-			private _d = 100;
-			private _broken = false;
-			while {(!_broken) && (_d <= DRO_seaInsertMaxDist)} do {
-				private _cand = _dropPos getPos [_d, _deg];
-				if ((surfaceIsWater _cand) && {[_dropPos, _cand, 40] call _fnc_lineIsWater}) then {
-					_clearTo = _d;
-				} else {
-					_broken = true;
-				};
-				_d = _d + 50;
-			};
-			if (_clearTo > _bestDist) then {
-				_bestDist = _clearTo;
-				_bestSpawn = _dropPos getPos [_clearTo, _deg];
-			};
-		} forEach [-40, -20, 0, 20, 40];
-
-		if ((_bestDist >= 300) && {count _bestSpawn > 0}) then {
-			DRO_seaDropPos = _dropPos;
-			DRO_seaSpawnPos = [_bestSpawn select 0, _bestSpawn select 1, 0];
-			private _cdir = [DRO_seaSpawnPos, DRO_seaDropPos] call BIS_fnc_dirTo;
-			private _ctot = DRO_seaSpawnPos distance2D DRO_seaDropPos;
-			private _steps = 3;
-			DRO_seaCorridor = [];
-			for "_i" from 0 to _steps do {
-				private _cp = DRO_seaSpawnPos getPos [(_ctot * _i / _steps), _cdir];
-				DRO_seaCorridor pushBack [_cp select 0, _cp select 1, 0];
-			};
-			DRO_seaInsertViable = true;
-		};
-	};
-};
+// Default corridor seeded from the AO centre at generation (lets the lobby gate the SEA option).
+// A custom insertion point, if set in Team Planning, re-seeds the corridor at insertion time
+// (setupPlayersFaction). Finder = DRO_fnc_findSeaCorridor (pure; returns, publishes nothing).
+private _seaRes = [centerPos] call DRO_fnc_findSeaCorridor;
+DRO_seaInsertViable = _seaRes select 0;
+DRO_seaSpawnPos     = _seaRes select 1;
+DRO_seaDropPos      = _seaRes select 2;
+DRO_seaCorridor     = _seaRes select 3;
+DRO_seaOrigin       = _seaRes select 4;
 publicVariable "DRO_seaInsertViable";
 publicVariable "DRO_seaSpawnPos";
 publicVariable "DRO_seaDropPos";
 publicVariable "DRO_seaCorridor";
-publicVariable "DRO_seaInsertMaxDist";
-publicVariable "DRO_seaDropMaxRadius";
-diag_log format ["DRO: SEA insert viable=%1 spawn=%2 drop=%3", DRO_seaInsertViable, DRO_seaSpawnPos, DRO_seaDropPos];
+publicVariable "DRO_seaOrigin";
+diag_log format ["DRO: SEA insert (default) viable=%1 spawn=%2 drop=%3", DRO_seaInsertViable, DRO_seaSpawnPos, DRO_seaDropPos];
 
 
 _objGroupingHandle = [] execVM "sunday_system\objectives\objGrouping.sqf";

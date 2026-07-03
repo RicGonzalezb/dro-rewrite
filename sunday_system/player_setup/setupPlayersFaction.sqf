@@ -31,15 +31,10 @@ diag_log format ["Zeus = %1", _zeus];
 } forEach (units (grpNetId call BIS_fnc_groupFromNetId));
 diag_log (units (grpNetId call BIS_fnc_groupFromNetId));
 
-if (insertType == 0) then {
-	insertType = [1,3] call BIS_fnc_randomInt;
-};
-
-if (insertType == 3) then {
-	if (((configfile >> "CfgMods" >> "IF") call BIS_fnc_getCfgIsClass) || ((configfile >> "CfgMods" >> "SPE") call BIS_fnc_getCfgIsClass)) then {
-		insertType = [1,2] call BIS_fnc_randomInt;
-	};
-};
+// Effective insert type (random pool incl. SEA when viable + heli mod-downgrade).
+// Idempotent: if the START button already locked a resolved type, this is a no-op.
+insertType = [insertType] call DRO_fnc_resolveInsertType;
+publicVariable "insertType";
 
 _customStart = false;
 _randomStartingLocation = [];
@@ -680,6 +675,21 @@ switch (insertType) do {
 			};
 			case "SEA": {
 				insertType = "SEA";
+				// Custom insertion point (Team Planning): re-seed the sea corridor from it (reverse path).
+				if (_customStart && {count customPos > 0}) then {
+					private _cr = [customPos] call DRO_fnc_findSeaCorridor;
+					if (_cr select 0) then {
+						DRO_seaInsertViable = true;
+						DRO_seaSpawnPos = _cr select 1;
+						DRO_seaDropPos  = _cr select 2;
+						DRO_seaCorridor = _cr select 3;
+						DRO_seaOrigin   = _cr select 4;
+						{ publicVariable _x } forEach ["DRO_seaInsertViable","DRO_seaSpawnPos","DRO_seaDropPos","DRO_seaCorridor","DRO_seaOrigin"];
+						diag_log format ["DRO: SEA insert (custom) viable=1 spawn=%1 drop=%2", DRO_seaSpawnPos, DRO_seaDropPos];
+					} else {
+						diag_log "DRO: SEA custom point has no viable corridor - keeping default corridor.";
+					};
+				};
 				if (DRO_seaInsertViable && {count DRO_seaSpawnPos > 0}) then {
 					[] call DRO_fnc_boatInsertion;
 					_randomStartingLocation = DRO_seaLandPos;
@@ -919,6 +929,21 @@ switch (insertType) do {
 	case 5: {
 		// SEA - Boat insertion (own lobby option, index 5).
 		insertType = "SEA";
+		// Custom insertion point (Team Planning): re-seed the sea corridor from it (reverse path).
+		if (_customStart && {count customPos > 0}) then {
+			private _cr = [customPos] call DRO_fnc_findSeaCorridor;
+			if (_cr select 0) then {
+				DRO_seaInsertViable = true;
+				DRO_seaSpawnPos = _cr select 1;
+				DRO_seaDropPos  = _cr select 2;
+				DRO_seaCorridor = _cr select 3;
+				DRO_seaOrigin   = _cr select 4;
+				{ publicVariable _x } forEach ["DRO_seaInsertViable","DRO_seaSpawnPos","DRO_seaDropPos","DRO_seaCorridor","DRO_seaOrigin"];
+				diag_log format ["DRO: SEA insert (custom) viable=1 spawn=%1 drop=%2", DRO_seaSpawnPos, DRO_seaDropPos];
+			} else {
+				diag_log "DRO: SEA custom point has no viable corridor - keeping default corridor.";
+			};
+		};
 		if (DRO_seaInsertViable && {count DRO_seaSpawnPos > 0}) then {
 			[] call DRO_fnc_boatInsertion;
 			_randomStartingLocation = DRO_seaLandPos;
