@@ -2569,3 +2569,47 @@ Ao aplicar as pursuit-tasks, um erro meu (`""RUSH""` dentro de raw-string Python
 ### Falta testar (Gonza)
 - COM LAMBS: sentir a curva furtivo (emboscada CREEP) → caçada metódica (reforço HUNT no meio do jogo) → enxame agressivo (extração RUSH). Afinar ranges se preciso.
 - SEM LAMBS: confirmar que todo caminho cai no `taskAttack`/comportamento vanilla.
+
+
+---
+
+## Feature — Tipo de inserção "Sea - Boat" (barco pilotado) — 2026-07-03
+
+Nova inserção naval (índice 5 no combo do Team Planning / `DRO_ParamInsertType`). Barcos pilotados por bot levam a esquadra do mar até uma praia perto do AO, ejetam os players em água rasa (vadeiam pra terra) e voltam pra ser deletados — análogo ao heli.
+
+### Finder do corredor de água (start.sqf, na geração, server-side)
+Após a geração de objetivos, computa e publica:
+- `DRO_seaInsertViable` (bool), `DRO_seaSpawnPos` (offshore), `DRO_seaDropPos` (água rasa costeira), `DRO_seaCorridor` (waypoints), `DRO_seaDropMaxRadius` (=`aoSize+600`, teto do drop, tunável), `DRO_seaInsertMaxDist` (=800, spawn↔drop).
+- **Corredor:** do drop, rumo seaward (±40°), acha o spawn mais distante ATÉ 800m cujo caminho reto é 100% água (`surfaceIsWater` a cada 40m). O corredor limpo É o teste de viabilidade (mín. 300m). Trilha os barcos por waypoints ao longo dele.
+- **Anti-lago (flood-fill):** cada candidato de água rasa passa por um BFS (`_fnc_waterReachesEdge`, células 100m, `createHashMap`) — só vale se o corpo d'água **alcança a borda do mapa** (=mar). Lago interno é rejeitado. Cap de 8 floods + 1500 células. **Consequência:** Livonia (landlocked) nunca oferece Sea-Boat; precisa de mapa costeiro (Altis/Tanoa/Malden...).
+
+### fn_boatInsertion.sqf (nova função, CfgFunctions class boatInsertion)
+- `ceil(esquadra/4)` barcos `B_Boat_Transport_01_F` (classe fixa, sem scan de facção), faixas paralelas.
+- **Piloto:** grupo de 1 via `spawnGroupWeighted` da **facção do player** (`pInfClassesForWeights`), `allowDamage false` (piloto E barco invulneráveis o tempo todo), careless/captive/sem mira/sem dynamic sim.
+- Resolve `grpNetId`→grupo→units **DEPOIS** do `sun_setPlayerGroup` (ela troca o grupo; capturar antes pegava grupo vazio → bug "1 barco, ninguém embarcado").
+- Distribui via `sun_groupToVehicle` e **espera todos embarcarem** antes de dar waypoint (senão o barco parte e deixa a esquadra nadando).
+- **Force-eject** por proximidade (<50m do drop) OU timeout (300s / 5min) + RTB pro spawn + delete. PFH hard-stop 480s.
+- **Ponto de terra (`DRO_seaLandPos`):** terra firme mais próxima do drop em direção ao AO. É o **landing/beach point** (NÃO o "staging" fixo do editor) = novo spawn/respawn/JIP (`campMkr` "Sea Insert" + `startPos`) e onde o **arsenal de inserção** (`DRO_fnc_spawnInsertArsenal`) surge, como nos outros tipos.
+
+### Fiação
+- `populateLobby.sqf`: `lbAdd "Sea - Boat"` só se `DRO_seaInsertViable`; `lbSetCurSel` com clamp (índice inválido→Ground).
+- `setupPlayersFaction.sqf`: `case 5` (e o case "SEA" interno) chamam `boatInsertion`; SEA removida do sorteio do GROUND; `_randomStartingLocation = DRO_seaLandPos`.
+- `description.ext`: `DRO_ParamInsertType` valor 5 "Sea - Boat" + ref no server.cfg com nota "requires COASTAL AO".
+- **Override do Skip Team Planning** (`initPlayerLocal.sqf`): se `insertType==5` + `!DRO_seaInsertViable` + skip ligado → força abrir o Team Planning + aviso **em inglês** grande centralizado via `BIS_fnc_dynamicText` (size 3), disparado quando o mapa abre.
+
+### Bugs corrigidos durante o teste (Gonza)
+1. `_randomStartingLocation` vazio no case SEA → erro em `checkRouteWater:3` ("0 elements, 3 expected"). Fix: setar pro drop/land + guard defensivo no `fn_checkRouteWater`.
+2. Players nadando: barco partia antes do embarque → adicionado waitUntil-aboard.
+3. Só 1 barco + ninguém embarcado: handle de grupo obsoleto (grpNetId muda no setPlayerGroup) → resolver depois.
+4. Erro no `_boatPos` (createMarker linha 984): bloco de resupply-boat parasita rodava pra SEA → pulado com `insertType != "SEA"`.
+5. Aviso fallback não aparecia (hintSilent tarde) → `cutText`→`BIS_fnc_dynamicText` grande centralizado.
+6. Piloto genérico NATO + mortal → facção do player + invulnerável.
+7. Spawn/arsenal na água → ponto de terra `DRO_seaLandPos`.
+
+### Tunáveis
+`DRO_seaInsertMaxDist` (800), `DRO_seaDropMaxRadius` (aoSize+600), rumos seaward (±40°), corredor mín. (300m), `_maxFloods` (8), flood `_cap` (1500), eject prox (50m)/timeout (300s).
+
+### Falta testar (Gonza)
+- MP: pathing dos barcos pelo corredor, eject via `remoteExec` "GetOut", override do skip (mexe na feature Skip Team Planning validada em MP).
+- Confirmar em jogo: arsenal na praia, respawn/JIP em terra, piloto da facção certa e invulnerável.
+- SP em mapa costeiro: OK (Altis validado). Livonia (landlocked): corretamente NÃO oferece Sea-Boat.

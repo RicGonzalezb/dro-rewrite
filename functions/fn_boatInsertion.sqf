@@ -14,16 +14,18 @@ if (!DRO_seaInsertViable || {count DRO_seaSpawnPos == 0} || {count DRO_seaDropPo
 private _boatClass = "B_Boat_Transport_01_F";
 private _spawnPos  = +DRO_seaSpawnPos;
 private _dropPos   = +DRO_seaDropPos;
-private _grp  = grpNetId call BIS_fnc_groupFromNetId;
 private _fwd  = [_spawnPos, _dropPos] call BIS_fnc_dirTo;
 private _perp = _fwd + 90;
 
-// Spawn the player group at the offshore start.
+// Spawn the player group at the offshore start. sun_setPlayerGroup joins the squad into a NEW
+// group and reassigns grpNetId, so the group/units MUST be resolved AFTER it runs — a handle
+// captured before points at the now-empty old group (that was the "1 boat, nobody aboard" bug).
 [_spawnPos] remoteExec ["sun_setPlayerGroup"];
 waitUntil {newUnitsReady};
 sleep 2;
 
-private _players    = units _grp;
+private _grp     = grpNetId call BIS_fnc_groupFromNetId;
+private _players = (units _grp) - [objNull];
 private _seats      = count (_boatClass call BIS_fnc_vehicleRoles);
 private _paxPerBoat = (_seats - 1) max 1;
 private _numBoats   = (ceil ((count _players) / _paxPerBoat)) max 1;
@@ -39,14 +41,20 @@ for "_bi" from 0 to (_numBoats - 1) do {
 	private _boat = createVehicle [_boatClass, _bpos, [], 0, "NONE"];
 	_boat setDir _fwd;
 	_boat allowDamage false;
-	[_boat, playersSide, false] call sun_createVehicleCrew;
+	// Pilot: 1-man group from the PLAYERS' faction (correct side/faction), invulnerable and
+	// passive (careless, captive, no targeting, no dynamic sim) for the whole insertion.
+	private _bg = [_bpos, playersSide, pInfClassesForWeights, pInfClassWeights, [1,1], false] call DRO_fnc_spawnGroupWeighted;
+	if ((!isNull _bg) && {(count (units _bg)) > 0}) then {
+		private _pilot = (units _bg) select 0;
+		_pilot allowDamage false;
+		_pilot moveInDriver _boat;
+		_bg setBehaviour "CARELESS";
+		_bg setCombatMode "BLUE";
+		[_pilot, true] remoteExec ["setCaptive", _pilot, true];
+		_pilot disableAI "TARGET";
+		_pilot disableAI "AUTOTARGET";
+	};
 	waitUntil {!isNull (driver _boat)};
-	private _bg = group (driver _boat);
-	_bg setBehaviour "CARELESS";
-	_bg setCombatMode "BLUE";
-	{ [_x, true] remoteExec ["setCaptive", _x, true]; } forEach (units _bg);
-	(driver _boat) disableAI "TARGET";
-	(driver _boat) disableAI "AUTOTARGET";
 	_boats pushBack _boat;
 };
 
@@ -91,19 +99,40 @@ waitUntil { sleep 0.5; (({!isNull objectParent _x} count _players) >= (count _pl
 	_boat setVariable ["DRO_seaDrop", _thisDrop, true];
 } forEach _boats;
 
-// Start marker on the shore drop.
+// Nearest DRY LAND from the drop toward the AO — the beach the squad wades onto. This becomes
+// the landing (beach) / respawn point and where the insertion arsenal spawns (like other insert types).
+private _landDir = [_dropPos, centerPos] call BIS_fnc_dirTo;
+private _land = [];
+private _ld = 0;
+while { (count _land == 0) && (_ld <= 500) } do {
+	private _lp = _dropPos getPos [_ld, _landDir];
+	if (!surfaceIsWater _lp) then { _land = [_lp select 0, _lp select 1, 0]; };
+	_ld = _ld + 10;
+};
+if (count _land == 0) then { _land = _dropPos; };
+_land = _land getPos [12, _landDir];
+private _lem = _land findEmptyPosition [0, 40];
+if (count _lem > 0) then { _land = [_lem select 0, _lem select 1, 0]; };
+_land set [2, 0];
+DRO_seaLandPos = _land;
+publicVariable "DRO_seaLandPos";
+
+// Landing (beach) start marker on dry land.
 deleteMarker "campMkr";
 missionNameSpace setVariable ["publicCampName", "Landing Zone", true];
 publicVariable "publicCampName";
-markerPlayerStart = createMarker ["campMkr", _dropPos];
+markerPlayerStart = createMarker ["campMkr", _land];
 markerPlayerStart setMarkerShape "ICON";
 markerPlayerStart setMarkerColor markerColorPlayers;
 markerPlayerStart setMarkerType "mil_start";
 markerPlayerStart setMarkerText "Sea Insert";
 
-// Mission start position = the drop (on land) so briefing/respawn use the shore.
-missionNameSpace setVariable ["startPos", _dropPos, true];
+// Mission start position on land so briefing/respawn/JIP use the beach.
+missionNameSpace setVariable ["startPos", _land, true];
 publicVariable "startPos";
+
+// Insertion arsenal crate at the landing (beach) point (same as the other insertion types).
+[_land] call DRO_fnc_spawnInsertArsenal;
 
 // Force-eject + RTB monitor (server). Ejects each boat's passengers when it reaches its
 // drop OR after a timeout, then sends the boat back to spawn to be deleted.
@@ -118,7 +147,7 @@ if (isNil "DRO_seaInsertPFH") then {
 			if (!isNull _boat && {alive _boat} && {!(_boat getVariable ["DRO_seaEjected", false])}) then {
 				_remaining = _remaining + 1;
 				private _drop = _boat getVariable ["DRO_seaDrop", _spawnPos];
-				if (((_boat distance2D _drop) < 50) || {(time - _t0) > 300}) then {
+				if ((((_boat distance2D _drop) < 50) && {(getTerrainHeightASL (getPos _boat)) > -3.5}) || {(time - _t0) > 300}) then {
 					{
 						if (_x != (driver _boat)) then {
 							[_x, ["GetOut", _boat]] remoteExec ["action", _x];

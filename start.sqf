@@ -686,7 +686,7 @@ DRO_seaCorridor = [];
 			private _pp = centerPos getPos [_r, _deg];
 			if (surfaceIsWater _pp) then {
 				private _depth = getTerrainHeightASL _pp;
-				if ((_depth < 0) && (_depth > -8)) then {
+				if ((_depth < 0) && (_depth > -3)) then {
 					_floods = _floods + 1;
 					if ([_pp] call _fnc_waterReachesEdge) then {
 						_dropPos = [_pp select 0, _pp select 1, 0];

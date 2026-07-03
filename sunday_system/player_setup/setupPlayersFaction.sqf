@@ -636,7 +636,7 @@ switch (insertType) do {
 				insertType = "SEA";
 				if (DRO_seaInsertViable && {count DRO_seaSpawnPos > 0}) then {
 					[] call DRO_fnc_boatInsertion;
-					_randomStartingLocation = DRO_seaDropPos;
+					_randomStartingLocation = DRO_seaLandPos;
 				} else {
 					// Corridor not viable at runtime — staging fallback (lobby/skip should prevent this).
 					diag_log "DRO: SEA not viable at runtime — staging fallback.";
@@ -875,7 +875,7 @@ switch (insertType) do {
 		insertType = "SEA";
 		if (DRO_seaInsertViable && {count DRO_seaSpawnPos > 0}) then {
 			[] call DRO_fnc_boatInsertion;
-			_randomStartingLocation = DRO_seaDropPos;
+			_randomStartingLocation = DRO_seaLandPos;
 		} else {
 			// Corridor not viable — staging fallback (lobby gray-out / skip override should prevent this).
 			diag_log "DRO: SEA not viable at runtime — staging fallback.";

@@ -393,7 +393,7 @@ if ((!_skipTP) || _forceLobbyForSea) then {
 	cutText ["", "BLACK IN", 1];
 	hintSilent "Close map when ready to access loadout menu";
 	if (_forceLobbyForSea) then {
-		cutText [parseText "<t size='3' align='center' shadow='1'>Sea insertion unavailable for this AO<br/>select another insertion type</t>", "PLAIN", 1];
+		["<t size='3' align='center' shadow='1'>Sea insertion unavailable for this AO<br/>select another insertion type</t>", safezoneX + safezoneW/2, safezoneY + safezoneH/2, 10, 0.5] spawn BIS_fnc_dynamicText;
 	};
 	diag_log format ["DRO: Player %1 map initialized", player];
 
