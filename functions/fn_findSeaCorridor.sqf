@@ -92,8 +92,27 @@ private _spawnPos = [];
 private _corridor = [];
 
 if (_foundDrop) then {
-	// 2. Advance the drop shoreward to the last floatable cell before the beach.
-	private _landDir = [_dropPos, _origin] call BIS_fnc_dirTo;
+	// Local shore normal at the drop: nearest-land direction is landward; seaward is opposite.
+	// True beach-perpendicular, independent of where the AO centre sits along the coast.
+	private _landward = [_dropPos, _origin] call BIS_fnc_dirTo;   // fallback: toward the AO centre
+	private _bestLandDist = 1e9;
+	for "_a" from 0 to 345 step 15 do {
+		private _dd = 10;
+		private _hit = -1;
+		while {(_hit < 0) && (_dd <= 220)} do {
+			private _tp = _dropPos getPos [_dd, _a];
+			if (!surfaceIsWater _tp) then { _hit = _dd; };
+			_dd = _dd + 10;
+		};
+		if ((_hit > 0) && (_hit < _bestLandDist)) then {
+			_bestLandDist = _hit;
+			_landward = _a;
+		};
+	};
+	private _seaward = _landward + 180;
+
+	// 2. Advance the drop shoreward (toward nearest land) to the last floatable cell before the beach.
+	private _landDir = _landward;
 	private _refined = +_dropPos;
 	private _rd = 5;
 	private _walk = true;
@@ -113,8 +132,10 @@ if (_foundDrop) then {
 	_dropPos = _refined;
 
 	// 3. Reverse path: offshore spawn within maxDist with an all-water corridor to the drop.
-	private _seaward = [_origin, _dropPos] call BIS_fnc_dirTo;
-	private _bestDist = 0;
+	// Prefer lanes closer to the shore-perpendicular: score = clear reach minus an angle penalty,
+	// so an oblique lane only wins if it has substantially more open water than the perpendicular.
+	private _anglePenalty = 8;   // metres of reach penalised per degree off perpendicular (tunable)
+	private _bestScore = -1e9;
 	private _bestSpawn = [];
 	{
 		private _deg = _seaward + _x;
@@ -130,13 +151,16 @@ if (_foundDrop) then {
 			};
 			_d = _d + 50;
 		};
-		if (_clearTo > _bestDist) then {
-			_bestDist = _clearTo;
-			_bestSpawn = _dropPos getPos [_clearTo, _deg];
+		if (_clearTo >= 300) then {
+			private _score = _clearTo - (abs _x) * _anglePenalty;
+			if (_score > _bestScore) then {
+				_bestScore = _score;
+				_bestSpawn = _dropPos getPos [_clearTo, _deg];
+			};
 		};
-	} forEach [-40, -20, 0, 20, 40];
+	} forEach [-40, -20, -15, -10, -5, 0, 5, 10, 15, 20, 40];
 
-	if ((_bestDist >= 300) && {count _bestSpawn > 0}) then {
+	if (count _bestSpawn > 0) then {   // set only when a lane >=300m existed
 		_spawnPos = [_bestSpawn select 0, _bestSpawn select 1, 0];
 		private _cdir = [_spawnPos, _dropPos] call BIS_fnc_dirTo;
 		private _ctot = _spawnPos distance2D _dropPos;

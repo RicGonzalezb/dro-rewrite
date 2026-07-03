@@ -163,16 +163,21 @@ if (isNil "DRO_seaInsertPFH") then {
 				if ((_spd < 3) && (_moved < 4)) then { _stall = _stall + 1; } else { _stall = 0; };
 				_boat setVariable ["DRO_seaStall", _stall];
 				private _pastSpawn = (_boat distance2D _spawnPos) > 120;
-				private _arrived   = (_dist < 50) && (_depth > -3);
-				private _wadeable  = (_depth > -2) && (_dist < 160);   // disembark once in <=2m water
-				private _stuckNear = (_stall >= 3) && _pastSpawn && ((_depth > -3) || (_dist < 140));
+				private _arrived   = (_dist < 50) && (_depth > -2);
+				private _wadeable  = (_depth > -1.5) && (_dist < 160);   // primary disembark: in <=1.5m water
+				private _stuckNear = (_stall >= 4) && _pastSpawn;        // stuck (deep or shallow) -> forced, boat nosed onto drop below
 				// [DIAG - remove after tuning] per-boat eject state each tick.
 				diag_log format ["DRO SEA eject-check boat=%1 dist=%2 depth=%3 spd=%4 stall=%5 arr=%6 wade=%7 stuck=%8", _boat, round _dist, (round (_depth*10))/10, round _spd, _stall, _arrived, _wadeable, _stuckNear];
 				// Decelerate on approach so the boat noses into the shallows instead of ramming/grounding.
 				if (_dist < 140) then { _boat limitSpeed (8 max (_dist * 0.25)); };
 				if (_arrived || _wadeable || _stuckNear || {(time - _t0) > 180}) then {
+					// Guarantee a shallow disembark: if still in deeper water (stuck/timeout), nose the boat
+					// onto its shallow drop first so nobody is dropped in deep water.
+					if (_depth < -1.5) then { _boat setPosASL [_drop select 0, _drop select 1, 0.2]; };
 					{
 						if (_x != (driver _boat)) then {
+							_boat disableCollisionWith _x;                        // don't run units over on exit (boat side)
+							[_x, _boat] remoteExec ["disableCollisionWith", _x]; // unit side, on its owner
 							[_x, ["GetOut", _boat]] remoteExec ["action", _x];
 							unassignVehicle _x;
 						};
