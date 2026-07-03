@@ -260,6 +260,12 @@ switch (insertType) do {
 			if (_randomStartingLocation isEqualTo [0,0,0]) then {
 				_randomStartingLocation = [_center, (aoSize+500), (aoSize+3000), 2, 0, 0.6, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
 			};			
+			// Keep the ground/FOB centre off roads — at least 10m clear (re-roll a few times).
+			private _roadTries = 0;
+			while { (count (_randomStartingLocation nearRoads 10) > 0) && (_roadTries < 15) } do {
+				_randomStartingLocation = [_center, (aoSize+500), (aoSize+1500), 8, 0, 0.25, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
+				_roadTries = _roadTries + 1;
+			};
 			if (_forceSeaStart == 1) then {
 				_groundStylesAvailable = ["SEA"];
 			} else {
@@ -937,6 +943,7 @@ if (typeName _waterReturn == "ARRAY") then {
 		};
 	} forEach AOLocations;
 };
+_waterPositions = _waterPositions select { (_x isEqualType []) && {(count _x) >= 2} };
 if ((count _waterPositions > 0) && (insertType != "SEA")) then {
 	diag_log "DRO: Found water for extra boat spawn";
 	_closestWaterPositions = [_waterPositions, [_randomStartingLocation], {_input0 distance _x}, "ASCEND"] call BIS_fnc_sortBy;
