@@ -662,7 +662,14 @@ switch (insertType) do {
 				markerPlayerStart setMarkerSize [3, 3];
 				markerPlayerStart setMarkerText _campName;
 				if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {	
-					respawnFOB = [missionNamespace, "campMkr", _campName] call BIS_fnc_addRespawnPosition;
+					// Respawn on CLEAR GROUND, not the FOB centre (which holds the base tent — players were
+					// respawning on top of it). Find an empty spot near the FOB; fall back to the initial
+					// spawn offset, then the centre. Force Z=0 so it's ground level.
+					private _fobRespawnPos = _randomStartingLocation findEmptyPosition [5, 35, "B_Soldier_F"];
+					if (count _fobRespawnPos < 2) then { _fobRespawnPos = _playersPos; };
+					if (count _fobRespawnPos < 2) then { _fobRespawnPos = _randomStartingLocation; };
+					_fobRespawnPos = [_fobRespawnPos select 0, _fobRespawnPos select 1, 0];
+					respawnFOB = [missionNamespace, _fobRespawnPos, _campName] call BIS_fnc_addRespawnPosition;
 				};
 			};
 			case "SEA": {

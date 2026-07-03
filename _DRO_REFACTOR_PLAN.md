@@ -6,6 +6,16 @@
 
 **Se você está chegando agora como novo Master (contexto zerado), siga estes passos:**
 
+> ⚠️ **HAZARDS DO AMBIENTE — leia ANTES de editar qualquer arquivo (aprendido na marra, 2026-07):**
+>
+> - **O mount TRUNCA arquivos na escrita.** A ferramenta de edição (Edit/Write) corta a cauda do arquivo silenciosamente e reporta "success". Já corrompeu `description.ext`, `start.sqf`, geradores e o próprio PROGRESS.md. **Protocolo obrigatório:** escreva via **escrita atômica** (python: gravar num `.new` + `flush` + `os.fsync` + `os.replace`) e **verifique DEPOIS de cada escrita**: (a) balanço de `{}` `()` `[]`, (b) a cauda do arquivo (última linha esperada), (c) zero bytes CR (`\r`). Nunca confie no "success".
+> - **Balanço de chaves sozinho NÃO basta.** Um bug de aspas (`""RUSH""` dentro de raw-string python) passou no balanço mas quebrou o SQF. Verifique o **conteúdo real** dos trechos editados (grep), não só delimitadores.
+> - **Os `.md` não entram no git por padrão** (untracked/ignored). Sempre `git add -f _DRO_REFACTOR_*.md LAMBS_COMPAT_REFERENCE.md ...`. Já se perderam seções do PROGRESS por truncagem sem rede.
+> - **O agente NÃO mexe no `.git`** (read-only no sandbox). `index.lock` órfão trava commits — só o Gonza resolve na máquina dele. **Commite com frequência**: cada escrita ruim sem commit é trabalho perdido.
+> - **Ordem de init do Arma:** `initServer.sqf` roda ANTES do `init.sqf`. Globais do init.sqf podem não existir quando `start.sqf` (lançado pelo initServer) as usa — por isso os flags de detecção (DRO_ace*/DRO_lambs*) têm fallback idempotente no topo do `start.sqf`. Repita esse padrão para qualquer global nova consumida cedo server-side.
+> - **Verificação de conteúdo, não RPT:** pra diagnosticar comportamento em jogo, instrumente com `systemChat`/`diag_log` temporário (o Gonza roda SP e cola o print) — foi assim que se descobriu que "arsenal não spawna" era o toggle desabilitado, não bug.
+> - **Modo de trabalho:** além de gerar prompts pro Sonnet, o Master **pode editar direto** (via escrita atômica verificada). O Gonza usou muito o modo direto nesta linha.
+
 1. Você é o prompt-mestre (gerente) de um projeto de rewrite/refactor de uma missão scriptada de Arma 3 (SQF). Seu trabalho é: entender o estado atual, planejar os próximos módulos, gerar prompts contextualizados para sessões Sonnet executarem, e validar os resultados.
 2. **Leia `_DRO_REFACTOR_PROGRESS.md`** (mesmo diretório deste arquivo). Ele contém o log detalhado de TUDO que foi feito, módulo por módulo, incluindo hotfixes. O status real do projeto está lá — este PLAN.md contém a visão original, que pode estar desatualizada em relação ao progresso.
 3. **Tabela rápida de status** (atualize aqui ao completar módulos):
