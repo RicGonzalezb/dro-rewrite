@@ -545,6 +545,10 @@ switch (insertType) do {
 					};
 				};
 				
+				// All static FOB objects invulnerable (allowDamage false). Excludes AllVehicles (units + vehicles),
+				// so only the FOB structures/props are affected, not the guards or the work vehicle.
+				{ if (!(_x isKindOf "AllVehicles")) then { _x allowDamage false; }; } forEach (nearestObjects [_randomStartingLocation, [], 70]);
+				
 				// Create 'real' player units at the spawn position and switch players
 				_playersPos = [_randomStartingLocation, 20, (random 360)] call dro_extendPos;
 				//[_playersPos] remoteExec ["sun_newUnits", s1];
@@ -939,53 +943,55 @@ if ((count _waterPositions > 0) && (insertType != "SEA")) then {
 	_checkPos = (_closestWaterPositions select 0);
 	_waterPlaces = selectBestPlaces [_checkPos, 200, "sea - waterDepth + (waterDepth factor [0.25, 0.5])", 20, 5];
 	diag_log format ["DRO: _waterPlaces = %1", _waterPlaces];
-	_deepestPos = ((_waterPlaces select 0) select 0);
-	_deepestHeight = getTerrainHeightASL ((_waterPlaces select 0) select 0);
-	{
-		_height = getTerrainHeightASL (_x select 0);
-		if (_height < _deepestHeight) then {
-			_deepestHeight = _height;
-			_deepestPos = (_x select 0);
-		};
-	} forEach _waterPlaces;
+	if (count _waterPlaces > 0) then {
+		_deepestPos = ((_waterPlaces select 0) select 0);
+		_deepestHeight = getTerrainHeightASL ((_waterPlaces select 0) select 0);
+		{
+			_height = getTerrainHeightASL (_x select 0);
+			if (_height < _deepestHeight) then {
+				_deepestHeight = _height;
+				_deepestPos = (_x select 0);
+			};
+		} forEach _waterPlaces;
 	
-	_boatPos = [(_deepestPos select 0), (_deepestPos select 1), 0];
-	diag_log format ["DRO: _boatPos = %1", _boatPos];
-	// Spawn boats until there are enough slots for players
-	_rolesFilled = 0;
-	while {_rolesFilled < (count (units (grpNetId call BIS_fnc_groupFromNetId)))} do {
+		_boatPos = [(_deepestPos select 0), (_deepestPos select 1), 0];
+		diag_log format ["DRO: _boatPos = %1", _boatPos];
+		// Spawn boats until there are enough slots for players
+		_rolesFilled = 0;
+		while {_rolesFilled < (count (units (grpNetId call BIS_fnc_groupFromNetId)))} do {
 	
-		_shipClass = selectRandom _shipClasses;
-		_vehRoles = (count ([_shipClass] call BIS_fnc_vehicleRoles));
-		_dir = [_checkPos, _boatPos] call BIS_fnc_dirTo;
-		_boat = createVehicle [_shipClass, _boatPos, [], 0, "NONE"];
-		_boat setDir _dir;
+			_shipClass = selectRandom _shipClasses;
+			_vehRoles = (count ([_shipClass] call BIS_fnc_vehicleRoles));
+			_dir = [_checkPos, _boatPos] call BIS_fnc_dirTo;
+			_boat = createVehicle [_shipClass, _boatPos, [], 0, "NONE"];
+			_boat setDir _dir;
 		
-		[
-			_boat,
 			[
-				"Nudge",  
-				{  
-				   _dir = [(_this select 1), (_this select 0)] call BIS_fnc_dirTo;  
-				   _nudgePos = [(getPos (_this select 0)), 2, _dir] call dro_extendPos;  
-					(_this select 0) setVelocity [(sin _dir)*3, (cos _dir)*3, 0.5];
-				},  
-				nil,  
-				6,  
-				false,  
-				false,  
-				"",  
-				"(_this distance _target < 8) && (vehicle _this == _this)"
-			]
-		] remoteExec ["addAction", 0, true];
-		_rolesFilled = _rolesFilled + _vehRoles;
+				_boat,
+				[
+					"Nudge",  
+					{  
+					   _dir = [(_this select 1), (_this select 0)] call BIS_fnc_dirTo;  
+					   _nudgePos = [(getPos (_this select 0)), 2, _dir] call dro_extendPos;  
+						(_this select 0) setVelocity [(sin _dir)*3, (cos _dir)*3, 0.5];
+					},  
+					nil,  
+					6,  
+					false,  
+					false,  
+					"",  
+					"(_this distance _target < 8) && (vehicle _this == _this)"
+				]
+			] remoteExec ["addAction", 0, true];
+			_rolesFilled = _rolesFilled + _vehRoles;
+		};
+		_markerName = format["boatMkr%1", floor(random 10000)];
+		_markerBoat = createMarker [_markerName, _boatPos];
+		_markerBoat setMarkerShape "ICON";
+		_markerBoat setMarkerType "mil_pickup";
+		_markerBoat setMarkerColor markerColorPlayers;
+		_markerBoat setMarkerText "Sea transport";
 	};
-	_markerName = format["boatMkr%1", floor(random 10000)];
-	_markerBoat = createMarker [_markerName, _boatPos];
-	_markerBoat setMarkerShape "ICON";
-	_markerBoat setMarkerType "mil_pickup";
-	_markerBoat setMarkerColor markerColorPlayers;
-	_markerBoat setMarkerText "Sea transport";
 };		
 
 missionNameSpace setVariable ["startPos", _randomStartingLocation, true];
