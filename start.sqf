@@ -1,5 +1,20 @@
 diag_log "DRO: Main DRO script started";
 
+// Mod detection fallback — start.sqf is launched from initServer.sqf, which can run before
+// init.sqf on the server, so the DRO_ace*/DRO_lambs* globals may not exist yet here.
+// Idempotent with init.sqf (same machine-local config reads); guarded so it won't re-run.
+if (isNil "DRO_aceMedical") then {
+	DRO_aceLoaded  = isClass (configFile >> "CfgPatches" >> "ace_main");
+	DRO_aceMedical = isClass (configFile >> "CfgPatches" >> "ace_medical");
+	DRO_aceArsenal = isClass (configFile >> "CfgPatches" >> "ace_arsenal");
+	DRO_aceFatigue = isClass (configFile >> "CfgPatches" >> "ace_advanced_fatigue");
+};
+if (isNil "DRO_lambsCompat") then {
+	DRO_lambsLoaded = isClass (configFile >> "CfgPatches" >> "lambs_main");
+	DRO_lambsWP     = isClass (configFile >> "CfgPatches" >> "lambs_wp");
+	DRO_lambsCompat = DRO_lambsLoaded && ((["DRO_ParamLambsReinforce", 1] call BIS_fnc_getParamValue) == 1);
+};
+
 // [M3 removed] #include "sunday_system\fnc_lib\sundayFunctions.sqf";
 // [M3 removed] #include "sunday_system\fnc_lib\droFunctions.sqf";
 // [M3 removed] #include "sunday_revive\reviveFunctions.sqf";
