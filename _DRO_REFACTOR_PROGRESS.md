@@ -2526,3 +2526,46 @@ Nesta sessão a ferramenta Edit TRUNCOU o fim dos 6 arquivos editados (init.sqf,
 ### Flag mestre da integração LAMBS (lobby param) — 2026-07-01
 Adicionado param de lobby `DRO_ParamLambsReinforce` (title "Activate LAMBS Reinforced Groups and Radio (if loaded)", values {0,1}, default 1=Enabled), em `description.ext` logo ACIMA do bloco SOGPF. Só no lobby — nada na UI de missão.
 Global `DRO_lambsCompat = DRO_lambsLoaded && ((["DRO_ParamLambsReinforce",1] call BIS_fnc_getParamValue)==1)` em `init.sqf` (após os flags DRO_lambs*). Todos os sites de integração (reforço em `_patrolGroups` + dangerRadio em garrison/camp/roadblock/bunker/emplacement) agora gateiam por `DRO_lambsCompat` em vez de `DRO_lambsLoaded`. Os flags `DRO_lambsLoaded`/`DRO_lambsWP` seguem como detecção pura do mod (uso futuro independente do toggle). Referência do param também no bloco comentado de server.cfg dentro do `description.ext` (após `DRO_ParamArsenal`).
+
+
+---
+
+## LAMBS — Pursuit tasks por contexto (RUSH/HUNT/CREEP) — 2026-07-02
+
+Extensão da integração LAMBS: os grupos que a missão manda/spawna atrás dos players passam a usar as funções de busca do LAMBS em vez de `BIS_fnc_taskAttack` (que mira uma posição fixa/obsoleta). Tudo gateado por `DRO_lambsCompat` (flag de lobby + mod carregado); sem LAMBS/flag, cai no `taskAttack` vanilla.
+
+### Mapa de comportamento
+| Sistema | Task | Range | Racional |
+|---|---|---|---|
+| `staggeredAttack.sqf` (extração quente) | RUSH | 1500 | clímax: stealth quebrado, todos convergem agressivos |
+| `reinforce.sqf` — branch de extração (createExtractTask, 4 chamadas) | RUSH | 2000 | enxame de saída |
+| `reinforce.sqf` — gameplay (addTaskExtras objetivo + fn_setupReinforcementTrigger incursão) | HUNT | 2500 | QRF metódico caçando o intruso; pacing |
+| `fn_triggerAmbushSpawn.sqf` (emboscada) | CREEP | 800 | spawn oculto (checkVisibility<0.2) → stalk e bote |
+| `stealth.sqf` (alarme na detecção) | HUNT | 1000 | busca-e-destrói o intruso recém-detectado |
+
+Ranges tunáveis (comentados no código).
+
+### Arquivos tocados
+- `sunday_system/generate_enemies/staggeredAttack.sqf` — `taskAttack` → `taskRush` (gated). (feito na sessão anterior desta linha.)
+- `sunday_system/reinforce.sqf` — novo param `_pursuitStyle` (default "VANILLA") + helper local `_fnc_pursue` (switch RUSH/HUNT/CREEP/vanilla). Aplicado nos 2 sites diretos: infantaria (ex-linha 84) e carro (ex-166).
+- `sunday_system/createExtractTask.sqf` — 4 callers do reinforce passam `"RUSH"`.
+- `sunday_system/objectives/addTaskExtras.sqf` — caller passa `"HUNT"`.
+- `functions/fn_setupReinforcementTrigger.sqf` — caller (dentro da trigger statement) passa `'HUNT'` (aspas SIMPLES, pois está aninhado numa string de aspas duplas).
+- `functions/fn_triggerAmbushSpawn.sqf` — `setBehaviour/setSpeedMode/doMove` → `taskCreep` (gated; else vanilla).
+- `sunday_system/stealth.sqf` — `taskAttack` do alarme → `taskHunt` (gated; else vanilla).
+
+### Lacuna conhecida (opcional)
+Reforços TRANSPORTADOS (CARTRANSPORT/HELI) do `reinforce.sqf` desembarcam via `insertGroup.sqf`, que ainda usa `taskAttack` vanilla — não passam pelo `_fnc_pursue`. Baixa prioridade (o veículo faz a aproximação; taskAttack de posição fresca perto dos players). Cobrir depois se quiser uniformidade.
+
+### Incidente #1 — description.ext truncado (recuperado)
+O `description.ext` foi encontrado truncado no meio do `CfgFunctions` (terminava em `// ------------------`, chaves 432/430) — a truncagem tinha entrado nos commits `df19a83` e `c68cb2b`. Último commit íntegro: `0a11b7a` (437/437). Recuperado reconstruindo a partir de `0a11b7a` + re-aplicando os 2 edits do param LAMBS (classe + ref server.cfg). Resultado: 440/440, CfgFunctions fechado. **Aprendizado:** meu check de escrita comparou o DELTA de chaves, não o BALANÇO ABSOLUTO — 432≠430 já era truncagem e passou batido. Daqui pra frente: verificar `open==close` absoluto + cauda vs commit bom.
+
+### Incidente #2 — bug de string Python (RUSH/HUNT sem aspas + CR)
+Ao aplicar as pursuit-tasks, um erro meu (`""RUSH""` dentro de raw-string Python) gerou `RUSH`/`HUNT` sem aspas e injetou um byte CR no caminho (`sunday_system<CR>einforce.sqf`) em 3 sites (createExtractTask 70/117, setupReinforcementTrigger 24). Pego pela verificação do CONTEÚDO real (grep dos callers), não pelo brace-count (que passou "OK"). Corrigido em nível de byte. **Aprendizado:** validar o texto gerado, não só chaves/marcadores.
+
+### Varredura de integridade (2026-07-02)
+225 arquivos `.sqf/.hpp/.ext` (fora `_archive`) escaneados: zero truncagem além do description.ext (já corrigido). 9 arquivos com imbalance de chaves = artefato de `{}` dentro de string (idênticos ao HEAD que rodou em MP; caudas íntegras) — não é truncagem.
+
+### Falta testar (Gonza)
+- COM LAMBS: sentir a curva furtivo (emboscada CREEP) → caçada metódica (reforço HUNT no meio do jogo) → enxame agressivo (extração RUSH). Afinar ranges se preciso.
+- SEM LAMBS: confirmar que todo caminho cai no `taskAttack`/comportamento vanilla.
