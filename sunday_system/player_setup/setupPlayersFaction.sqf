@@ -260,9 +260,19 @@ switch (insertType) do {
 			if (_randomStartingLocation isEqualTo [0,0,0]) then {
 				_randomStartingLocation = [_center, (aoSize+500), (aoSize+3000), 2, 0, 0.6, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
 			};			
-			// Keep the ground/FOB centre off roads — >=10m clear (isOnRoad centre + 10m ring; re-roll).
+			// Keep the whole FOB FOOTPRINT off roads — sample centre + rings out to ~45m (isOnRoad).
+			// The FOB is large, so a centre-only / 10m check let the perimeter clip roads. Re-roll if any hit.
+			private _roadNear = {
+				params ["_p"];
+				private _pts = [_p];
+				{
+					private _rr = _x;
+					{ _pts pushBack (_p getPos [_rr, _x]); } forEach [0,45,90,135,180,225,270,315];
+				} forEach [15, 30, 45];
+				({ isOnRoad _x } count _pts) > 0
+			};
 			private _roadTries = 0;
-			while { ((isOnRoad _randomStartingLocation) || {({isOnRoad (_randomStartingLocation getPos [10, _x])} count [0,45,90,135,180,225,270,315]) > 0}) && (_roadTries < 15) } do {
+			while { ([_randomStartingLocation] call _roadNear) && (_roadTries < 20) } do {
 				_randomStartingLocation = [_center, (aoSize+500), (aoSize+1500), 8, 0, 0.25, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
 				_roadTries = _roadTries + 1;
 			};
