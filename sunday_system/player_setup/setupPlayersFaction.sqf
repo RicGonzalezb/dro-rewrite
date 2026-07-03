@@ -260,9 +260,9 @@ switch (insertType) do {
 			if (_randomStartingLocation isEqualTo [0,0,0]) then {
 				_randomStartingLocation = [_center, (aoSize+500), (aoSize+3000), 2, 0, 0.6, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
 			};			
-			// Keep the ground/FOB centre off roads — at least 10m clear (re-roll a few times).
+			// Keep the ground/FOB centre off roads — >=10m clear (isOnRoad centre + 10m ring; re-roll).
 			private _roadTries = 0;
-			while { (count (_randomStartingLocation nearRoads 10) > 0) && (_roadTries < 15) } do {
+			while { ((isOnRoad _randomStartingLocation) || {({isOnRoad (_randomStartingLocation getPos [10, _x])} count [0,45,90,135,180,225,270,315]) > 0}) && (_roadTries < 15) } do {
 				_randomStartingLocation = [_center, (aoSize+500), (aoSize+1500), 8, 0, 0.25, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
 				_roadTries = _roadTries + 1;
 			};
@@ -551,9 +551,9 @@ switch (insertType) do {
 					};
 				};
 				
-				// All static FOB objects invulnerable (allowDamage false). Excludes AllVehicles (units + vehicles),
+				// All static FOB objects invulnerable (allowDamage false); leftover alignment arrows deleted.
 				// so only the FOB structures/props are affected, not the guards or the work vehicle.
-				{ if (!(_x isKindOf "AllVehicles")) then { _x allowDamage false; }; } forEach (nearestObjects [_randomStartingLocation, [], 70]);
+				{ private _tt = typeOf _x; if ((_tt find "Sign_Arrow") == 0) then { deleteVehicle _x; } else { if (!(_x isKindOf "AllVehicles")) then { _x allowDamage false; }; }; } forEach (nearestObjects [_randomStartingLocation, [], 70]);
 				
 				// Create 'real' player units at the spawn position and switch players
 				_playersPos = [_randomStartingLocation, 20, (random 360)] call dro_extendPos;
@@ -626,7 +626,20 @@ switch (insertType) do {
 				// Was inline here using ACE_arsenal_fnc_openBox (no-op server-side, `player`
 				// is objNull on a dedicated server) and a legacy spawn+waitUntil for the
 				// rearm action; the shared function uses initBox + CBA_fnc_waitUntilAndExecute.
-				_box = [_randomStartingLocation] call DRO_fnc_spawnInsertArsenal;
+				// Place the insertion arsenal next to the FOB's existing crates (the ones under the
+				// tents) when present, so it groups with them; else fall back to the FOB centre.
+				private _fobCrates = (nearestObjects [_randomStartingLocation, [], 45]) select {
+					private _tl = toLowerANSI (typeOf _x);
+					(_x isKindOf "ReammoBox_F") || (_tl find "box" > -1) || (_tl find "crate" > -1) || (_tl find "pallet" > -1) || (_tl find "cargo" > -1)
+				};
+				private _arsenalPos = _randomStartingLocation;
+				if (count _fobCrates > 0) then {
+					_fobCrates = [_fobCrates, [_randomStartingLocation], {_input0 distance _x}, "ASCEND"] call BIS_fnc_sortBy;
+					private _near = _fobCrates select 0;
+					private _ep = (getPos _near) findEmptyPosition [1.5, 4, "B_supplyCrate_F"];
+					_arsenalPos = if (count _ep > 0) then { _ep } else { (getPos _near) getPos [2.5, random 360] };
+				};
+				_box = [_arsenalPos] call DRO_fnc_spawnInsertArsenal;
 				// FOB marker
 				deleteMarker "campMkr";
 				_campName = format ["FOB %1", ([FOBNames] call sun_selectRemove)];
