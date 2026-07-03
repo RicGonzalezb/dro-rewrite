@@ -17,7 +17,10 @@ if ((missionNamespace getVariable ["arsenalEnabled", 0]) == 1) exitWith { objNul
 
 if (count _pos == 0) exitWith { objNull };
 
-private _boxLocation = _pos findEmptyPosition [0, 20, "B_supplyCrate_F"];
+private _boxLocation = _pos findEmptyPosition [0, 25, "B_supplyCrate_F"];
+if (count _boxLocation == 0) then {
+	_boxLocation = _pos findEmptyPosition [0, 35, "B_supplyCrate_F"];
+};
 if (count _boxLocation == 0) then {
 	_boxLocation = _pos;
 };
@@ -26,12 +29,16 @@ private _box = createVehicle ["B_supplyCrate_F", _boxLocation, [], 0, "NONE"];
 if (isNil "sun_checkVehicleSpawn") then {
 	sun_checkVehicleSpawn = DRO_fnc_checkVehicleSpawn;
 };
-_box = [_box] call sun_checkVehicleSpawn;
-
+// The arsenal is a FUNCTIONAL (non-cosmetic) crate: if it spawned stuck/clipped, RELOCATE it to
+// a valid position instead of dropping it. Passing the class enables checkVehicleSpawn's recreate
+// path (findEmptyPosition + recreate); without the class it would just null the crate.
+_box = [_box, "B_supplyCrate_F"] call sun_checkVehicleSpawn;
 if (isNull _box) exitWith {
-	diag_log "DRO: spawnInsertArsenal failed to create supply crate";
+	diag_log "DRO: spawnInsertArsenal failed to create supply crate (no valid spot)";
 	objNull
 };
+// Invulnerable AFTER the spawn check (so the check can still read collision damage).
+_box allowDamage false;
 
 // Map marker — tied 1:1 to the crate, name keyed off netId so repeated calls
 // (one per insertType per round) never collide with each other or with the
