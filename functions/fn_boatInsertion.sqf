@@ -65,6 +65,11 @@ private _pi = 0;
 	};
 } forEach _boats;
 
+// Wait until the squad is actually aboard before the boats move off — otherwise the
+// boats drive away in CARELESS/FULL and leave the players swimming at the spawn.
+private _tBoard = time + 20;
+waitUntil { sleep 0.5; (({!isNull objectParent _x} count _players) >= (count _players)) || (time > _tBoard) };
+
 // Rail each boat down its own parallel lane of the corridor to an offset drop.
 {
 	private _boat = _x;

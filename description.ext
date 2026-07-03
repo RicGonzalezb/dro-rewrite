@@ -629,6 +629,9 @@ class Params
                // ---- INSERTION & SUPPORTS (usados quando DRO_ParamOverride==1; uma lobby pulada usa estes) ----
                DRO_ParamSkipTeamPlanning = 0;  // 0=mostra a lobby de Team Planning | 1=pula (aplica os params abaixo direto)
                DRO_ParamInsertType    = 0;  // 0=Random 1=Ground 2=Air-HALO 3=Air-Helicopter 4=None 5=Sea-Boat
+               //   NOTE: 5=Sea-Boat requires a COASTAL AO (a water corridor must exist near the random AO).
+               //   If no water is viable and Team Planning is skipped, the lobby is forced open so the
+               //   leader can pick another insertion type. Drop stays within ~aoSize+600m of the AO.
                DRO_ParamSupplyDrop    = 0;  // 0=Disabled 1=Enabled
                DRO_ParamArtillery     = 0;  // 0=Disabled 1=Enabled
                DRO_ParamCAS           = 0;  // 0=Disabled 1=Enabled

@@ -1,5 +1,6 @@
 // Migrated from DRO_fnc_checkRouteWater — M3 CfgFunctions migration
 params ["_startPos", "_endPos", ["_returnLastLand", false]];
+	if (((count _startPos) < 3) || {(count _endPos) < 3}) exitWith { if (_returnLastLand) then {[]} else {false} };
 	_dir = _startPos getDir _endPos;
 	_checkPos = _startPos;
 	_landPos = [];											

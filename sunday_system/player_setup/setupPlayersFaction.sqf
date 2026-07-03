@@ -636,6 +636,7 @@ switch (insertType) do {
 				insertType = "SEA";
 				if (DRO_seaInsertViable && {count DRO_seaSpawnPos > 0}) then {
 					[] call DRO_fnc_boatInsertion;
+					_randomStartingLocation = DRO_seaDropPos;
 				} else {
 					// Corridor not viable at runtime — staging fallback (lobby/skip should prevent this).
 					diag_log "DRO: SEA not viable at runtime — staging fallback.";
@@ -874,6 +875,7 @@ switch (insertType) do {
 		insertType = "SEA";
 		if (DRO_seaInsertViable && {count DRO_seaSpawnPos > 0}) then {
 			[] call DRO_fnc_boatInsertion;
+			_randomStartingLocation = DRO_seaDropPos;
 		} else {
 			// Corridor not viable — staging fallback (lobby gray-out / skip override should prevent this).
 			diag_log "DRO: SEA not viable at runtime — staging fallback.";
@@ -931,7 +933,7 @@ if (typeName _waterReturn == "ARRAY") then {
 		};
 	} forEach AOLocations;
 };
-if (count _waterPositions > 0) then {
+if ((count _waterPositions > 0) && (insertType != "SEA")) then {
 	diag_log "DRO: Found water for extra boat spawn";
 	_closestWaterPositions = [_waterPositions, [_randomStartingLocation], {_input0 distance _x}, "ASCEND"] call BIS_fnc_sortBy;
 	_checkPos = (_closestWaterPositions select 0);

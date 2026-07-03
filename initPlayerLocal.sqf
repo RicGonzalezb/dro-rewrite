@@ -392,6 +392,9 @@ if ((!_skipTP) || _forceLobbyForSea) then {
 	mapAnimCommit;
 	cutText ["", "BLACK IN", 1];
 	hintSilent "Close map when ready to access loadout menu";
+	if (_forceLobbyForSea) then {
+		cutText [parseText "<t size='3' align='center' shadow='1'>Sea insertion unavailable for this AO<br/>select another insertion type</t>", "PLAIN", 1];
+	};
 	diag_log format ["DRO: Player %1 map initialized", player];
 
 	waitUntil {!visibleMap};
@@ -407,7 +410,6 @@ if ((!_skipTP) || _forceLobbyForSea) then {
 		_handle = CreateDialog "DRO_lobbyDialog";
 		diag_log format ["DRO: Player %1 created DRO_lobbyDialog: %2", player, _handle];
 		[] execVM "sunday_system\dialogs\populateLobby.sqf";
-		if (_forceLobbyForSea) then { hintSilent "Sea insertion unavailable for this AO — select another insertion type."; };
 		sleep 0.5;
 		cutText ["", "BLACK IN", 1];
 	} else {

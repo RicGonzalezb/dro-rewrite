@@ -635,20 +635,63 @@ DRO_seaCorridor = [];
 		_ok
 	};
 
-	// 1. Nearest shallow-water shore point to the AO center.
+	private _maxScan = DRO_seaDropMaxRadius;
+	// Sea vs lake test: BFS flood over 100m water cells from _p; true if the body reaches the
+	// map edge (= sea). Stops early on edge, or on a cell cap (a body that big is treated as sea).
+	private _fnc_waterReachesEdge = {
+		params ["_p"];
+		private _cell = 100;
+		private _ws = worldSize;
+		private _margin = 200;
+		private _cap = 1500;
+		private _sx = (floor ((_p select 0) / _cell)) * _cell + (_cell / 2);
+		private _sy = (floor ((_p select 1) / _cell)) * _cell + (_cell / 2);
+		private _open = [[_sx, _sy]];
+		private _seen = createHashMap;
+		_seen set [format ["%1_%2", _sx, _sy], true];
+		private _reached = false;
+		private _cnt = 0;
+		while {(count _open > 0) && (!_reached) && (_cnt < _cap)} do {
+			private _c = _open deleteAt 0;
+			_cnt = _cnt + 1;
+			private _cx = _c select 0;
+			private _cy = _c select 1;
+			if ((_cx < _margin) || (_cx > (_ws - _margin)) || (_cy < _margin) || (_cy > (_ws - _margin))) then {
+				_reached = true;
+			} else {
+				{
+					private _nx = _cx + (_x select 0);
+					private _ny = _cy + (_x select 1);
+					private _k = format ["%1_%2", _nx, _ny];
+					if (isNil {_seen get _k}) then {
+						_seen set [_k, true];
+						if (surfaceIsWater [_nx, _ny, 0]) then { _open pushBack [_nx, _ny]; };
+					};
+				} forEach [[_cell, 0], [-_cell, 0], [0, _cell], [0, -_cell]];
+			};
+		};
+		_reached || (_cnt >= _cap)
+	};
+
+	// 1. Nearest shallow-water shore point to the AO center that is SEA (connects to the map edge,
+	//    not a landlocked lake). Flood-checks each shallow candidate, capped at _maxFloods.
 	private _dropPos = [];
 	private _foundDrop = false;
-	private _maxScan = DRO_seaDropMaxRadius;
+	private _floods = 0;
+	private _maxFloods = 8;
 	private _r = 200;
-	while {(!_foundDrop) && (_r <= _maxScan)} do {
+	while {(!_foundDrop) && (_r <= _maxScan) && (_floods < _maxFloods)} do {
 		private _deg = 0;
-		while {(!_foundDrop) && (_deg < 360)} do {
+		while {(!_foundDrop) && (_deg < 360) && (_floods < _maxFloods)} do {
 			private _pp = centerPos getPos [_r, _deg];
 			if (surfaceIsWater _pp) then {
 				private _depth = getTerrainHeightASL _pp;
 				if ((_depth < 0) && (_depth > -8)) then {
-					_dropPos = [_pp select 0, _pp select 1, 0];
-					_foundDrop = true;
+					_floods = _floods + 1;
+					if ([_pp] call _fnc_waterReachesEdge) then {
+						_dropPos = [_pp select 0, _pp select 1, 0];
+						_foundDrop = true;
+					};
 				};
 			};
 			_deg = _deg + 20;
