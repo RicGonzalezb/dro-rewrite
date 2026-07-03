@@ -606,6 +606,105 @@ if (count allObjectives < _numObjs) then {
 	diag_log format ["DRO: objData %1 = %2", _forEachIndex, objData select _forEachIndex];
 } forEach objData;
 
+// ============================================================
+// SEA insertion — water corridor finder (server-side, runs once at generation).
+// Publishes DRO_seaInsertViable + DRO_seaSpawnPos (offshore) + DRO_seaDropPos (shallow
+// shore) + DRO_seaCorridor (waypoints). A corridor is a straight, all-water line
+// spawn->drop of length <= DRO_seaInsertMaxDist. If none, SEA insert is not offered.
+// No exitWith inside loops (SQF footgun) — flags gate early termination.
+// ============================================================
+DRO_seaInsertMaxDist = 800;
+DRO_seaDropMaxRadius = aoSize + 600;   // max distance drop point may be from AO centre (tunable; keeps landings near the objective, like the heli LZ)
+DRO_seaInsertViable = false;
+DRO_seaSpawnPos = [];
+DRO_seaDropPos = [];
+DRO_seaCorridor = [];
+[] call {
+	private _fnc_lineIsWater = {
+		params ["_a", "_b", ["_step", 40]];
+		private _d = _a distance2D _b;
+		private _dir = [_a, _b] call BIS_fnc_dirTo;
+		private _n = (ceil (_d / _step)) max 1;
+		private _ok = true;
+		for "_i" from 0 to _n do {
+			if (_ok) then {
+				private _sp = _a getPos [(_d * _i / _n), _dir];
+				if (!surfaceIsWater _sp) then { _ok = false; };
+			};
+		};
+		_ok
+	};
+
+	// 1. Nearest shallow-water shore point to the AO center.
+	private _dropPos = [];
+	private _foundDrop = false;
+	private _maxScan = DRO_seaDropMaxRadius;
+	private _r = 200;
+	while {(!_foundDrop) && (_r <= _maxScan)} do {
+		private _deg = 0;
+		while {(!_foundDrop) && (_deg < 360)} do {
+			private _pp = centerPos getPos [_r, _deg];
+			if (surfaceIsWater _pp) then {
+				private _depth = getTerrainHeightASL _pp;
+				if ((_depth < 0) && (_depth > -8)) then {
+					_dropPos = [_pp select 0, _pp select 1, 0];
+					_foundDrop = true;
+				};
+			};
+			_deg = _deg + 20;
+		};
+		_r = _r + 100;
+	};
+
+	// 2. Offshore spawn within maxDist with an all-water corridor to the drop.
+	if (_foundDrop) then {
+		private _seaward = [centerPos, _dropPos] call BIS_fnc_dirTo;
+		private _bestDist = 0;
+		private _bestSpawn = [];
+		{
+			private _deg = _seaward + _x;
+			private _clearTo = 0;
+			private _d = 100;
+			private _broken = false;
+			while {(!_broken) && (_d <= DRO_seaInsertMaxDist)} do {
+				private _cand = _dropPos getPos [_d, _deg];
+				if ((surfaceIsWater _cand) && {[_dropPos, _cand, 40] call _fnc_lineIsWater}) then {
+					_clearTo = _d;
+				} else {
+					_broken = true;
+				};
+				_d = _d + 50;
+			};
+			if (_clearTo > _bestDist) then {
+				_bestDist = _clearTo;
+				_bestSpawn = _dropPos getPos [_clearTo, _deg];
+			};
+		} forEach [-40, -20, 0, 20, 40];
+
+		if ((_bestDist >= 300) && {count _bestSpawn > 0}) then {
+			DRO_seaDropPos = _dropPos;
+			DRO_seaSpawnPos = [_bestSpawn select 0, _bestSpawn select 1, 0];
+			private _cdir = [DRO_seaSpawnPos, DRO_seaDropPos] call BIS_fnc_dirTo;
+			private _ctot = DRO_seaSpawnPos distance2D DRO_seaDropPos;
+			private _steps = 3;
+			DRO_seaCorridor = [];
+			for "_i" from 0 to _steps do {
+				private _cp = DRO_seaSpawnPos getPos [(_ctot * _i / _steps), _cdir];
+				DRO_seaCorridor pushBack [_cp select 0, _cp select 1, 0];
+			};
+			DRO_seaInsertViable = true;
+		};
+	};
+};
+publicVariable "DRO_seaInsertViable";
+publicVariable "DRO_seaSpawnPos";
+publicVariable "DRO_seaDropPos";
+publicVariable "DRO_seaCorridor";
+publicVariable "DRO_seaInsertMaxDist";
+publicVariable "DRO_seaDropMaxRadius";
+diag_log format ["DRO: SEA insert viable=%1 spawn=%2 drop=%3", DRO_seaInsertViable, DRO_seaSpawnPos, DRO_seaDropPos];
+
+
 _objGroupingHandle = [] execVM "sunday_system\objectives\objGrouping.sqf";
 waitUntil {scriptDone _objGroupingHandle};
 

@@ -357,8 +357,8 @@ class Params
 	class DRO_ParamInsertType
 	{
 		title = "Insertion Type";
-		values[] = {0,1,2,3,4};
-		texts[] = {"Random","Ground","Air - HALO","Air - Helicopter","None"};
+		values[] = {0,1,2,3,4,5};
+		texts[] = {"Random","Ground","Air - HALO","Air - Helicopter","None","Sea - Boat"};
 		default = 0;
 	};
 	class DRO_ParamSupplyDrop
@@ -628,7 +628,7 @@ class Params
                DRO_ParamObjProtect    = 0;
                // ---- INSERTION & SUPPORTS (usados quando DRO_ParamOverride==1; uma lobby pulada usa estes) ----
                DRO_ParamSkipTeamPlanning = 0;  // 0=mostra a lobby de Team Planning | 1=pula (aplica os params abaixo direto)
-               DRO_ParamInsertType    = 0;  // 0=Random 1=Ground 2=Air-HALO 3=Air-Helicopter 4=None
+               DRO_ParamInsertType    = 0;  // 0=Random 1=Ground 2=Air-HALO 3=Air-Helicopter 4=None 5=Sea-Boat
                DRO_ParamSupplyDrop    = 0;  // 0=Disabled 1=Enabled
                DRO_ParamArtillery     = 0;  // 0=Disabled 1=Enabled
                DRO_ParamCAS           = 0;  // 0=Disabled 1=Enabled
@@ -1269,6 +1269,7 @@ class CfgFunctions
             class handleDamage {};
             class handleKilled {};
             class heliInsertion {};
+            class boatInsertion {};
             class helicopterCanFly {};
             class hostageRelease {};
             class hvtCapture {};

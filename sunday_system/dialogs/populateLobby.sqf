@@ -121,8 +121,11 @@ lbAdd [6009, "Ground"];
 lbAdd [6009, "Air - HALO"];
 lbAdd [6009, "Air - Helicopter"];
 lbAdd [6009, "None"]; // M11: índice 4 — sem inserção (players ficam na staging area)
+if (missionNamespace getVariable ["DRO_seaInsertViable", false]) then {
+	lbAdd [6009, "Sea - Boat"]; // index 5 — only offered when a water corridor exists
+};
 if (player == _dialogPlayer) then {
-	lbSetCurSel [6009, insertType];
+	lbSetCurSel [6009, ([insertType, 1] select (insertType >= (lbSize 6009) || insertType < 0))];
 };
 
 // Insert vehicle options

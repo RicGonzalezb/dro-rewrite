@@ -380,8 +380,12 @@ diag_log format ["DRO: Player %1 cam terminated", player];
 
 
 //waitUntil{(missionNameSpace getVariable ["dro_introCamComplete", 0]) == 1};
-// Team Planning lobby — bypassed entirely when DRO_paramSkipTeamPlanning is set.
-if (!(missionNamespace getVariable ["DRO_paramSkipTeamPlanning", false])) then {
+// Team Planning lobby — bypassed when DRO_paramSkipTeamPlanning is set, EXCEPT when the chosen
+// insertion is Sea-Boat (5) but no water corridor is viable for this AO: then force the lobby
+// open so the leader can pick another insertion type.
+private _skipTP = missionNamespace getVariable ["DRO_paramSkipTeamPlanning", false];
+private _forceLobbyForSea = _skipTP && (insertType isEqualTo 5) && (!(missionNamespace getVariable ["DRO_seaInsertViable", false]));
+if ((!_skipTP) || _forceLobbyForSea) then {
 	// Open map
 	_mapOpen = openMap [true, false];
 	mapAnimAdd [0, 0.05, markerPos "centerMkr"];
@@ -403,6 +407,7 @@ if (!(missionNamespace getVariable ["DRO_paramSkipTeamPlanning", false])) then {
 		_handle = CreateDialog "DRO_lobbyDialog";
 		diag_log format ["DRO: Player %1 created DRO_lobbyDialog: %2", player, _handle];
 		[] execVM "sunday_system\dialogs\populateLobby.sqf";
+		if (_forceLobbyForSea) then { hintSilent "Sea insertion unavailable for this AO — select another insertion type."; };
 		sleep 0.5;
 		cutText ["", "BLACK IN", 1];
 	} else {

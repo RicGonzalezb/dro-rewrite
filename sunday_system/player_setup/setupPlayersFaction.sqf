@@ -268,20 +268,10 @@ switch (insertType) do {
 				};
 			};
 			
+			// SEA removed from the random GROUND draw — sea insertion is now its own lobby option.
 			if (count _groundStylesAvailable == 0) then {
-				if ((count _seaPositions > 0) && (count _shipClasses > 0)) then {
-					_seaSpawn = _seaPositions select 0;
-					_groundStylesAvailable pushBackUnique "SEA";
-				};		
-			} else {
-				_seaRand = (random 100);
-				if (_seaRand > 85) then {
-					if ((count _seaPositions > 0) && (count _shipClasses > 0)) then {
-						_seaSpawn = _seaPositions select 0;
-						_groundStylesAvailable pushBackUnique "SEA";
-					};
-				};
-			};		
+				_groundStylesAvailable pushBack "FOB";
+			};
 		};
 		_groundStyleSelect = selectRandom _groundStylesAvailable;
 		diag_log format ["DRO: Ground insert style will be %1", _groundStyleSelect];
@@ -644,100 +634,16 @@ switch (insertType) do {
 			};
 			case "SEA": {
 				insertType = "SEA";
-				_shipClass = selectRandom _shipClasses;
-				
-				if (getMarkerColor "campMkr" == "") then {
-					_randomStartingLocation = [(_seaSpawn select 0), (_seaSpawn select 1), 0];
+				if (DRO_seaInsertViable && {count DRO_seaSpawnPos > 0}) then {
+					[] call DRO_fnc_boatInsertion;
 				} else {
-					_randomStartingLocation = getMarkerPos "campMkr";
-				};
-				//[_randomStartingLocation] remoteExec ["sun_newUnits", s1];
-				//[_randomStartingLocation] call sun_setPlayerGroup;
-				[_randomStartingLocation] remoteExec ["sun_setPlayerGroup"];
-				waitUntil {newUnitsReady};
-				sleep 2;
-				// Spawn vehicles until there are enough slots for players
-				_vehiclePool = [];
-				_rolesFilled = 0;
-				while {(_rolesFilled < (count (units (grpNetId call BIS_fnc_groupFromNetId))))} do {
-				
-					_shipClass = selectRandom _shipClasses;
-					_vehRoles = (count ([_shipClass] call BIS_fnc_vehicleRoles));
-					
-					_boatLoc = _randomStartingLocation findEmptyPosition [0, 25, _shipClass];
-					
-					_boat = createVehicle [_shipClass, _boatLoc, [], 0, "NONE"];
-					
-					[
-						_boat,
-						[
-							"Nudge",  
-							{  
-								_dir = [(_this select 1), (_this select 0)] call BIS_fnc_dirTo;  
-								_nudgePos = [(getPos (_this select 0)), 2, _dir] call dro_extendPos;  
-								(_this select 0) setVelocity [(sin _dir)*3, (cos _dir)*3, 0.5];	
-							},  
-							nil,  
-							6,  
-							false,  
-							false,  
-							"",  
-							"(_this distance _target < 8) && (vehicle _this == _this)"
-						]
-					] remoteExec ["addAction", 0, true];
-					
-					_rolesFilled = _rolesFilled + _vehRoles;
-					
-					_vehiclePool pushBack _boat;
-				};	
-				
-				if (count _vehiclePool > 0) then {
-					//_playersLeft = (units (grpNetId call BIS_fnc_groupFromNetId));
-					_playersLeft = _playerGroupUnique;
-					diag_log format ["_playersLeft = %1", _playersLeft];
-					{
-						if ((count _playersLeft) > 0) then {
-							_thisBoat = _x;
-							diag_log format ["_thisBoat = %1", _thisBoat];
-							_vehRoles = (count ([_thisBoat] call BIS_fnc_vehicleRoles));
-							diag_log format ["_vehRoles = %1", _vehRoles];
-							_playersToAssign = [];
-							if (_vehRoles > (count _playersLeft)) then {_vehRoles = (count _playersLeft)};
-							for "_i" from 0 to (_vehRoles - 1) do {	
-								diag_log format ["_i = %1", _i];
-								diag_log format ["(_playersLeft select _i) = %1", (_playersLeft select _i)];
-								_thisUnit = (_playersLeft select _i);
-								_playersToAssign pushBack _thisUnit;
-							};
-							_playersLeft = _playersLeft - _playersToAssign;
-							diag_log format ["_playersLeft = %1", _playersLeft];
-							diag_log format ["_playersToAssign = %1", _playersToAssign];
-							if ((count _playersToAssign) > 0) then {
-								[_playersToAssign, _thisBoat] spawn sun_groupToVehicle;
-							};
-						};
-					} forEach _vehiclePool;
-					diag_log format ["(units (group u1)) = %1", _playersLeft];
-					deleteMarker "campMkr";
-					//missionNameSpace setVariable ["publicCampName", "Altis Ocean Territory"];
-					missionNameSpace setVariable ["publicCampName", "Open Water"];
-					publicVariable "publicCampName";
-					markerPlayerStart = createMarker ["campMkr", _randomStartingLocation];
-					markerPlayerStart setMarkerShape "ICON";
-					markerPlayerStart setMarkerColor markerColorPlayers;
-					markerPlayerStart setMarkerType "mil_start";
-					markerPlayerStart setMarkerText "Sea Insert";
-					
-					if ((["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {	
-						respawnBoat = [missionNamespace, (_vehiclePool select 0)] call BIS_fnc_addRespawnPosition;
-					};
-					
-					{
-						_x addMagazineCargoGlobal ["SatchelCharge_Remote_Mag", 2];
-						_x addMagazineCargoGlobal ["DemoCharge_Remote_Mag", 4];
-						_x addItemCargoGlobal ["Medikit", 1];
-						_x addItemCargoGlobal ["FirstAidKit", 10];
-					} forEach _vehiclePool;
+					// Corridor not viable at runtime — staging fallback (lobby/skip should prevent this).
+					diag_log "DRO: SEA not viable at runtime — staging fallback.";
+					insertType = "GROUND";
+					_randomStartingLocation = getPosATL (leader (grpNetId call BIS_fnc_groupFromNetId));
+					[_randomStartingLocation] remoteExec ["sun_setPlayerGroup"];
+					waitUntil {newUnitsReady};
+					missionNameSpace setVariable ["startPos", _randomStartingLocation, true];
 				};
 			};
 		};
@@ -962,6 +868,20 @@ switch (insertType) do {
 
 		// M11: insertion arsenal crate at the staging area, so JIP players can adjust loadouts.
 		[_randomStartingLocation] call DRO_fnc_spawnInsertArsenal;
+	};
+	case 5: {
+		// SEA - Boat insertion (own lobby option, index 5).
+		insertType = "SEA";
+		if (DRO_seaInsertViable && {count DRO_seaSpawnPos > 0}) then {
+			[] call DRO_fnc_boatInsertion;
+		} else {
+			// Corridor not viable — staging fallback (lobby gray-out / skip override should prevent this).
+			diag_log "DRO: SEA not viable at runtime — staging fallback.";
+			insertType = "NONE";
+			private _ldr = leader (grpNetId call BIS_fnc_groupFromNetId);
+			_randomStartingLocation = getPosATL _ldr;
+			missionNameSpace setVariable ["startPos", _randomStartingLocation, true];
+		};
 	};
 };
 
