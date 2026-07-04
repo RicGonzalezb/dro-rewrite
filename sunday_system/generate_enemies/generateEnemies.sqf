@@ -78,11 +78,16 @@ if (_numInf > 0) then {
 	};
 };
 
-if (missionPreset == 3) then {
-	// Combined Arms tanks
-	// Vehicle patrol
-	if (count eAPCClasses > 0) then {
-		_numVeh = round ([2,3] call BIS_fnc_randomInt);
+// Mechanized (APC/tank) - cross-preset since 2026-07-04. Counts come from the mission-wide
+// budget precomputed in start.sqf (DRO_mechQuota[AO] = [apc, tank]), which already encodes
+// the preset/level profile (None -> zeros). No missionPreset gate here anymore.
+private _apcQuota  = if (!isNil "DRO_mechQuota" && {_AOIndex < count DRO_mechQuota}) then {(DRO_mechQuota select _AOIndex) select 0} else {0};
+private _tankQuota = if (!isNil "DRO_mechQuota" && {_AOIndex < count DRO_mechQuota}) then {(DRO_mechQuota select _AOIndex) select 1} else {0};
+// [DIAG - remove after tuning] mechanized quota + faction armour pools for this AO.
+diag_log format ["DRO: AO %1 mech quota apc=%2 tank=%3 | pools eAPC=%4 eTank=%5 eCarTurret=%6 eCar=%7", _AOIndex, _apcQuota, _tankQuota, count eAPCClasses, count eTankClasses, count eCarTurretClasses, count eCarClasses];
+if (_apcQuota > 0 || {_tankQuota > 0}) then {
+	if (count eAPCClasses > 0 && {_apcQuota > 0}) then {
+		_numVeh = _apcQuota;
 		for "_x" from 1 to _numVeh do {
 			_indexes = [[0, 1]] call DRO_fnc_checkAOIndexes;
 			if (count _indexes > 0) then {			
@@ -105,8 +110,8 @@ if (missionPreset == 3) then {
 			};			
 		};
 	};
-	if (count eTankClasses > 0) then {
-		_numVeh = ([1,3] call BIS_fnc_randomInt);
+	if (count eTankClasses > 0 && {_tankQuota > 0}) then {
+		_numVeh = _tankQuota;
 		for "_x" from 1 to _numVeh do {
 			_indexes = [[0, 1]] call DRO_fnc_checkAOIndexes;
 			if (count _indexes > 0) then {			
