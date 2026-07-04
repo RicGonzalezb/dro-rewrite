@@ -2765,3 +2765,6 @@ Gonza: o drop mirava a praia mais próxima do CENTRO -> caía no coração do en
 - Corredor sempre perpendicular à praia escolhida (normal local), nunca ao AO.
 - Corridor-build extraído p/ inner `_fnc_buildFromDrop` (reusado por cada candidato). Sem exitWith em loop (flag `_done`).
 `git add -f functions/fn_findSeaCorridor.sqf start.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Sea insert — decel quase-zero causava parada precoce (fix) — 2026-07-03 (Master/Opus)
+Gonza (print): barco parou ~30-40m da beira, soltou em água funda. Causa: decel anterior a ~1.5 km/h fazia o barco estacionar antes do raso; e como o detector de stall usa `speed < 3 km/h`, o crawl da decel era lido como "travado" -> ejeção precoce em água funda. Fix: decel `if (_dist < 60) then { limitSpeed (7 max _dist*0.5) }` (piso 7 km/h > limiar de stall de 3), pra manter embalo até o drop raso e só então parar/ejetar. PENDENTE confirmar com diag `DRO SEA eject-check`: se ejetar já em depth ~-0.4/-1 -> resolvido; se ainda em ~-2 via stuck -> é a IA recusando o último trecho (aí só nudge suave ou aceitar vadeação). `git add -f functions/fn_boatInsertion.sqf _DRO_REFACTOR_PROGRESS.md`.
