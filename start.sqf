@@ -782,6 +782,86 @@ diag_log format ["DRO: Time of day is %1", timeOfDay];
 _garrisionScriptHandle = [] execVM "sunday_system\generate_ao\findGarrisonBuildings.sqf";
 waitUntil {scriptDone _garrisionScriptHandle};
 
+// --- Mechanized profile -> DRO_mechMult ---------------------------------------------
+// Cross-preset (2026-07-04): every game mode can field enemy armour, but the allowed
+// profiles + default depend on the preset. Lobby param DRO_ParamMechLevel overrides:
+//   0=Default(per preset) 1=None 2=Low 3=Standard 4=High. Choices outside a preset's
+//   allowed set are clamped. Level -> mult: None 0, Low 0.6, Standard 1.0, High 1.5.
+//   Sniper(2): None/Low/Standard (def None). Combined(3): Standard/High (def Standard).
+//   Recon(1) + Current Settings(0): all incl None (def Low).
+private _mechDefault = switch (missionPreset) do {
+	case 2: {"NONE"};      // Sniper
+	case 3: {"STANDARD"};  // Combined
+	default {"LOW"};       // Recon (1) + Current Settings (0)
+};
+private _mechChosen = switch (["DRO_ParamMechLevel", 0] call BIS_fnc_getParamValue) do {
+	case 1: {"NONE"};
+	case 2: {"LOW"};
+	case 3: {"STANDARD"};
+	case 4: {"HIGH"};
+	default {_mechDefault};
+};
+switch (missionPreset) do {
+	case 2: { if (_mechChosen == "HIGH") then { _mechChosen = "STANDARD" } };          // Sniper: no High
+	case 3: { if (_mechChosen in ["NONE","LOW"]) then { _mechChosen = "STANDARD" } };  // Combined: no None/Low
+	default {};                                                                         // Recon(1)/Current(0): all
+};
+DRO_mechMult = switch (_mechChosen) do {
+	case "NONE": {0};
+	case "LOW": {0.6};
+	case "HIGH": {1.5};
+	default {1};
+};
+diag_log format ["DRO: mech profile = %1 (mult %2), preset %3", _mechChosen, DRO_mechMult, missionPreset];
+
+// --- Mechanized quota (Combined Arms) -----------------------------------------------
+// Enemy APC/tank allocation as a mission-wide budget instead of an independent per-AO
+// roll, so the total no longer scales linearly with AO count. Standard base 2.5 APC /
+// 1.5 tank, growth 0.3 per extra hostile AO. Primary (first hostile AO) takes ~50%; the
+// remainder is scattered randomly across the other hostile AOs, capped below the primary
+// so it stays the armoured strongpoint. DRO_mechMult is the Low/Standard/High hook.
+DRO_mechQuota = [];
+{ DRO_mechQuota pushBack [0,0] } forEach AOLocations;
+if (DRO_mechMult > 0) then {
+	private _hostiles = [];
+	{ if (((AOLocations select _forEachIndex) select 4) == 0) then { _hostiles pushBack _forEachIndex } } forEach AOLocations;
+	private _H = count _hostiles;
+	if (_H > 0) then {
+		private _mult = missionNamespace getVariable ["DRO_mechMult", 1];
+		private _apcBudget  = round ((2.5 * _mult) * (1 + (_H - 1) * 0.3));
+		private _tankBudget = floor ((1.5 * _mult) * (1 + (_H - 1) * 0.3));
+		private _fnc_alloc = {
+			params ["_budget", "_hostileCount"];
+			private _out = [];
+			for "_z" from 1 to _hostileCount do { _out pushBack 0 };
+			if (_hostileCount == 1) then {
+				_out set [0, _budget];
+			} else {
+				private _primary = round (_budget * 0.5);
+				_out set [0, _primary];
+				private _rem = _budget - _primary;
+				private _cap = _primary max 1;
+				private _guard = 0;
+				while {_rem > 0 && {_guard < 200}} do {
+					private _s = 1 + floor (random (_hostileCount - 1));
+					if ((_out select _s) < _cap) then {
+						_out set [_s, (_out select _s) + 1];
+						_rem = _rem - 1;
+					};
+					_guard = _guard + 1;
+				};
+			};
+			_out
+		};
+		private _apcAlloc  = [_apcBudget, _H] call _fnc_alloc;
+		private _tankAlloc = [_tankBudget, _H] call _fnc_alloc;
+		{
+			DRO_mechQuota set [_x, [(_apcAlloc select _forEachIndex), (_tankAlloc select _forEachIndex)]];
+		} forEach _hostiles;
+		diag_log format ["DRO: mech quota H=%1 apcB=%2 tankB=%3 -> %4", _H, _apcBudget, _tankBudget, DRO_mechQuota];
+	};
+};
+
 _enemyScripts = [];
 {
 	if (((AOLocations select _forEachIndex) select 4) == 0) then {

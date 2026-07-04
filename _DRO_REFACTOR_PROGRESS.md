@@ -2840,3 +2840,55 @@ Sessão de onboarding do novo Master. Gonza confirmou tuning do Sea insert valid
 **Diag temporário:** `diag_log "DRO: variety guard -> ..."` (1x por objetivo, baixa frequência) — útil pro Gonza confirmar no .rpt. Remover depois se quiser.
 
 **Pendente (Gonza, SP):** selecionar 3 tipos + qtd 3, confirmar variedade; olhar `.rpt` por "variety guard ->". Testar também qtd > nº de tipos (deve ciclar e repetir só após esgotar). `git add -f sunday_system/objectives/objSelect.sqf start.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+---
+
+## Combined Arms — mecanizados via orçamento de missão (fim do crescimento linear) — 2026-07-04 (Master/Opus)
+
+**Problema:** APC/tanque inimigos eram rolados por-AO de forma independente e FLAT (`generateEnemies.sqf` APC `round[2,3]`, tanque `[1,3]`), sem `aiMultiplier` nem `_sizeMod`. Total da missão crescia linear com o nº de AOs hostis (~4,5 blindados × N) — explodia com Extended AO (até 6 AOs → ~27 veículos).
+
+**Solução (decisões do Gonza):** orçamento de missão único, distribuído. Base 2,5 APC / 1,5 tanque; crescimento k=0,3 por AO hostil extra; primário (1º AO hostil) leva ~50%; sobra espalhada ALEATORIAMENTE entre secundários (imprevisível), com teto = cota do primário (secundário nunca supera o núcleo). Tipos mantidos misturados.
+
+- **`start.sqf`** (após `findGarrisonBuildings`, antes do loop de inimigos): calcula `DRO_mechQuota[aoIndex] = [apc, tank]`. `budget = round(base * DRO_mechMult * (1 + (H-1)*0.3))`, H = nº AOs hostis. Alocação via `_fnc_alloc` (primário 50% arredondado; resto sorteado 1-a-1 entre secundários com cap=primário; guard anti-loop 200). Server-side, single-thread → sem corrida (os generateEnemies por-AO só LEEM a cota).
+- **`generateEnemies.sqf`** (bloco `missionPreset==3`): lê `_apcQuota`/`_tankQuota` de `DRO_mechQuota select _AOIndex` (guard isNil/bounds) em vez de `randInt`. Condição ganhou `&& {quota > 0}` p/ pular o bloco quando a cota é 0. Gates de facção (`eAPCClasses`/`eTankClasses`) e de posição de estrada (`checkAOIndexes`) preservados — efetivo <= cota.
+- **`DRO_mechMult`** (default 1) = gancho pronto p/ o futuro param Low/Standard/High (multiplica a base).
+
+**Tabela Standard resultante (total APC+Tk na missão):** H=1:5, H=2:5, H=3:6, H=4:8, H=5:9, H=6:10 (vs atual 4,5/9/13,5/18/22,5/27). Primário ~igual ao AO único de hoje; excesso multi-AO cortado ~60%.
+
+**Verificação:** escrita atômica; balanço `{}()[]` delta 0 nos 2 arquivos; sem CR; caudas intactas; regiões relidas; alocação simulada em Python confere.
+
+**Diag temporário:** `diag_log "DRO: mech quota H=..."` (1x por missão) — útil pra confirmar no .rpt.
+
+**Pendente (Gonza, SP, preset Combined Arms):** confirmar contagem por AO no .rpt (`mech quota`), e in-game que o primário é o núcleo blindado e secundários leves/variáveis. Depois: encaixar o param Low/Standard/High sobre `DRO_mechMult`. `git add -f start.sqf sunday_system/generate_enemies/generateEnemies.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+---
+
+## Mecanizados — perfis cross-preset + param DRO_ParamMechLevel (None/Low/Standard/High) — 2026-07-04 (Master/Opus)
+
+Extensão do orçamento de mecanizados: deixa de ser exclusivo do Combined Arms. **Agora TODOS os game modes podem ter blindado inimigo**, com perfil por preset.
+
+**Perfil -> multiplicador (`DRO_mechMult` sobre a base 2.5 APC / 1.5 Tk):** None=0, Low=0.6, Standard=1.0, High=1.5.
+
+**Permitidos + default por preset:**
+- Sniper (2): None / Low / Standard — default **Low** (High clampa p/ Standard).
+- Recon (1): None / Low / Standard / High — default **Standard**.
+- Combined (3): Standard / High — default **Standard** (None e Low clampam p/ Standard).
+- Current Settings (0): coringa igual Recon (None..High, default Standard). NOTA: preset 0 só existe na UI in-game (`fn_switchLookup`), NÃO no param do lobby (`DRO_ParamPreset` = {1,2,3}).
+
+**Param novo `DRO_ParamMechLevel`** (description.ext): 0=Default(por preset) 1=None 2=Low 3=Standard 4=High. Escolha fora do permitido é clampada (Sniper sem High; Combined sem None/Low). Lobby-only (a UI in-game não tem controle; no fluxo UI o perfil = default do preset).
+
+**Mudanças:**
+- `description.ext`: classe `DRO_ParamMechLevel` (após EnemySize) + linha de referência no bloco server.cfg comentado.
+- `start.sqf`: resolução `missionPreset` + `DRO_ParamMechLevel` -> `_mechChosen` (com clamp) -> `DRO_mechMult`. Gate do orçamento trocado de `if (missionPreset == 3)` para `if (DRO_mechMult > 0)` (None pula, quota fica zerada).
+- `generateEnemies.sqf`: removido o wrapper `if (missionPreset == 3)` do bloco de mecanizados; agora roda gated por `if (_apcQuota > 0 || _tankQuota > 0)`. O `_numInf min 1` (cap de infantaria) CONTINUA exclusivo do Combined (linha 59, não tocada).
+
+**Impacto de gameplay:** Recon e Sniper passam a ter blindado inimigo (antes zero). Sniper default Low (~2 APCs em AO único, 0 tanque pelo floor); Combined nunca abaixo de Standard.
+
+**Verificação:** escrita atômica nos 3 arquivos; balanço `{}()[]` delta 0; sem CR; matriz preset×nível simulada em Python (bate com a spec). Diag `DRO: mech profile = ...` por missão.
+
+**Pendente (Gonza):** testar in-game por preset (confirmar armor em Recon/Sniper agora; clamp do Sniper-High->Standard e Combined-None->Standard); confirmar param no lobby. `git add -f description.ext start.sqf sunday_system/generate_enemies/generateEnemies.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Mecanizados — ajuste dos defaults por preset — 2026-07-04 (Master/Opus)
+Defaults de perfil revistos (`start.sqf`, `_mechDefault`): Sniper -> **None** (era Low; volta a "sem blindado" por padrão, mas o player pode ligar Low/Standard via param), Recon -> **Low** (era Standard), Combined -> **Standard** (inalterado). Current Settings(0) segue Recon = Low. Allowed sets e clamp inalterados. Escrita atômica; balanço delta 0; sem CR.
+
+**Current Settings no lobby:** confirmado que NÃO existe no lobby (`DRO_ParamPreset` = {1,2,3}, default 1). Nada a remover lá. Só existe na UI in-game (fn_switchLookup índice 0). Remoção da UI ficou PENDENTE de decisão do Gonza (risco: índices 1/2/3 hardcoded no código todo + preset 0 é o default do profile).
