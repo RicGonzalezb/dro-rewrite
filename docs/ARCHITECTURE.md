@@ -1,6 +1,6 @@
 # Architecture & Maintainer Guide
 
-Technical reference for anyone modifying this mission. It consolidates the project's internal refactor notes (which live in Portuguese in the repo root: `_DRO_REFACTOR_PLAN.md`, `_DRO_REFACTOR_PROGRESS.md`, `_DRO_PRESETS_MAP.md`, `LAMBS_COMPAT_REFERENCE.md`).
+Technical reference for anyone modifying this mission.
 
 ## Table of contents
 
@@ -176,8 +176,6 @@ Consequences for editing:
 - **Sniper (2)** differences are mostly the `aiMultiplier` (0.5) plus objective branches: HVT is elimination-only (`hvt.sqf`), reactive tasks are HVT-only (`selectReactiveTask.sqf`), preferred objective forced to `["HVT"]`.
 - **Preset 0 (Current Settings)** skips `fn_missionPreset` and falls into every default `if (missionPreset == N)` branch. Account for it when adding new preset rules.
 
-Full breakdown lives in `_DRO_PRESETS_MAP.md`.
-
 ---
 
 ## 8. Mission generation flow
@@ -191,8 +189,8 @@ Full breakdown lives in `_DRO_PRESETS_MAP.md`.
 
 ## 9. ACE & LAMBS soft-compat
 
-- **ACE3** is required. Revive/medical, arsenal, and interaction integrate natively; the custom revive layer (`sunday_revive/`) sits on top of ACE medical and is gated by the Revive parameter.
-- **LAMBS Danger** is detected at runtime (`DRO_lambs*` flags). When present: mobile patrols become reinforcement responders (`enableGroupReinforce`), camps broadcast contact (`dangerRadio`), and pursuit tasks are assigned by context (RUSH / HUNT / CREEP). When absent, the mission uses vanilla AI behavior — no hard dependency. See `LAMBS_COMPAT_REFERENCE.md`.
+- **ACE3** is optional and detected at runtime (`DRO_ace*` flags). When present, arsenal and interaction integrate with ACE, and the revive layer (`sunday_revive/`) adapts to ACE medical; when absent it falls back to base-game behavior. Gated by the Revive parameter. No hard dependency.
+- **LAMBS Danger** is detected at runtime (`DRO_lambs*` flags). When present: mobile patrols become reinforcement responders (`enableGroupReinforce`), camps broadcast contact (`dangerRadio`), and pursuit tasks are assigned by context (RUSH / HUNT / CREEP). When absent, the mission uses vanilla AI behavior — no hard dependency.
 
 Detection flags have idempotent fallbacks at the top of `start.sqf` because of the init-order issue (§3).
 
@@ -211,10 +209,11 @@ Learned the hard way during the refactor — these apply to any tool/editor writ
 
 ## 11. Porting to another map
 
-The mission is map-agnostic: it resolves locations from `nearestLocations` and factions from `CfgFactionClasses` at runtime, with no Livonia hardcoding. To port:
+The mission is map-agnostic: it resolves locations from `nearestLocations` and factions from `CfgFactionClasses` at runtime, with no terrain hardcoding. To port:
 
-1. Copy the mission folder and rename its `.<WorldName>` suffix to the target world (e.g. `...Livonia.Enoch` → `...MyMission.Altis`).
-2. Ensure the target map's DLC/mod is loaded (Contact for Livonia; base game for Altis/Stratis).
-3. Faction availability follows loaded content — Contact-only factions (LDF, Spetsnaz) won't appear on maps loaded without Contact, and fall back to Random.
+1. Copy the mission folder and rename its `.<WorldName>` suffix to the target world (e.g. `...MyMission.Enoch` → `...MyMission.Altis`).
+2. Ensure the target map is loaded (as a base-game terrain or via whatever mod/DLC provides it).
+3. Faction availability follows loaded content — factions from mods or DLC you don't have loaded simply fall back to Random.
 
 Test on at least two maps after any generation change to confirm nothing regressed to map-specific assumptions.
+                                                                                                                                                                                                                             

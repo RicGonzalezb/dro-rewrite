@@ -149,7 +149,7 @@ These apply when **Skip Team Planning** is enabled.
 
 ### Factions
 
-Player, Enemy, Civilian, and three "advanced" (secondary) faction slots per side. Index 0 is **Random**; other indices map to vanilla + Contact factions. The mission validates each choice against the loaded content and falls back to Random if a faction isn't present. See §7.
+Player, Enemy, Civilian, and three "advanced" (secondary) faction slots per side. Index 0 is **Random**; other indices map to vanilla factions plus optional mod/DLC factions. The mission validates each choice against the loaded content and falls back to Random if a faction isn't present. See §7.
 
 ---
 
@@ -192,25 +192,25 @@ Objectives are chosen based on each AO's geography and whether it is hostile or 
 
 ## 7. Factions
 
-The mission ships a curated faction list spanning vanilla Arma 3 and Contact content (NATO, CSAT, AAF, FIA, CTRG, Gendarmerie, LDF, Spetsnaz, and Pacific/Woodland variants), plus a long list of common community factions that resolve **only if the corresponding mod is loaded**.
+The mission ships a curated faction list spanning vanilla Arma 3 factions (NATO, CSAT, AAF, FIA, CTRG, Gendarmerie, and Pacific/Woodland variants), plus a long list of common community and DLC factions that resolve **only if the corresponding content is loaded**.
 
 - **Player / Enemy** parameters offer non-civilian factions. If player and enemy resolve to the same side, the mission auto-resolves the conflict.
 - **Civilian** parameter offers civilian-side factions only (e.g. Civilians, IDAP).
 - **Advanced** slots (3 per side) let you mix additional factions into the player or enemy force. `None` leaves the slot empty.
-- Any faction that isn't present in the loaded game falls back to Random, so a missing mod never hard-breaks generation.
+- Any faction that isn't present in the loaded game falls back to Random, so missing content never hard-breaks generation.
 
-If you play only with the required mods (ACE, CBA, Contact), stick to the vanilla + Contact entries.
+If you play with only the base game and CBA, stick to the vanilla faction entries; the other entries activate automatically if you load the mods/DLC they belong to.
 
 ---
 
 ## 8. Revive & medical
 
-The mission uses **ACE3 medical**. The **Revive** parameter controls the incapacitation/bleedout window:
+The mission has its own revive layer. When ACE3 is loaded it integrates with ACE interaction; without ACE it works on its own. The **Revive** parameter controls the incapacitation/bleedout window:
 
 - **300s / 120s / 60s** — you can be revived by a teammate within that window.
-- **Disabled** (default) — no custom revive layer; ACE medical governs directly.
+- **Disabled** (default) — no custom revive timer; incapacitation follows the base game (or ACE, if ACE is present).
 
-When down, screen effects darken progressively and a self-give-up action is available. A teammate (or AI) can stabilize and revive you within the timer. Arsenal loadouts and ACE interaction work as normal.
+When down, screen effects darken progressively and a self-give-up action is available. A teammate (or AI) can stabilize and revive you within the timer. Arsenal loadouts work as normal; ACE interaction is used when ACE is present.
 
 ---
 
@@ -231,5 +231,4 @@ Combined Arms additionally gives the leader a **Friendly Engage** command to dir
 
 - The **leader** is the first player slot. Only the leader sees the pre-generation UI and presses **START MISSION**; other players customize their gear via the "Open Arsenal" scroll action and wait.
 - Any player can reopen **Team Planning** via the scroll action, but only the leader can start.
-- If the leader disconnects before the mission starts, leadership transfers to another player, who receives the UI and the start button (multiplayer only).
-- Press **ESC** to leave the planning interface; a hint reminds you how to reopen it.
+- If the leader disc

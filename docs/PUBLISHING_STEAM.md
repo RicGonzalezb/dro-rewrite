@@ -6,7 +6,7 @@ I can't run this for you — it requires the **Arma 3 Tools** (Publisher) app an
 
 ## Pre-flight checklist
 
-- [ ] **Mission runs clean.** Test in the editor and in a hosted MP session with only the required mods (CBA, ACE, Contact). Watch the `.rpt` for errors.
+- [ ] **Mission runs clean.** Test in the editor and in a hosted MP session with only **CBA_A3** loaded (then again with ACE/LAMBS if you play with them). Watch the `.rpt` for errors.
 - [ ] **Add an MP `Header`** to `description.ext`. It currently has **none**, so the mission won't advertise player count / game type in the MP browser. The mission has **15 playable slots**. Paste this near the top of `description.ext` (after the `#include` lines):
 
   ```cpp
@@ -23,13 +23,13 @@ I can't run this for you — it requires the **Arma 3 Tools** (Publisher) app an
   ```cpp
   author         = "mbrdmn (original) / R. Gonzalez (Rewrite)";
   onLoadName     = "Dynamic Recon Ops — Rewrite (Livonia)";
-  onLoadMission  = "Dynamic special-ops. ACE + CBA required.";
-  overviewText   = "Randomized recon operations. Requires CBA, ACE3, Contact.";
+  onLoadMission  = "Dynamic special-ops. Requires CBA_A3.";
+  overviewText   = "Randomized recon operations. Requires CBA_A3; ACE3 and LAMBS optional.";
   overviewPicture = "images\recon_image_notext.jpg";
   loadScreen     = "images\recon_image_notext.jpg";
   ```
 
-- [ ] **Confirm required-mod list** for the Workshop description: CBA_A3, ACE3, Arma 3 Contact (DLC). List LAMBS Danger as *optional*.
+- [ ] **Confirm the mod list** for the Workshop description: **CBA_A3** required. List **ACE3** and **LAMBS Danger** as *optional* (soft-compatible).
 - [ ] **Prepare a preview image** (`images\recon_image.jpg` works; Workshop wants ~512×512+).
 - [ ] **Decide the license / attribution** — see [LICENSE](../LICENSE). This is a derivative of mbrdmn's DRO; credit the original author in the Workshop description.
 
@@ -59,11 +59,11 @@ The Publisher can also upload an unpacked mission folder. Same steps as A but sk
 ## After publishing
 
 - **Updating:** re-open the item in Publisher, point at the new build, and *Update*. Add **change notes** each time.
-- **Dependencies:** in the Workshop item page, add CBA/ACE as required items so Steam links them.
+- **Dependencies:** in the Workshop item page, add CBA_A3 as a required item so Steam links it (ACE3 and LAMBS are optional — mention them in the description rather than as hard dependencies).
 - **Keep the GitHub repo as source of truth**; the Workshop item is the built artifact. Tag a release in git that matches each Workshop update so you can reproduce any published version.
 
 ---
 
 ## What I can and can't do
 
-I can prepare the mission for packing (add the `Header`/overview snippets above, clean up files, write the Workshop description text). I **cannot** run Addon Builder or the Publisher, or upload to Steam — those need the desktop tools and your Steam login. Ask me if you want me to apply the `Header`/overview edits to `description.ext` and draft the Workshop description copy.
+I can prepare the mission for packing (add the `Header`/overview snippets above, clean up files, write the Workshop description text). I **cannot** run Addon Builder or the Publisher, or upload to Steam — those need the deskt
