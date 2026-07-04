@@ -3,11 +3,25 @@
 #include "sunday_system\dialogs\dialogsMainMenu.hpp"
 #include "sunday_system\dialogs\dialogsLobby.hpp"
 
+// ---- MP header & scenario overview ----
+class Header
+{
+	gameType = "Coop";
+	minPlayers = 1;
+	maxPlayers = 16;
+};
+
+author = "mbrdmn (original) / R. Gonzalez (Rewrite)";
+onLoadName = "Dynamic Recon Ops: Rewrite";
+onLoadMission = "Procedural recon operations. Requires CBA_A3.";
+overviewText = "The classic Dynamic Recon Ops, rebuilt on CBA and hardened. CBA_A3 required; ACE3 and LAMBS optional.";
+loadScreen = "images\recon_image.jpg";
+
 enableDebugConsole = 1;
 allowFunctionsLog = 1;
 
 corpseManagerMode = 1;
-corpseLimit = 15;
+corpseLimit = 30;
 corpseRemovalMinTime = 900;
 corpseRemovalMaxTime = 3600;
 

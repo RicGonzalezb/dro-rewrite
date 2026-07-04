@@ -1,10 +1,54 @@
-# Dynamic Recon Ops — Rewrite (Livonia)
+# Dynamic Recon Ops: Rewrite
 
-A dynamic, randomized special-operations scenario for **Arma 3**, built on **CBA** scheduling, with an expanded pre-game configuration system and optional soft-compatibility for **ACE3** and **LAMBS Danger**.
+Built on the legendary **Dynamic Recon Ops** by **mbrdmn** — one of the most-played dynamic mission frameworks in the Arma 3 community. This Rewrite keeps everything that made DRO great, rebuilds it under the hood for stability, hardens the existing systems, and adds full lobby-side configuration plus modern AI and ACE support.
 
-Every playthrough generates a fresh Area of Operations, enemy layout, objectives, weather, and time of day. Insert by helicopter, HALO, ground, or boat; hunt an HVT, rescue a hostage, destroy a cache, or clear a town — solo or in co-op.
+Every op is procedurally generated: a fresh Area of Operations, enemy layout, objectives, weather, and time of day, every single time. Insert by helicopter, HALO, ground, or boat; hunt an HVT, rescue a hostage, retrieve intel, destroy a cache, or clear a town — solo or in co-op.
 
-> **Status:** Feature-complete and stabilized. This repository is a heavily refactored community rewrite of Dynamic Recon Ops. See [Credits & attribution](#credits--attribution).
+> **Status:** Feature-complete and stabilized. A community rewrite of Dynamic Recon Ops — see [Credits & attribution](#credits--attribution).
+
+---
+
+## What's new in this Rewrite
+
+**Rebuilt engine, smoother play**
+
+- Full migration to CBA scheduling (per-frame handlers) — fewer frame hitches during spawns and steadier performance in long sessions.
+- Hardened for multiplayer and dedicated servers: init-order fixes, event-handler leak fixes, and locality fixes.
+- Faster boot via engine-loaded functions (CfgFunctions).
+
+**Configure the whole mission from the lobby**
+
+- New parameter-override system: set scenario, environment, objectives, factions, insertion, and supports straight from the MP **Parameters** screen.
+- Optionally skip the in-game setup UI entirely — hosts can pre-bake a mission so players drop straight in.
+- Three independent override spheres, so you can mix (e.g. factions via parameters, everything else via the in-game UI).
+
+**Smarter battlefield population**
+
+- Reworked enemy population across the AO — patrol corridors and seeded adjacent areas make the battlespace feel connected instead of clumped.
+- Objective variety guard so multi-objective ops spread across different task types.
+- Off-map spawn protection — no more objectives or hostages generated outside the playable area.
+
+**More ways to insert**
+
+- Added **Sea (Boat)** insertion — a piloted boat runs you to shore, respecting your chosen insertion point.
+- Added **None** (start on-site) alongside the classic Ground, HALO, and Helicopter.
+
+**Combined-arms overhaul**
+
+- Enemy mechanized forces (APCs and tanks) via a mission budget instead of endless linear growth.
+- Per-mode armor profiles plus a **Mechanized level** parameter (None / Low / Standard / High).
+
+**Optional soft-compat**
+
+- **ACE3** — new Arsenal toggle; arsenal and interaction integrate with ACE when it's loaded, and fall back cleanly without it.
+- **LAMBS Danger** — context-aware pursuit, reinforcement responders, and radio-driven escalation when present.
+
+**Refined & fixed**
+
+- The classic DRO game modes (Recon / Sniper / Combined Arms) reviewed and fixed.
+- Civilian system fixes and improvements, including a performance-friendly agent mode and an optional hostile-civilian setting.
+- Leader-centric Team Planning lobby with a disconnect-handover safeguard.
+- Numerous bug fixes across revive, objectives, and spawn logic.
 
 ---
 
@@ -15,23 +59,31 @@ Every playthrough generates a fresh Area of Operations, enemy layout, objectives
 - **Arma 3**
 - **CBA_A3** — Community Base Addons
 
-**Optional (soft-compatible — the mission detects them at runtime and runs fine without them)**
+**Optional (soft-compatible — detected at runtime, runs fine without them)**
 
-- **ACE3** — when present, the mission integrates with ACE interaction and arsenal.
-- **LAMBS Danger** — improves enemy reactions, reinforcement, and radio behavior.
+- **ACE3** — arsenal and interaction integration.
+- **LAMBS Danger** — smarter enemy AI.
 
-The scenario is **map-agnostic**: it resolves locations and factions from the running game at runtime rather than hardcoding a specific terrain, so it can be ported to other maps by copying the mission folder onto a different world (see the architecture doc) as also all objects present on Eden Editor. Faction options that belong to content you don't have loaded simply fall back to Random.
+The scenario is **map-agnostic**: it resolves locations and factions from the running game at runtime rather than hardcoding a terrain, so it can be ported to other maps by copying the mission folder onto a different world (see the architecture doc). Faction options that belong to content you don't have loaded simply fall back to Random.
+
+---
+
+## Game modes
+
+The classic DRO modes, refined in this Rewrite:
+
+- **Recon Ops** — the baseline experience: full enemy strength, stealth possible, any objective.
+- **Sniper Ops** — lean and stealthy: half the enemies, a 2-man marksman team, focus on hunting an HVT.
+- **Combined Arms** — open battle: armor on both sides, friendly AI, no stealth.
 
 ---
 
 ## Quick start
 
 1. Install **CBA_A3**, then launch Arma 3 with it enabled (ACE3 and LAMBS Danger are optional).
-2. Load the scenario (from the Workshop once published, or place this folder in `...\Arma 3\MPMissions\` / your profile's `mpmissions\` for local play).
-3. In the lobby, either leave everything on defaults or open **Parameters** to configure the mission (see the [Player Guide](docs/PLAYER_GUIDE.md)).
-4. Launch. Configure your Area of Operations and factions in the in-game **pre-generation UI** (or skip it entirely via lobby parameters), pick your loadout in **Team Planning**, and start the mission.
-
-**Game modes:** *Recon Ops* (baseline), *Sniper Ops* (lean, stealth-focused, 2-man team), *Combined Arms* (armor on both sides, friendly AI, open battle). Details in the Player Guide.
+2. Load the scenario (from the Workshop once published, or place this folder in your `mpmissions\` for local play).
+3. In the lobby, leave everything on defaults or open **Parameters** to configure the mission (see the [Player Guide](docs/PLAYER_GUIDE.md)).
+4. Launch. Configure your AO and factions in the in-game pre-generation UI (or skip it via lobby parameters), pick your loadout in **Team Planning**, and start the mission.
 
 ---
 
@@ -40,37 +92,22 @@ The scenario is **map-agnostic**: it resolves locations and factions from the ru
 | Doc | Audience | What's in it |
 |---|---|---|
 | **[Player Guide](docs/PLAYER_GUIDE.md)** | Players | Game modes, every lobby parameter, insertion types, objective types, factions, revive, supports, and the parameter-override system. |
-| **[Architecture](docs/ARCHITECTURE.md)** | Developers / maintainers | Folder layout, init order, CBA & CfgFunctions conventions, the 3-sphere override system, preset internals, ACE/LAMBS soft-compat, and the file-write hazards to know before editing. |
+| **[Architecture](docs/ARCHITECTURE.md)** | Developers / maintainers | Folder layout, init order, CBA & CfgFunctions conventions, the 3-sphere override system, preset internals, ACE/LAMBS soft-compat, and file-write hazards. |
 | **[Publishing to Steam Workshop](docs/PUBLISHING_STEAM.md)** | Maintainer | Pre-flight checklist and step-by-step packing/upload via the Arma 3 Publisher. |
-
----
-
-## Features at a glance
-
-- **Randomized AO generation** — primary + up to 5 extended AOs, resolved from real map locations each run.
-- **Three game modes** with distinct force composition, stealth behavior, and objective focus.
-- **10+ objective types** — Eliminate HVT, Rescue Hostage, Retrieve Intel, Destroy Cache/Asset, Steal Vehicle, Clear Area, plus neutral-AO tasks (Disarm IED/UXO, Fortify, Protect Civilian).
-- **Five insertion types** — Ground, Air (HALO), Air (Helicopter), Sea (Boat), or None.
-- **Full lobby-parameter override** — configure scenario, environment, objectives, factions, insertion, and supports from the MP Parameters screen and optionally skip the in-game UI entirely.
-- **Built-in revive** with configurable bleedout and arsenal loadouts; integrates with ACE interaction when ACE is present.
-- **LAMBS Danger soft-compat** — context-aware pursuit, reinforcement, and radio-driven escalation when the mod is present.
-- **Curated faction list** — vanilla factions plus any loaded faction mods, validated against loaded content at runtime.
 
 ---
 
 ## Credits & attribution
 
-This project is a community modification of **Dynamic Recon Ops**, originally created by **mbrdmn**. All original design credit belongs to the original author.
+Original **Dynamic Recon Ops** by **mbrdmn**. All original design credit belongs to the original author. This Rewrite is a community modification that adds the CBA rebuild, lobby-parameter override system, additional insertion types, combined-arms overhaul, ACE3 and LAMBS Danger soft-compat, and numerous fixes to the existing systems.
 
-This rewrite adds a CBA-based scheduling rewrite, the lobby-parameter override system, additional insertion types, mechanized/combined-arms balancing, ACE3 and LAMBS Danger soft-compat, and numerous fixes.
-
-Please review [LICENSE](LICENSE) before redistributing. Publishing a derivative of another author's Workshop content carries attribution obligations — see the note in the license file.
+Please review [LICENSE](LICENSE) before redistributing — publishing a derivative of another author's Workshop content carries attribution obligations.
 
 ---
 
 ## Contributing / maintaining
 
-Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first. Two hard rules that will save you pain:
+Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first. Two hard rules:
 
 - **Code comments are written in English.**
 - The mission uses **CBA scheduling** (per-frame handlers / `waitAndExecute`) — never introduce `spawn { while {true} do { sleep } }` patterns in new code.
