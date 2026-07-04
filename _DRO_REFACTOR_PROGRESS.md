@@ -2776,3 +2776,26 @@ Diag revelou a causa: `perim=3734` — `_perim = max(dist(centro,loc)+size)` exp
 - Candidatos = praias por isolamento desc; primeiro com corredor viável vence. Degrada suave (pior caso = praia menos isolada). `_near` (nearest ao origin) appendado por último = também o comportamento do ponto custom (_avoidPerimeter=false).
 - Diag atualizado: `coastCands`, `source=STEALTH/FALLBACK`. `_occCap=550` é o botão de tuning.
 `git add -f functions/fn_findSeaCorridor.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+---
+
+## HANDOFF — estado do SEA INSERT (para o próximo Master) — 2026-07-03
+
+Sessão dedicada ao feature de inserção por barco (SEA). Resumo do que está VALIDADO e o que está PENDENTE, pra não reler as entradas incrementais.
+
+**Arquivos do feature:**
+- `functions/fn_findSeaCorridor.sqf` — acha o corredor (drop + spawn + waypoints). PURA, não publica globais.
+- `functions/fn_boatInsertion.sqf` — executa (spawna barcos, embarca, aproxima, ejeta, RTB+cleanup).
+- `functions/fn_resolveInsertType.sqf` — resolve o tipo de inserção (Random pode dar SEA).
+- Consumido em `start.sqf` (corredor default `[centerPos, true]`), `setupPlayersFaction.sqf` (executa + re-semeia custom), `fn_lobbyReadyButton.sqf` (trava SEA no START), `selectStart.sqf`.
+
+**Validado em teste (Gonza, Altis):**
+- Desembarque: barco vem até a praia, desacelera (decel piso 7 km/h) e ejeta em água rasa (gate <1m). No-collision unidade↔barco na saída. Cleanup do barco garantido (waypoint de chegada + backstop 300s).
+- Ponto de desembarque STEALTH: percorre a costa, pontua praias por isolamento dos clusters inimigos (raio ocupado 550m), pega a mais isolada com corredor viável. Corredor sempre perpendicular à praia.
+- Trava no START se SEA (explícito ou Random→SEA) com ponto custom inviável (cutText). Random pode dar SEA quando viável.
+
+**PENDENTE / atenção pro próximo Master:**
+1. **Remover os `diag_log` temporários** quando o tuning estiver 100%: `"DRO SEA eject-check ..."` (fn_boatInsertion, por barco/tick — spam no .rpt) e `"DRO SEA corridor: ..."` (fn_findSeaCorridor). Marcados `[DIAG - remove after tuning]`.
+2. **Botões de tuning:** `_occCap=550` (fn_findSeaCorridor, quão longe do inimigo); decel `limitSpeed (7 max _dist*0.5)` e gates de ejeção `_arrived/_wadeable/_stuckNear` (fn_boatInsertion).
+3. Precisão de inimigo: o stealth usa AOLocations (footprint), não posições reais dos inimigos (que spawnam depois). Suficiente na prática; precisão real exigiria mover o cálculo pra depois da geração de inimigos.
+4. `initPlayerLocal.sqf` aparece modificado no git status mas NÃO foi tocado nesta sessão — alteração pré-existente não commitada; investigar antes de incluir em commit.
