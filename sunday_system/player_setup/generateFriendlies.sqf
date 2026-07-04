@@ -106,7 +106,7 @@ if (_ambFriendlyChance > 0.75) then {
 		_centerDir = (getMarkerPos "mkrAOC") getDir (holdAO select 0);
 		_startPos = (holdAO select 0) getPos [900, _centerDir];
 		_spawnPos = [_startPos, 0, 1800, 1, 0, 0.7, 0, _blacklist, [[0,0,0], [0,0,0]]] call BIS_fnc_findSafePos;
-		if ([_spawnPos] call DRO_fnc_validPos) then {
+		if ([_spawnPos, "friendly"] call DRO_fnc_validPos) then {
 			diag_log format ["DRO: Ambient friendly spawn pos: %1", _spawnPos];
 			_style = _styles selectRandomWeighted _weights;
 			_thisSquad = nil;
@@ -344,7 +344,7 @@ if (_friendlyChance > 0.75) then {
 	} else {
 		// Create random position for this squad only
 		_spawnPos = [(getPos trgAOC), 1000, 1600, 1, 0, 0.7, 0, _blacklist, [[0,0,0], [0,0,0]]] call BIS_fnc_findSafePos;
-		if ([_spawnPos] call DRO_fnc_validPos) then {
+		if ([_spawnPos, "friendly"] call DRO_fnc_validPos) then {
 			_distance = 9999999;
 			{	
 				if (!([_spawnPos, (_x select 0)] call DRO_fnc_checkRouteWater)) then {
@@ -362,7 +362,7 @@ if (_friendlyChance > 0.75) then {
 		};
 	};
 
-	if ([_rendezvousPos] call DRO_fnc_validPos) then {
+	if ([_rendezvousPos, "friendly-rdv"] call DRO_fnc_validPos) then {
 		_thisCallsign = [callsigns] call DRO_fnc_selectRemove;
 		// Create friendly squad
 		_minAI = (round (4 * aiMultiplier) min 6);

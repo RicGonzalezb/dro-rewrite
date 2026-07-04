@@ -78,7 +78,7 @@ if (_artyChance > _supplyChance) then {
 			//diag_log format ["DRO: ARTY _centerDist: %1 , tries: %2",_centerDist,_j];
 
 			//_artyPos = [getPos trgAOC, _minPlacementDistance, _minPlacementDistance + 500, 5, 0, 0.25, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-			if ([_artyPos] call DRO_fnc_validPos) then {
+			if ([_artyPos, "support-arty"] call DRO_fnc_validPos) then {
 				_availableArty pushBack [_artyClass, _artyPos];
 			};
 		} forEach _artyList;

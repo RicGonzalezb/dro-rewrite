@@ -3,7 +3,7 @@ params ["_vehicle", "_insertGroup", "_pos", "_return", "_heliInsertType", "_star
 _startPos = getPos _vehicle;
 _safePos = if (_vehicle isKindOf "Helicopter") then {
 	_areaPos = [_pos,0,200,3,1,1,0,[],[[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-	if ([_areaPos] call DRO_fnc_validPos) then {
+	if ([_areaPos, "insert-group"] call DRO_fnc_validPos) then {
 		_areaPos
 	} else {
 		_pos
@@ -15,7 +15,7 @@ _safePos = if (_vehicle isKindOf "Helicopter") then {
 		_nearRoads select 0
 	} else {
 		_areaPos = [_pos,0,200,3,1,1,0,[],[[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-		if ([_areaPos] call DRO_fnc_validPos) then {
+		if ([_areaPos, "insert-group"] call DRO_fnc_validPos) then {
 			_areaPos
 		} else {
 			_pos

@@ -75,7 +75,7 @@ if (hostileCivsEnabled) then {
 		_spawnPos = [_IEDPos, 15, 70, 1, 0, 1, 0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;		
 	};
 	diag_log format ["DRO: IED triggerman spawnPos = %1", _spawnPos];
-	if ([_spawnPos] call DRO_fnc_validPos) then {	
+	if ([_spawnPos, "disarm-ied"] call DRO_fnc_validPos) then {	
 		_civType = selectRandom civClasses;
 		_group = createGroup civilian;
 		_triggerMan = _group createUnit [_civType, _spawnPos, [], 0, "NONE"];			
