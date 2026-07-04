@@ -86,8 +86,47 @@ if (count powJoinTasks > 0) then {
 				_return
 			}
 		] call BIS_fnc_randomPos;
-		
-		if (!isNil "_extractPos") then {		
+
+		// Guard: BIS_fnc_randomPos can return [0,0,0] or an off-map position when its
+		// constraints can't be met (>=800m from every AO location inside trgAOC). Validate and
+		// fall back to a clear on-land spot >=800m from the objectives so the extraction
+		// team never spawns outside the map borders nor in the middle of the AO.
+		private _fnc_validExtract = {
+			params ["_p"];
+			(_p isEqualType []) && {count _p >= 2} && {!(_p isEqualTo [0,0,0])} &&
+			{(_p select 0) > 50 && (_p select 0) < (worldSize - 50)} &&
+			{(_p select 1) > 50 && (_p select 1) < (worldSize - 50)} &&
+			{!(surfaceIsWater _p)}
+		};
+		if (!([_extractPos] call _fnc_validExtract)) then {
+			diag_log format ["DRO: extract team pos invalid (%1), searching a clear on-map spot >=800m out", _extractPos];
+			// Ring candidates >=800m from the AO centre in 8 directions; keep those on land, in
+			// bounds, and >=800m from EVERY AO location (clear of the objectives). Relax to just
+			// on-map if the map is too tight for full clearance; never place off-map.
+			private _clearOfAOs = {
+				params ["_p"];
+				private _ok = true;
+				{ if ((_p distance2D (_x select 0)) < 800) exitWith { _ok = false } } forEach AOLocations;
+				_ok
+			};
+			private _clear = [];
+			private _onMap = [];
+			{
+				private _deg = _x;
+				{
+					private _cand = centerPos getPos [_r, _deg];
+					if ([_cand] call _fnc_validExtract) then {
+						_onMap pushBack _cand;
+						if ([_cand] call _clearOfAOs) then { _clear pushBack _cand };
+					};
+				} forEach [900, 1150, 1400, 1700];
+			} forEach [0, 45, 90, 135, 180, 225, 270, 315];
+			_extractPos = if (count _clear > 0) then { selectRandom _clear } else {
+				if (count _onMap > 0) then { selectRandom _onMap } else { _extractPos }
+			};
+		};
+
+		if ([_extractPos] call _fnc_validExtract) then {		
 			_markerExtract = createMarker [(format ["mkrExtract%1", round(random 100000)]), _extractPos];						
 			_markerExtract setMarkerShape "ICON";		
 			_markerExtract setMarkerColor markerColorPlayers;

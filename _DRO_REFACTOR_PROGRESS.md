@@ -2892,3 +2892,54 @@ Extensão do orçamento de mecanizados: deixa de ser exclusivo do Combined Arms.
 Defaults de perfil revistos (`start.sqf`, `_mechDefault`): Sniper -> **None** (era Low; volta a "sem blindado" por padrão, mas o player pode ligar Low/Standard via param), Recon -> **Low** (era Standard), Combined -> **Standard** (inalterado). Current Settings(0) segue Recon = Low. Allowed sets e clamp inalterados. Escrita atômica; balanço delta 0; sem CR.
 
 **Current Settings no lobby:** confirmado que NÃO existe no lobby (`DRO_ParamPreset` = {1,2,3}, default 1). Nada a remover lá. Só existe na UI in-game (fn_switchLookup índice 0). Remoção da UI ficou PENDENTE de decisão do Gonza (risco: índices 1/2/3 hardcoded no código todo + preset 0 é o default do profile).
+
+### Mecanizados — controle "ENEMY ARMOR" na UI in-game (pre-gen) — 2026-07-04 (Master/Opus)
+Adicionado switch-button na aba SCENARIO do sundayDialog, logo abaixo de Enemy Force Size, com icone de tanque. Cicla None/Low/Standard/High (global `mechLevel` idx 0-3).
+
+**Arquivos:**
+- `dialogsMainMenu.hpp`: novo grupo `ArmorSwitchButton` idc 2075 (pic 2076 icon `iconTank_ca.paa`, title 2077 "ENEMY ARMOR", text 2078=idc+3, button 2079 action `['MAIN',2075]`), em y=27.5. Os 8 controles abaixo (Mines..Arsenal) empurrados +3.5 (Arsenal agora 55.5; aba 2000 e rolavel, sem overflow).
+- `fn_switchLookup.sqf`: case 2075 -> ["mechLevel", mechLevel, ["NONE","LOW","STANDARD","HIGH"]].
+- `loadProfile.sqf`: `mechLevel = getVariable ["DRO_mechLevel", 2]` + publicVariable (default Standard).
+- `populateStartupMenu.sqf`: `["MAIN", 2075, false] call switchButton` (init do texto).
+- `fn_missionPreset.sqf`: cada preset seta o default via switchButtonSet -> Recon=1(Low), Sniper=0(None), Combined=2(Standard).
+- `start.sqf`: resolucao reescrita. Prioridade: lobby param DRO_ParamMechLevel (se !=Default) > UI `mechLevel` > preset default. Depois clamp por preset. -> DRO_mechMult.
+
+**Notas:** o switch cicla os 4 valores sempre; escolha fora do permitido (Combined None/Low, Sniper High) e CLAMPADA no start (UI pode mostrar valor que o runtime corrige). Icone: se `iconTank_ca.paa` nao renderizar, trocar o path (sem crash). Verificacao: escrita atomica nos 6 arquivos; balanco {}()[] delta 0; sem CR; posicoes y conferidas.
+
+**Pendente (Gonza, SP):** abrir pre-gen, ver "ENEMY ARMOR" abaixo de Enemy Force Size com icone; trocar presets e ver o default mudar (Sniper None/Recon Low/Combined Standard); confirmar geracao. `git add -f sunday_system/dialogs/dialogsMainMenu.hpp functions/fn_switchLookup.sqf loadProfile.sqf sunday_system/dialogs/populateStartupMenu.sqf functions/fn_missionPreset.sqf start.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Mecanizados — ENEMY ARMOR esconde opcoes por modo — 2026-07-04 (Master/Opus)
+O switch de ENEMY ARMOR passa a ciclar apenas os niveis permitidos pelo game mode (opcoes proibidas somem):
+- Sniper: None / Low / Standard (esconde High).
+- Combined Arms: Standard / High (esconde None e Low).
+- Recon / Current Settings: todos os 4.
+
+**Como:** NOVA `functions/fn_switchMechLevel.sqf` (CfgFunctions core `switchMechLevel`) — funcao de ciclo propria que guarda o nivel ABSOLUTO em `mechLevel` (0-3) e avanca so dentro do subconjunto permitido do preset; com `[false]` faz refresh e clampa pra banda permitida (High sob Sniper -> Standard; None/Low sob Combined -> Standard). 
+- `dialogsMainMenu.hpp`: action do botao 2079 -> `[] call DRO_fnc_switchMechLevel` (era switchButton generico).
+- `populateStartupMenu.sqf`: init do texto via `[false] call DRO_fnc_switchMechLevel` (clampa no load).
+- `fn_missionPreset.sqf` (inalterado): ao trocar de preset ja seta o default via switchButtonSet (valor sempre dentro do permitido).
+- switchLookup 2075 mantido (usado pelo switchButtonSet p/ o texto). Clamp em start.sqf mantido como rede.
+
+Resolve o descompasso visual anterior (UI mostrava valor que o runtime clampava). Verificacao: escrita atomica; balanco {}()[] delta 0; sem CR.
+
+**Pendente (Gonza, SP):** abrir pre-gen, trocar presets e confirmar que sob Sniper nao aparece High, sob Combined nao aparece None/Low, e Recon mostra os 4. `git add -f functions/fn_switchMechLevel.sqf description.ext sunday_system/dialogs/dialogsMainMenu.hpp sunday_system/dialogs/populateStartupMenu.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+---
+
+## Bug — "Extraction Team" (POW) spawnando fora do mapa — 2026-07-04 (Master/Opus)
+
+**Sintoma (Gonza):** time de extracao terrestre (unidades + marker "Extraction Team") do resgate de refem as vezes nascia fora das bordas do mapa.
+
+**Processo mapeado:** `sunday_system/objectives/objGrouping.sqf` roda apos a geracao de objetivos. Para tarefas POW (`powJoinTasks`), se NAO ha helicoptero disponivel (`pHeliClasses` vazio), o ramo `else` (linha ~70) spawna um **time de extracao terrestre** (grupo playersSide 4-6, invulneravel/captive, marker "Extraction Team" tipo mil_pickup). Os POWs resgatados se juntam a esse grupo por proximidade (PFH por unidade).
+
+**Causa-raiz:** a posicao (`_extractPos`) vinha de `BIS_fnc_randomPos [[trgAOC], ["water","out"], cond>=800m de toda AOLocation]`. Quando as restricoes nao podem ser satisfeitas, `BIS_fnc_randomPos` retorna `[0,0,0]` (canto do mapa) ou posicao invalida. O guard existente `if (!isNil "_extractPos")` era INUTIL — randomPos nunca retorna nil, entao o spawn off-map passava direto.
+
+**Fix (`objGrouping.sqf`):** funcao local `_fnc_validExtract` valida a posicao (array, != [0,0,0], dentro das bordas 50..worldSize-50, nao-agua). Se invalida -> fallback `BIS_fnc_findSafePos [centerPos, 400, 900, 8, 0(land), 0.4, 0, [], centerPos]` (default = centerPos, sempre on-map). O guard do bloco de spawn trocado de `!isNil` para `[_extractPos] call _fnc_validExtract` — se ate o fallback falhar (improvavel, default=centerPos valido), o time simplesmente NAO spawna (melhor que off-map).
+
+**Nota (nao corrigido):** linhas ~71-75 tem codigo morto — um `forEach AOLocations` cuja saida (`_extractPos`) e imediatamente sobrescrita pelo randomPos. A "primeira escolha" (flat-pos-far index 5) nunca se aplica. Fora do escopo; o guard cobre o sintoma.
+
+**Verificacao:** escrita atomica; balanco {}()[] delta 0; sem CR; regiao relida. Diag `DRO: extract team pos invalid ...` quando o fallback dispara.
+
+**Pendente (Gonza):** so reproduzivel com POW + sem heli disponivel na facção. Se reincidir, colar o diag. `git add -f sunday_system/objectives/objGrouping.sqf _DRO_REFACTOR_PROGRESS.md`.
+### Extraction Team — fallback refinado (>=800m dos objetivos) — 2026-07-04 (Master/Opus)
+Ajuste do fix acima: o fallback antes usava findSafePos 400-900m do centro (podia cair no meio dos objetivos). Agora gera candidatos em anel (8 direcoes x [900,1150,1400,1700]m do centro), filtra por on-map + terra + >=800m de TODA AOLocation, e sorteia um (direcao aleatoria). Relaxa pra so-on-map se o mapa for apertado; nunca off-map. `git add -f sunday_system/objectives/objGrouping.sqf`.
