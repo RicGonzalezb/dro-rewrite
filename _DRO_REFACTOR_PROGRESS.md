@@ -588,7 +588,7 @@ Proteção para quando `_numHousesToFill > count _filteredHouses` (loop drena o 
 
 **Possíveis causas:** lógica de posicionamento em `hvt.sqf` ou na geração de posição do reactive task em `selectReactiveTask.sqf` (linhas que calculam `_sizeLarge = _sizeSmall * 1.5` — o multiplicador pode jogar a posição pra fora dos limites do terreno).
 
-**Status:** ⬜ PENDENTE — investigar em módulo futuro. Não é bug de refactor, é bug de gameplay preexistente.
+**Status:** ✅ RESOLVIDO (2026-07-04) — coberto pelos guards de posição/grupo em hvt.sqf (2026-05-31) e pelo fix dos guards de posição do selectReactiveTask (HVT/VEHICLE reativos) na Auditoria off-map de 2026-07-04. Entrada antiga; mantida por histórico.
 
 ---
 
