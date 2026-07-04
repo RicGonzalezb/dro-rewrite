@@ -61,6 +61,7 @@ _index = lbAdd [2106, "3"];
 ["MAIN", 2065, false] call DRO_fnc_switchButton;
 ["MAIN", 2085, false] call DRO_fnc_switchButton;
 ["MAIN", 2070, false] call DRO_fnc_switchButton;
+[false] call DRO_fnc_switchMechLevel;
 ["MAIN", 2080, false] call DRO_fnc_switchButton;
 ["MAIN", 2090, false] call DRO_fnc_switchButton;
 ["MAIN", 2400, false] call DRO_fnc_switchButton;

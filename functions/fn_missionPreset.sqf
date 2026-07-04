@@ -13,6 +13,7 @@ params ["_preset"];
 		case 1: {					
 			["MAIN", 2020, 0] call DRO_fnc_switchButtonSet;
 			sliderSetPosition [2041, 1*10];
+			["MAIN", 2075, 1] call DRO_fnc_switchButtonSet;
 			((findDisplay 52525) displayCtrl 2040) ctrlSetText "Enemy force size multiplier: x1.0";				
 			["MAIN", 2050, 0] call DRO_fnc_switchButtonSet;
 			["MAIN", 2060, 0] call DRO_fnc_switchButtonSet;
@@ -29,6 +30,7 @@ params ["_preset"];
 		case 2: {					
 			["MAIN", 2020, 0] call DRO_fnc_switchButtonSet;
 			sliderSetPosition [2041, 0.5*10];
+			["MAIN", 2075, 0] call DRO_fnc_switchButtonSet;
 			((findDisplay 52525) displayCtrl 2040) ctrlSetText "Enemy force size multiplier: x0.5";	
 			["MAIN", 2050, 0] call DRO_fnc_switchButtonSet;			
 			["MAIN", 2060, 0] call DRO_fnc_switchButtonSet;					
@@ -44,7 +46,8 @@ params ["_preset"];
 		};
 		case 3: {					
 			["MAIN", 2020, 0] call DRO_fnc_switchButtonSet;
-			sliderSetPosition [2041, 1*12.5];	
+			sliderSetPosition [2041, 1*12.5];
+			["MAIN", 2075, 2] call DRO_fnc_switchButtonSet;	
 			((findDisplay 52525) displayCtrl 2040) ctrlSetText "Enemy force size multiplier: x1.25";	
 			["MAIN", 2050, 0] call DRO_fnc_switchButtonSet;
 			["MAIN", 2060, 0] call DRO_fnc_switchButtonSet;

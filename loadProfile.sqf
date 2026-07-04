@@ -48,6 +48,8 @@ staminaDisabled = profileNamespace getVariable ["DRO_staminaDisabled", 0];
 publicVariable "staminaDisabled";
 missionPreset = profileNamespace getVariable ["DRO_missionPreset", 0];
 publicVariable "missionPreset";
+mechLevel = profileNamespace getVariable ["DRO_mechLevel", 2];
+publicVariable "mechLevel";
 insertType = profileNamespace getVariable ["DRO_insertType", 0];
 publicVariable "insertType";
 randomSupports = profileNamespace getVariable ["DRO_randomSupports", 0];

@@ -39,6 +39,11 @@ params ["_table", "_idc"];
 					_return pushBack stealthEnabled;
 					_return pushBack ["RANDOM", "ENABLED", "DISABLED"];
 				};
+				case 2075: {
+					_return pushBack "mechLevel";
+					_return pushBack mechLevel;
+					_return pushBack ["NONE", "LOW", "STANDARD", "HIGH"];
+				};
 				case 2080: {
 					_return pushBack "reviveDisabled";
 					_return pushBack reviveDisabled;

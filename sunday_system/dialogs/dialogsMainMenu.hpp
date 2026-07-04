@@ -421,9 +421,35 @@ class sundayDialog {
 					idc = 2043;					
 					y = "26.5 * pixelGridNoUIScale * pixelH";	
 				};				
+				class ArmorSwitchButton: RscControlsGroupNoScrollbars {
+					idc = 2075;
+					y = "27.5 * pixelGridNoUIScale * pixelH";
+					class Controls {
+						class SwitchPic: sundaySelButtonPic
+						{
+							idc = 2076;
+							text = "\A3\ui_f\data\map\vehicleicons\iconTank_ca.paa";
+						};
+						class SwitchTitle: sundaySelButtonTitle
+						{
+							idc = 2077;
+							text = "ENEMY ARMOR";
+						};
+						class SwitchText: sundaySelButtonSelect
+						{
+							idc = 2078;
+							text = "";
+						};
+						class SwitchButton: sundaySelButton {
+							idc = 2079;
+							action = "[] call DRO_fnc_switchMechLevel";
+							tooltip = "Enemy mechanized (APC/tank) density. Sniper caps at Standard; Combined Arms floors at Standard. None removes armour (Sniper/Recon only).";
+						};
+					};
+				};
 				class MinesSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 2050;
-					y = "27.5 * pixelGridNoUIScale * pixelH";
+					y = "31 * pixelGridNoUIScale * pixelH";
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			
@@ -449,7 +475,7 @@ class sundayDialog {
 				};
 				class CivsSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 2060;
-					y = "31 * pixelGridNoUIScale * pixelH";
+					y = "34.5 * pixelGridNoUIScale * pixelH";
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			
@@ -475,7 +501,7 @@ class sundayDialog {
 				};
 				class CivsAgentSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 2065;
-					y = "34.5 * pixelGridNoUIScale * pixelH";
+					y = "38 * pixelGridNoUIScale * pixelH";
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{
@@ -501,7 +527,7 @@ class sundayDialog {
 				};
 				class StealthSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 2070;
-					y = "38 * pixelGridNoUIScale * pixelH";					
+					y = "41.5 * pixelGridNoUIScale * pixelH";					
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			
@@ -527,7 +553,7 @@ class sundayDialog {
 				};
 				class ReviveSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 2080;
-					y = "41.5 * pixelGridNoUIScale * pixelH";
+					y = "45 * pixelGridNoUIScale * pixelH";
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			
@@ -553,7 +579,7 @@ class sundayDialog {
 				};
 				class StaminaSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 3040;
-					y = "45 * pixelGridNoUIScale * pixelH";
+					y = "48.5 * pixelGridNoUIScale * pixelH";
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			
@@ -579,7 +605,7 @@ class sundayDialog {
 				};
 				class DynSimSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 2400;
-					y = "48.5 * pixelGridNoUIScale * pixelH";
+					y = "52 * pixelGridNoUIScale * pixelH";
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			
@@ -605,7 +631,7 @@ class sundayDialog {
 				};
 				class ArsenalSwitchButton: RscControlsGroupNoScrollbars {
 					idc = 2085;
-					y = "52 * pixelGridNoUIScale * pixelH";
+					y = "55.5 * pixelGridNoUIScale * pixelH";
 					class Controls {
 						class SwitchPic: sundaySelButtonPic
 						{			

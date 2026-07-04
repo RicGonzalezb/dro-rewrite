@@ -783,36 +783,25 @@ _garrisionScriptHandle = [] execVM "sunday_system\generate_ao\findGarrisonBuildi
 waitUntil {scriptDone _garrisionScriptHandle};
 
 // --- Mechanized profile -> DRO_mechMult ---------------------------------------------
-// Cross-preset (2026-07-04): every game mode can field enemy armour, but the allowed
-// profiles + default depend on the preset. Lobby param DRO_ParamMechLevel overrides:
-//   0=Default(per preset) 1=None 2=Low 3=Standard 4=High. Choices outside a preset's
-//   allowed set are clamped. Level -> mult: None 0, Low 0.6, Standard 1.0, High 1.5.
-//   Sniper(2): None/Low/Standard (def None). Combined(3): Standard/High (def Standard).
-//   Recon(1) + Current Settings(0): all incl None (def Low).
-private _mechDefault = switch (missionPreset) do {
-	case 2: {"NONE"};      // Sniper
-	case 3: {"STANDARD"};  // Combined
-	default {"LOW"};       // Recon (1) + Current Settings (0)
+// Cross-preset: every game mode can field enemy armour. Source priority:
+//   lobby param DRO_ParamMechLevel (if != Default) > in-game UI control mechLevel > preset default.
+//   Level -> mult: None 0, Low 0.6, Standard 1.0, High 1.5. Then clamp per preset:
+//   Sniper(2) caps at Standard; Combined(3) floors at Standard; Recon(1)/Current(0) free.
+private _mechLvl = switch (missionPreset) do { case 2: {"NONE"}; case 3: {"STANDARD"}; default {"LOW"} };
+if (!isNil "mechLevel") then {
+	_mechLvl = ["NONE","LOW","STANDARD","HIGH"] select ((mechLevel max 0) min 3);
 };
-private _mechChosen = switch (["DRO_ParamMechLevel", 0] call BIS_fnc_getParamValue) do {
-	case 1: {"NONE"};
-	case 2: {"LOW"};
-	case 3: {"STANDARD"};
-	case 4: {"HIGH"};
-	default {_mechDefault};
+private _mechParam = ["DRO_ParamMechLevel", 0] call BIS_fnc_getParamValue;
+if (_mechParam > 0) then {
+	_mechLvl = ["","NONE","LOW","STANDARD","HIGH"] select (_mechParam min 4);
 };
 switch (missionPreset) do {
-	case 2: { if (_mechChosen == "HIGH") then { _mechChosen = "STANDARD" } };          // Sniper: no High
-	case 3: { if (_mechChosen in ["NONE","LOW"]) then { _mechChosen = "STANDARD" } };  // Combined: no None/Low
-	default {};                                                                         // Recon(1)/Current(0): all
+	case 2: { if (_mechLvl == "HIGH") then { _mechLvl = "STANDARD" } };
+	case 3: { if (_mechLvl in ["NONE","LOW"]) then { _mechLvl = "STANDARD" } };
+	default {};
 };
-DRO_mechMult = switch (_mechChosen) do {
-	case "NONE": {0};
-	case "LOW": {0.6};
-	case "HIGH": {1.5};
-	default {1};
-};
-diag_log format ["DRO: mech profile = %1 (mult %2), preset %3", _mechChosen, DRO_mechMult, missionPreset];
+DRO_mechMult = switch (_mechLvl) do { case "NONE": {0}; case "LOW": {0.6}; case "HIGH": {1.5}; default {1} };
+diag_log format ["DRO: mech profile = %1 (mult %2), preset %3", _mechLvl, DRO_mechMult, missionPreset];
 
 // --- Mechanized quota (Combined Arms) -----------------------------------------------
 // Enemy APC/tank allocation as a mission-wide budget instead of an independent per-AO
