@@ -95,7 +95,10 @@ waitUntil { sleep 0.5; (({!isNull objectParent _x} count _players) >= (count _pl
 	private _thisDrop = _dropPos getPos [abs _off, _bearing];
 	// Offset can push the target onto land or into a deep pocket; fall back to the validated base drop.
 	if (!(surfaceIsWater _thisDrop) || {(getTerrainHeightASL _thisDrop) < -4}) then { _thisDrop = +_dropPos; };
-	private _wpD = _bg addWaypoint [_thisDrop, 0];
+	// Aim the final waypoint onto the beach (past the drop) so the boat keeps coming all the way in;
+	// the strong approach decel makes it arrive slowly (~0.4 m) instead of ramming/beaching.
+	private _beachWp = _thisDrop getPos [35, _fwd];
+	private _wpD = _bg addWaypoint [_beachWp, 0];
 	_wpD setWaypointType "MOVE";
 	_wpD setWaypointSpeed "LIMITED";
 	_boat setVariable ["DRO_seaDrop", _thisDrop, true];
@@ -169,11 +172,8 @@ if (isNil "DRO_seaInsertPFH") then {
 				// [DIAG - remove after tuning] per-boat eject state each tick.
 				diag_log format ["DRO SEA eject-check boat=%1 dist=%2 depth=%3 spd=%4 stall=%5 arr=%6 wade=%7 stuck=%8", _boat, round _dist, (round (_depth*10))/10, round _spd, _stall, _arrived, _wadeable, _stuckNear];
 				// Decelerate on approach so the boat noses into the shallows instead of ramming/grounding.
-				if (_dist < 140) then { _boat limitSpeed (8 max (_dist * 0.25)); };
+				if (_dist < 100) then { _boat limitSpeed (1.5 max (_dist * 0.3)); };   // ramp to near-zero at the margin
 				if (_arrived || _wadeable || _stuckNear || {(time - _t0) > 180}) then {
-					// Guarantee a shallow disembark: if still in deeper water (stuck/timeout), nose the boat
-					// onto its shallow drop first so nobody is dropped in deep water.
-					if (_depth < -1.5) then { _boat setPosASL [_drop select 0, _drop select 1, 0.2]; };
 					{
 						if (_x != (driver _boat)) then {
 							_boat disableCollisionWith _x;                        // don't run units over on exit (boat side)

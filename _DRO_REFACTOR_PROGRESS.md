@@ -2734,3 +2734,24 @@ Gonza: ejeção ainda em água funda; pediu 1.5m + desabilitar colisão unidade<
 - **No-collision:** por unidade ejetada, `_boat disableCollisionWith _x` (lado servidor) + `[_x,_boat] remoteExec ["disableCollisionWith", _x]` (lado do dono da unidade) antes do GetOut.
 
 Trade-off: o `setPosASL` é um "pulo" do barco os últimos metros — só ocorre no caso travado/fundo (exatamente o sintoma). Casos normais permanecem naturais (decel + nose-in). Se o pulo incomodar, alternativa é aceitar espera maior sem teleporte. `git add -f functions/fn_boatInsertion.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Sea insert — barco encalha na praia (remove teleporte) — 2026-07-03 (Master/Opus)
+Gonza: barco parava longe da margem e o `setPosASL` fazia um teleporte feio. Causa do "parou longe": o waypoint final mirava o drop (última célula flutuável, que em praia íngreme fica 30-50m fora) e a IA parava ainda antes. Fix (fn_boatInsertion):
+- **Waypoint final na PRAIA:** `_beachWp = _thisDrop getPos [35, _fwd]` (35m além do drop, na direção da costa). O barco atravessa o raso e encalha na beira -> ejeção acontece em água rasa naturalmente. `DRO_seaDrop` continua = _thisDrop (referência de ejeção).
+- **Decel mais suave:** só nos últimos 60m, piso 15 km/h (era 140m/8 km/h) — mantém embalo pra encostar em vez de parar tímido.
+- **Teleporte removido** (`setPosASL`). Ejeção agora depende do barco de fato chegar raso (arrived/wadeable) ou travar (stall) — sem pulo.
+Trade-off: se um barco raro travar em obstáculo longe, ejeta ali (sem teleporte) — última instância. `git add -f functions/fn_boatInsertion.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Sea insert — barco PARA na margem (~1.5m), não encalha — 2026-07-03 (Master/Opus)
+Correção de intenção (Gonza): não quer encalhe. Quer o barco desacelerando a quase-zero NA margem (~1.5m), bots saem e vadeiam o resto; o 1.5m existe justamente pra o barco não ir até o fim.
+- **Drop refinado p/ ~1.5m** (fn_findSeaCorridor): antes o drop ia até a última célula flutuável (~0.4m, quase encalhe). Agora caminha pela normal até profundidade ~-1.5m (landward se fundo demais, seaward se raso demais) e para ali. É onde o barco encosta.
+- **Waypoint final = drop** (fn_boatInsertion): revertido o "waypoint na praia (35m)"; volta pro `_thisDrop` (~1.5m), LIMITED. Não beacha.
+- **Decel a quase-zero**: `if (_dist < 100) then { limitSpeed (1.5 max _dist*0.3) }` — rampa de ~30km/h (100m) até ~1.5km/h no drop. Barco chega parando na margem; ejeção via arrived/stall em ~1.5m.
+`git add -f functions/fn_findSeaCorridor.sqf functions/fn_boatInsertion.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Sea insert — waypoint na praia + decel forte (chega devagar em ~0.4m) — 2026-07-03 (Master/Opus)
+Ajuste de intenção (Gonza): manter waypoint na praia, só desacelerar bem pra NÃO encalhar; chegar a ~0.4m devagar é seguro e preferido. Revertidas as 2 mudanças anteriores de "parar em 1.5m":
+- Drop volta a ~0.4m (última célula flutuável) em fn_findSeaCorridor.
+- Waypoint final volta pra praia (`_thisDrop getPos [35, _fwd]`) em fn_boatInsertion.
+- Mantida a decel a quase-zero (`_dist<100 -> limitSpeed (1.5 max _dist*0.3)`): o barco vem até o fim mas chega devagar em ~0.4m e para suave. Eject via arrived/wadeable/stall. Sem teleporte, sem ramada.
+`git add -f functions/fn_findSeaCorridor.sqf functions/fn_boatInsertion.sqf _DRO_REFACTOR_PROGRESS.md`.

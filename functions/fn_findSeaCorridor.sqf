@@ -111,13 +111,13 @@ if (_foundDrop) then {
 	};
 	private _seaward = _landward + 180;
 
-	// 2. Advance the drop shoreward (toward nearest land) to the last floatable cell before the beach.
-	private _landDir = _landward;
+	// 2. Advance the drop shoreward to the last floatable cell before the beach (~0.4 m). The boat
+	//    aims just past this and the strong decel makes it arrive slowly, without ramming/beaching.
 	private _refined = +_dropPos;
 	private _rd = 5;
 	private _walk = true;
 	while {_walk && (_rd <= 150)} do {
-		private _cp = _dropPos getPos [_rd, _landDir];
+		private _cp = _dropPos getPos [_rd, _landward];
 		if (surfaceIsWater _cp) then {
 			if ((getTerrainHeightASL _cp) > -0.4) then {
 				_walk = false;
