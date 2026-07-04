@@ -13,7 +13,7 @@ switch (_selectedTask) do {
 	case "HVT": {
 		// Find start position
 		_hvtSpawnPos = [centerPos, _sizeSmall, _sizeLarge, 2, 0, 0, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-		if (_hvtSpawnPos isEqualTo [0,0,0]) exitWith {
+		if (!([_hvtSpawnPos] call DRO_fnc_validPos)) exitWith {
 			diag_log "DRO: Reactive HVT position not available";
 		};
 		// Get HVT unit
@@ -94,7 +94,7 @@ switch (_selectedTask) do {
 				_vehSpawnPos = [centerPos, (aoSize*2), (aoSize*3), 2, 0, 0, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;				
 			};		
 			
-			if (_vehSpawnPos isEqualTo [0,0,0]) exitWith {
+			if (!([_vehSpawnPos] call DRO_fnc_validPos)) exitWith {
 				diag_log "DRO: Reactive vehicle position not available";
 			};
 			

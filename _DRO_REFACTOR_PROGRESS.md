@@ -2943,3 +2943,27 @@ Resolve o descompasso visual anterior (UI mostrava valor que o runtime clampava)
 **Pendente (Gonza):** so reproduzivel com POW + sem heli disponivel na facção. Se reincidir, colar o diag. `git add -f sunday_system/objectives/objGrouping.sqf _DRO_REFACTOR_PROGRESS.md`.
 ### Extraction Team — fallback refinado (>=800m dos objetivos) — 2026-07-04 (Master/Opus)
 Ajuste do fix acima: o fallback antes usava findSafePos 400-900m do centro (podia cair no meio dos objetivos). Agora gera candidatos em anel (8 direcoes x [900,1150,1400,1700]m do centro), filtra por on-map + terra + >=800m de TODA AOLocation, e sorteia um (direcao aleatoria). Relaxa pra so-on-map se o mapa for apertado; nunca off-map. `git add -f sunday_system/objectives/objGrouping.sqf`.
+
+---
+
+## Auditoria off-map — spawns por findSafePos/randomPos invalidos (classe do bug HVT/Extraction) — 2026-07-04 (Master/Opus)
+
+Gonza pediu p/ varrer a mesma classe do off-map do HVT (ja corrigido em 05-31) e Extraction Team.
+
+**Achado sistemico (2 modos de falha):**
+1. `BIS_fnc_findSafePos` com default `[[0,0,0],[0,0,0]]` retorna esse array de **count 2** quando falha (nao acha posicao). ~31 chamadas usam esse default. Muitos guards checam so `isEqualTo [0,0,0]` (count 3) -> NAO pegam o retorno de count 2. (O fix do HVT ja usava `count >= 3` justamente por isso.)
+2. `findSafePos` SEM default retorna `[0,0,0]` na falha; alguns sites nao tem guard de posicao nenhum.
+
+**NOVO helper `functions/fn_validPos.sqf`** (CfgFunctions core `validPos`): `[_pos] call DRO_fnc_validPos` = true se posicao usavel (array >=3, != [0,0,0], dentro de 0..worldSize). Pega os DOIS modos de falha + off-map. Guard reutilizavel.
+
+**Corrigido agora (alto risco = spawn de inimigo LONGE do centro):**
+- `sunday_system/objectives/selectReactiveTask.sqf` (2 guards): reactive HVT (L16) e VEHICLE (L97, spawnava a aoSize*2..*3 = 2400-3600m). Os guards `isEqualTo [0,0,0]` estavam QUEBRADOS (default era [[0,0,0],[0,0,0]]) -> trocados por `!([pos] call DRO_fnc_validPos)`.
+- `sunday_system/reinforce.sqf` (4 casos INFANTRY/CARTRANSPORT/CAR/HELI): findSafePos 900-3000m do alvo, SEM default e SEM guard de posicao (so guard de grupo). Adicionado `DRO_fnc_validPos` na condicao de spawn (3 casos) + `exitWith` no HELI. Onda de reforco perto da borda do mapa nao spawna mais no canto.
+
+**Verificacao:** escrita atomica nos 4 arquivos; balanco {}()[] delta 0; sem CR; linhas conferidas.
+
+**PENDENTE (nao corrigido, menor risco — decidir se vale hardening dedicado):**
+- Guards frageis `isEqualTo [0,0,0]` sobre findSafePos-com-default-[[0,0,0],[0,0,0]] em: `generateAOLocation.sqf` (4x, pools do AO), `setupPlayersFaction.sqf` (insercao do player, tem cadeia de fallback), `generateFriendlies.sqf` (Combined-only), `insertGroup.sqf`, `addSupports.sqf`, `generateBunker.sqf`. Risco menor pq raio pequeno perto de posicao valida (findSafePos raramente falha). Follow-up limpo: trocar todos por `DRO_fnc_validPos` (helper ja existe).
+- `fn_resetAI.sqf`/`resetAIAction.sqf`: findSafePos perto do unit, default [[0,0,0],[0,0,0]], guard isEqualTo [0,0,0]. Baixo risco (raio 50m).
+
+`git add -f functions/fn_validPos.sqf description.ext sunday_system/objectives/selectReactiveTask.sqf sunday_system/reinforce.sqf _DRO_REFACTOR_PROGRESS.md`.

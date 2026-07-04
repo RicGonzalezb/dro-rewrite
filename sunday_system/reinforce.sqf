@@ -78,7 +78,7 @@ for "_i" from 1 to _numReinforcements do {
 				// Get position data			
 				_spawnPos = [_targetPos,900,1100,1,0,100,0] call BIS_fnc_findSafePos;
 				
-				if ((({(_spawnPos distance _x) < 600} count (units (grpNetId call BIS_fnc_groupFromNetId))) == 0)) then {
+				if (([_spawnPos] call DRO_fnc_validPos) && {(({(_spawnPos distance _x) < 600} count (units (grpNetId call BIS_fnc_groupFromNetId))) == 0)}) then {
 									
 					// Debug marker
 					if (_debug == 1) then {
@@ -116,7 +116,7 @@ for "_i" from 1 to _numReinforcements do {
 					_spawnPos = _initPos;
 				};
 				
-				if ((({(_spawnPos distance _x) < 600} count (units (grpNetId call BIS_fnc_groupFromNetId))) == 0)) then {				
+				if (([_spawnPos] call DRO_fnc_validPos) && {(({(_spawnPos distance _x) < 600} count (units (grpNetId call BIS_fnc_groupFromNetId))) == 0)}) then {				
 					// Debug marker
 					if (_debug == 1) then {
 						hint "REINFORCING";
@@ -160,7 +160,7 @@ for "_i" from 1 to _numReinforcements do {
 				} else {
 					_spawnPos = _initPos;
 				};
-				if ((({(_spawnPos distance _x) < 600} count (units (grpNetId call BIS_fnc_groupFromNetId))) == 0)) then {				
+				if (([_spawnPos] call DRO_fnc_validPos) && {(({(_spawnPos distance _x) < 600} count (units (grpNetId call BIS_fnc_groupFromNetId))) == 0)}) then {				
 					// Debug marker
 					if (_debug == 1) then {
 						hint "REINFORCING";
@@ -190,6 +190,7 @@ for "_i" from 1 to _numReinforcements do {
 			case "HELI": {
 				// Heli type
 				_spawnPos = [_targetPos,2000,3000,0,1,100,0] call BIS_fnc_findSafePos;
+				if (!([_spawnPos] call DRO_fnc_validPos)) exitWith {};
 				
 				_insertPos = selectRandom (((AOLocations select _AOIndex) select 2) select 4);			
 				

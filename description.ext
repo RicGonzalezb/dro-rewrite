@@ -159,6 +159,13 @@ class Params
 		texts[] = {"x0.5","x0.8","x1.0","x1.2","x1.5","x1.7"};
 		default = 10;
 	};
+	class DRO_ParamMechLevel
+	{
+		title = "Enemy Mechanized";
+		values[] = {0,1,2,3,4};
+		texts[] = {"Default (per game mode)","None","Low","Standard","High"};
+		default = 0;
+	};
 	class DRO_ParamMines
 	{
 		title = "Minefields";
@@ -599,6 +606,7 @@ class Params
                DRO_ParamExtendedAO    = 0;  // 0=Enabled 1=Disabled
                DRO_ParamAISkill       = 2;  // 0=Normal 1=Hard 2=Custom
                DRO_ParamEnemySize     = 10; // 5,8,10,12,15,17  (=x0.5 .. x1.7)
+               DRO_ParamMechLevel     = 0;  // 0=Default(per mode) 1=None 2=Low 3=Standard 4=High  (Sniper: no High; Combined: no None/Low)
                DRO_ParamMines         = 0;  // 0=Disabled 1=Enabled
                DRO_ParamCivilians     = 0;  // 0=Random 1=Enabled 2=Enabled&Hostile 3=Disabled
                DRO_ParamCivAgents     = 0;  // 0=Enabled 1=Disabled
@@ -1322,6 +1330,8 @@ class CfgFunctions
             class supplyBox {};
             class switchButton {};
             class switchButtonSet {};
+            class switchMechLevel {};
+            class validPos {};
             class switchButtonWeather {};
             class switchLookup {};
             class triggerAmbushSpawn {};
