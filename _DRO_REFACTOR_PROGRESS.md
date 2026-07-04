@@ -2768,3 +2768,11 @@ Gonza: o drop mirava a praia mais próxima do CENTRO -> caía no coração do en
 
 ### Sea insert — decel quase-zero causava parada precoce (fix) — 2026-07-03 (Master/Opus)
 Gonza (print): barco parou ~30-40m da beira, soltou em água funda. Causa: decel anterior a ~1.5 km/h fazia o barco estacionar antes do raso; e como o detector de stall usa `speed < 3 km/h`, o crawl da decel era lido como "travado" -> ejeção precoce em água funda. Fix: decel `if (_dist < 60) then { limitSpeed (7 max _dist*0.5) }` (piso 7 km/h > limiar de stall de 3), pra manter embalo até o drop raso e só então parar/ejetar. PENDENTE confirmar com diag `DRO SEA eject-check`: se ejetar já em depth ~-0.4/-1 -> resolvido; se ainda em ~-2 via stuck -> é a IA recusando o último trecho (aí só nudge suave ou aceitar vadeação). `git add -f functions/fn_boatInsertion.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Sea insert — stealth por isolamento (fix do perim=3734) — 2026-07-03 (Master/Opus)
+Diag revelou a causa: `perim=3734` — `_perim = max(dist(centro,loc)+size)` explodia com AO espalhado (6 locs, uma a ~2.5km), jogando a janela de busca `[perim,perim+500]` pro oceano aberto -> stealthCands=0 -> FALLBACK -> coração. Reescrita de `fn_findSeaCorridor` (decisões do Gonza: pontuação + raio menor):
+- Removida a janela radial do `_perim`. Agora **percorre a costa** (ângulos a cada 10°, marcha do centro até a 1a célula rasa que conecta ao mar = praia daquele rumo).
+- Cada praia recebe **score de isolamento** = min sobre AOLocations de `dist(praia,loc) - min(size,550)` (raio ocupado ~550m, mais perto de onde os inimigos ficam). `_beaches sort false` (mais isolada primeiro).
+- Candidatos = praias por isolamento desc; primeiro com corredor viável vence. Degrada suave (pior caso = praia menos isolada). `_near` (nearest ao origin) appendado por último = também o comportamento do ponto custom (_avoidPerimeter=false).
+- Diag atualizado: `coastCands`, `source=STEALTH/FALLBACK`. `_occCap=550` é o botão de tuning.
+`git add -f functions/fn_findSeaCorridor.sqf _DRO_REFACTOR_PROGRESS.md`.

@@ -149,41 +149,42 @@ private _fnc_buildFromDrop = {
 // Assemble candidate drops in priority order.
 private _candidates = [];
 
-// Primary (stealth): flanking beaches OUTSIDE the occupied footprint, random angle order, first valid wins.
+// Primary (stealth): walk the coastline, score each beach by isolation from the enemy clusters, and
+// try the most-isolated first. Degrades gracefully: worst case is the least-isolated beach, never a
+// hard fall to the AO heart. Only used when _avoidPerimeter (the default/centre-seeded corridor).
 if (_avoidPerimeter) then {
-	private _perim = 0;
-	{
-		private _pr = (_origin distance2D (_x select 0)) + (_x select 1);
-		if (_pr > _perim) then { _perim = _pr; };
-	} forEach _aoLocs;
-
-	private _angles = [];
-	for "_a" from 0 to 340 step 20 do { _angles pushBack _a; };
-	_angles = _angles call BIS_fnc_arrayShuffle;
-
-	{
-		private _ang = _x;
-		private _r = _perim;
-		private _hit = [];
-		while {(count _hit == 0) && (_r <= (_perim + 500))} do {
+	private _occCap = 550;   // per-location "occupied" radius (~where enemies actually sit; tunable)
+	private _beaches = [];
+	for "_ang" from 0 to 350 step 10 do {
+		private _r = 200;
+		private _beach = [];
+		while {(count _beach == 0) && (_r <= _maxScan)} do {
 			private _pp = _origin getPos [_r, _ang];
 			if (surfaceIsWater _pp) then {
 				private _depth = getTerrainHeightASL _pp;
 				if ((_depth < 0) && (_depth > -3) && {[_pp] call _fnc_waterReachesEdge}) then {
-					private _ok = true;
-					{
-						if ((_pp distance2D (_x select 0)) < ((_x select 1) + 150)) then { _ok = false; };
-					} forEach _aoLocs;
-					if (_ok) then { _hit = [_pp select 0, _pp select 1, 0]; };
+					_beach = [_pp select 0, _pp select 1, 0];
 				};
 			};
 			_r = _r + 50;
 		};
-		if (count _hit > 0) then { _candidates pushBack _hit; };
-	} forEach _angles;
+		if (count _beach > 0) then {
+			private _iso = 1e9;
+			{
+				private _occR = (_x select 1) min _occCap;
+				private _clear = (_beach distance2D (_x select 0)) - _occR;
+				if (_clear < _iso) then { _iso = _clear; };
+			} forEach _aoLocs;
+			_beaches pushBack [_iso, _beach];
+		};
+	};
+	_beaches sort false;   // most-isolated first (descending by score)
+	{ _candidates pushBack (_x select 1); } forEach _beaches;
 };
 
-// Fallback: nearest shallow sea to the origin (the original behaviour), always tried last.
+private _stealthCount = count _candidates;
+
+// Fallback: nearest shallow sea to the origin (also the custom-point behaviour), tried last.
 private _near = [];
 private _found = false;
 private _floods = 0;
@@ -211,14 +212,18 @@ if (count _near > 0) then { _candidates pushBack _near; };
 // Try candidates in order; the first that yields a viable corridor wins.
 private _out = [false, [], [], [], _origin];
 private _done = false;
+private _winIdx = -1;
 {
 	if (!_done) then {
 		private _b = [_x] call _fnc_buildFromDrop;
 		if (_b select 0) then {
 			_out = [true, _b select 1, _b select 2, _b select 3, _origin];
 			_done = true;
+			_winIdx = _forEachIndex;
 		};
 	};
 } forEach _candidates;
+
+diag_log format ["DRO SEA corridor: avoidPerim=%1 aoLocs=%2 coastCands=%3 total=%4 winIdx=%5 source=%6 viable=%7 drop=%8", _avoidPerimeter, count _aoLocs, _stealthCount, count _candidates, _winIdx, (if (_winIdx < 0) then {"NONE"} else {if (_winIdx < _stealthCount) then {"STEALTH"} else {"FALLBACK"}}), _out select 0, _out select 2];
 
 _out
