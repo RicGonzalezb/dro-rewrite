@@ -216,4 +216,3 @@ The mission is map-agnostic: it resolves locations from `nearestLocations` and f
 3. Faction availability follows loaded content — factions from mods or DLC you don't have loaded simply fall back to Random.
 
 Test on at least two maps after any generation change to confirm nothing regressed to map-specific assumptions.
-                                                                                                                                                                                                                             
