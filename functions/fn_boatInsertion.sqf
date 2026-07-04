@@ -166,8 +166,8 @@ if (isNil "DRO_seaInsertPFH") then {
 				if ((_spd < 3) && (_moved < 4)) then { _stall = _stall + 1; } else { _stall = 0; };
 				_boat setVariable ["DRO_seaStall", _stall];
 				private _pastSpawn = (_boat distance2D _spawnPos) > 120;
-				private _arrived   = (_dist < 50) && (_depth > -2);
-				private _wadeable  = (_depth > -1.5) && (_dist < 160);   // primary disembark: in <=1.5m water
+				private _arrived   = (_dist < 50) && (_depth > -1);
+				private _wadeable  = (_depth > -1) && (_dist < 160);   // primary disembark: in <=1m water
 				private _stuckNear = (_stall >= 4) && _pastSpawn;        // stuck (deep or shallow) -> forced, boat nosed onto drop below
 				// [DIAG - remove after tuning] per-boat eject state each tick.
 				diag_log format ["DRO SEA eject-check boat=%1 dist=%2 depth=%3 spd=%4 stall=%5 arr=%6 wade=%7 stuck=%8", _boat, round _dist, (round (_depth*10))/10, round _spd, _stall, _arrived, _wadeable, _stuckNear];
