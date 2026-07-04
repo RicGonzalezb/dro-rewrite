@@ -1,15 +1,14 @@
-// DRO_fnc_findSeaCorridor — finds a boat-insertion water corridor seeded from a reference point.
-// Param: _origin (position) — the landward seed (AO centre for the default corridor, or the
-//   custom insertion point the player set in Team Planning).
-// Returns: [_viable, _spawnPos, _dropPos, _corridor, _origin]
-//   _dropPos  — shallow, floatable shore cell nearest _origin that connects to the open sea.
-//   _spawnPos — offshore boat spawn with an all-water straight corridor to the drop.
-//   _corridor — array of waypoint positions spawn->drop.
-// Pure: does NOT publish globals; the caller commits. Map-agnostic. No exitWith inside loops.
-params [["_origin", [0,0,0]]];
+// DRO_fnc_findSeaCorridor - finds a boat-insertion water corridor seeded from a reference point.
+// Params:
+//   _origin (position)     - landward seed (AO centre for the default corridor, or the custom point).
+//   _avoidPerimeter (bool) - if true, prefer a flanking beach OUTSIDE the AO's occupied footprint
+//                            (stealth), falling back to the nearest-to-origin beach if none is viable.
+// Returns: [_viable, _spawnPos, _dropPos, _corridor, _origin]. Pure: publishes nothing. Map-agnostic.
+params [["_origin", [0,0,0]], ["_avoidPerimeter", false]];
 
-private _maxScan = missionNamespace getVariable ["DRO_seaDropMaxRadius", aoSize + 800];
+private _maxScan = missionNamespace getVariable ["DRO_seaDropMaxRadius", aoSize + 1000];
 private _maxDist = missionNamespace getVariable ["DRO_seaInsertMaxDist", 800];
+private _aoLocs  = missionNamespace getVariable ["AOLocations", []];
 
 private _fnc_lineIsWater = {
 	params ["_a", "_b", ["_step", 40]];
@@ -62,36 +61,10 @@ private _fnc_waterReachesEdge = {
 	_reached || (_cnt >= _cap)
 };
 
-// 1. Nearest shallow SEA cell to the seed (depth 0..-3m, connects to the map edge, not a lake).
-private _dropPos = [];
-private _foundDrop = false;
-private _floods = 0;
-private _maxFloods = 8;
-private _r = 200;
-while {(!_foundDrop) && (_r <= _maxScan) && (_floods < _maxFloods)} do {
-	private _deg = 0;
-	while {(!_foundDrop) && (_deg < 360) && (_floods < _maxFloods)} do {
-		private _pp = _origin getPos [_r, _deg];
-		if (surfaceIsWater _pp) then {
-			private _depth = getTerrainHeightASL _pp;
-			if ((_depth < 0) && (_depth > -3)) then {
-				_floods = _floods + 1;
-				if ([_pp] call _fnc_waterReachesEdge) then {
-					_dropPos = [_pp select 0, _pp select 1, 0];
-					_foundDrop = true;
-				};
-			};
-		};
-		_deg = _deg + 20;
-	};
-	_r = _r + 100;
-};
+// Build a full corridor result from a given drop candidate. Returns [_viable, _spawn, _drop, _corridor].
+private _fnc_buildFromDrop = {
+	params ["_dropPos"];
 
-private _viable = false;
-private _spawnPos = [];
-private _corridor = [];
-
-if (_foundDrop) then {
 	// Local shore normal at the drop: nearest-land direction is landward; seaward is opposite.
 	// True beach-perpendicular, independent of where the AO centre sits along the coast.
 	private _landward = [_dropPos, _origin] call BIS_fnc_dirTo;   // fallback: toward the AO centre
@@ -111,8 +84,7 @@ if (_foundDrop) then {
 	};
 	private _seaward = _landward + 180;
 
-	// 2. Advance the drop shoreward to the last floatable cell before the beach (~0.4 m). The boat
-	//    aims just past this and the strong decel makes it arrive slowly, without ramming/beaching.
+	// Advance the drop shoreward to the last floatable cell before the beach (~0.4 m).
 	private _refined = +_dropPos;
 	private _rd = 5;
 	private _walk = true;
@@ -131,10 +103,8 @@ if (_foundDrop) then {
 	};
 	_dropPos = _refined;
 
-	// 3. Reverse path: offshore spawn within maxDist with an all-water corridor to the drop.
-	// Prefer lanes closer to the shore-perpendicular: score = clear reach minus an angle penalty,
-	// so an oblique lane only wins if it has substantially more open water than the perpendicular.
-	private _anglePenalty = 8;   // metres of reach penalised per degree off perpendicular (tunable)
+	// Reverse path: offshore spawn along the seaward normal, scored to prefer the perpendicular.
+	private _anglePenalty = 8;
 	private _bestScore = -1e9;
 	private _bestSpawn = [];
 	{
@@ -160,8 +130,10 @@ if (_foundDrop) then {
 		};
 	} forEach [-40, -20, -15, -10, -5, 0, 5, 10, 15, 20, 40];
 
-	if (count _bestSpawn > 0) then {   // set only when a lane >=300m existed
-		_spawnPos = [_bestSpawn select 0, _bestSpawn select 1, 0];
+	private _res = [false, [], _dropPos, []];
+	if (count _bestSpawn > 0) then {
+		private _spawnPos = [_bestSpawn select 0, _bestSpawn select 1, 0];
+		private _corridor = [];
 		private _cdir = [_spawnPos, _dropPos] call BIS_fnc_dirTo;
 		private _ctot = _spawnPos distance2D _dropPos;
 		private _steps = 3;
@@ -169,8 +141,84 @@ if (_foundDrop) then {
 			private _cp = _spawnPos getPos [(_ctot * _i / _steps), _cdir];
 			_corridor pushBack [_cp select 0, _cp select 1, 0];
 		};
-		_viable = true;
+		_res = [true, _spawnPos, _dropPos, _corridor];
 	};
+	_res
 };
 
-[_viable, _spawnPos, _dropPos, _corridor, _origin]
+// Assemble candidate drops in priority order.
+private _candidates = [];
+
+// Primary (stealth): flanking beaches OUTSIDE the occupied footprint, random angle order, first valid wins.
+if (_avoidPerimeter) then {
+	private _perim = 0;
+	{
+		private _pr = (_origin distance2D (_x select 0)) + (_x select 1);
+		if (_pr > _perim) then { _perim = _pr; };
+	} forEach _aoLocs;
+
+	private _angles = [];
+	for "_a" from 0 to 340 step 20 do { _angles pushBack _a; };
+	_angles = _angles call BIS_fnc_arrayShuffle;
+
+	{
+		private _ang = _x;
+		private _r = _perim;
+		private _hit = [];
+		while {(count _hit == 0) && (_r <= (_perim + 500))} do {
+			private _pp = _origin getPos [_r, _ang];
+			if (surfaceIsWater _pp) then {
+				private _depth = getTerrainHeightASL _pp;
+				if ((_depth < 0) && (_depth > -3) && {[_pp] call _fnc_waterReachesEdge}) then {
+					private _ok = true;
+					{
+						if ((_pp distance2D (_x select 0)) < ((_x select 1) + 150)) then { _ok = false; };
+					} forEach _aoLocs;
+					if (_ok) then { _hit = [_pp select 0, _pp select 1, 0]; };
+				};
+			};
+			_r = _r + 50;
+		};
+		if (count _hit > 0) then { _candidates pushBack _hit; };
+	} forEach _angles;
+};
+
+// Fallback: nearest shallow sea to the origin (the original behaviour), always tried last.
+private _near = [];
+private _found = false;
+private _floods = 0;
+private _r0 = 200;
+while {(!_found) && (_r0 <= _maxScan) && (_floods < 8)} do {
+	private _deg = 0;
+	while {(!_found) && (_deg < 360) && (_floods < 8)} do {
+		private _pp = _origin getPos [_r0, _deg];
+		if (surfaceIsWater _pp) then {
+			private _depth = getTerrainHeightASL _pp;
+			if ((_depth < 0) && (_depth > -3)) then {
+				_floods = _floods + 1;
+				if ([_pp] call _fnc_waterReachesEdge) then {
+					_near = [_pp select 0, _pp select 1, 0];
+					_found = true;
+				};
+			};
+		};
+		_deg = _deg + 20;
+	};
+	_r0 = _r0 + 100;
+};
+if (count _near > 0) then { _candidates pushBack _near; };
+
+// Try candidates in order; the first that yields a viable corridor wins.
+private _out = [false, [], [], [], _origin];
+private _done = false;
+{
+	if (!_done) then {
+		private _b = [_x] call _fnc_buildFromDrop;
+		if (_b select 0) then {
+			_out = [true, _b select 1, _b select 2, _b select 3, _origin];
+			_done = true;
+		};
+	};
+} forEach _candidates;
+
+_out

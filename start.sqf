@@ -614,14 +614,14 @@ if (count allObjectives < _numObjs) then {
 // No exitWith inside loops (SQF footgun) — flags gate early termination.
 // ============================================================
 DRO_seaInsertMaxDist = 800;
-DRO_seaDropMaxRadius = aoSize + 800;   // max distance drop point may be from the seed point (tunable)
+DRO_seaDropMaxRadius = aoSize + 1000;   // fallback (nearest-shore) cap from the seed point (tunable)
 publicVariable "DRO_seaInsertMaxDist";
 publicVariable "DRO_seaDropMaxRadius";
 
 // Default corridor seeded from the AO centre at generation (lets the lobby gate the SEA option).
 // A custom insertion point, if set in Team Planning, re-seeds the corridor at insertion time
 // (setupPlayersFaction). Finder = DRO_fnc_findSeaCorridor (pure; returns, publishes nothing).
-private _seaRes = [centerPos] call DRO_fnc_findSeaCorridor;
+private _seaRes = [centerPos, true] call DRO_fnc_findSeaCorridor;   // true = prefer a flanking beach outside the AO perimeter
 DRO_seaInsertViable = _seaRes select 0;
 DRO_seaSpawnPos     = _seaRes select 1;
 DRO_seaDropPos      = _seaRes select 2;

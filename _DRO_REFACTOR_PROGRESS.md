@@ -2755,3 +2755,13 @@ Ajuste de intenção (Gonza): manter waypoint na praia, só desacelerar bem pra 
 - Waypoint final volta pra praia (`_thisDrop getPos [35, _fwd]`) em fn_boatInsertion.
 - Mantida a decel a quase-zero (`_dist<100 -> limitSpeed (1.5 max _dist*0.3)`): o barco vem até o fim mas chega devagar em ~0.4m e para suave. Eject via arrived/wadeable/stall. Sem teleporte, sem ramada.
 `git add -f functions/fn_findSeaCorridor.sqf functions/fn_boatInsertion.sqf _DRO_REFACTOR_PROGRESS.md`.
+
+### Sea insert — desembarque stealth fora do perímetro do AO — 2026-07-03 (Master/Opus)
+Gonza: o drop mirava a praia mais próxima do CENTRO -> caía no coração do enxame inimigo. Quer mirar fora do perímetro ocupado (stealth). Reescrita de `DRO_fnc_findSeaCorridor`:
+- Novo param `_avoidPerimeter` (bool). start.sqf chama `[centerPos, true]`; custom (`[customPos]`) fica false = respeita o ponto do jogador.
+- **Perímetro** `_perim` = max sobre AOLocations de `dist(centro,loc)+tamanho(loc)`.
+- **Busca primária (stealth):** ângulos em ordem ALEATÓRIA (BIS_fnc_arrayShuffle); por ângulo varre de `_perim` até `_perim+500` procurando célula rasa que conecta ao mar E fora do raio de toda AOLocation (+150m). Coleta candidatos; **primeiro que tiver corredor viável vence** (decisão: qualquer válido, primeiro sorteado).
+- **Fallback:** praia mais próxima do centro (comportamento original), sempre tentada por último. Cap `DRO_seaDropMaxRadius` subiu `aoSize+800 -> aoSize+1000`.
+- Corredor sempre perpendicular à praia escolhida (normal local), nunca ao AO.
+- Corridor-build extraído p/ inner `_fnc_buildFromDrop` (reusado por cada candidato). Sem exitWith em loop (flag `_done`).
+`git add -f functions/fn_findSeaCorridor.sqf start.sqf _DRO_REFACTOR_PROGRESS.md`.
