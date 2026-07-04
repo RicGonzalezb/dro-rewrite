@@ -2813,3 +2813,30 @@ Sessão de onboarding do novo Master. Gonza confirmou tuning do Sea insert valid
 - **AVISO git:** um comando de leitura do Master (`git status --porcelain <path>`) criou um `.git/index.lock` órfão (08:51) que o sandbox NÃO consegue remover (`Operation not permitted`). **Gonza: apagar `.git/index.lock` na máquina antes do próximo commit.** Lição p/ Masters: usar sempre `git --no-optional-locks` e evitar comandos git que atualizam o index.
 
 `git add -f functions/fn_boatInsertion.sqf functions/fn_findSeaCorridor.sqf _DRO_REFACTOR_PROGRESS.md` (após remover o index.lock).
+
+---
+
+## Objetivos — variety guard (prefer-unused) no seletor — 2026-07-04 (Master/Opus)
+
+**Sintoma (Gonza):** selecionando 3 tipos de objetivo diferentes + quantidade 3, os 3 saíam do mesmo tipo.
+
+**Causa-raiz (3 fatores somados):**
+1. `objSelect.sqf` (= `DRO_fnc_selectObjective`) é chamado 1x por objetivo (`start.sqf` loop ~588), **sem memória** entre chamadas — `selectRandom` com reposição sobre o pool preferido.
+2. Colapso geográfico: `_AOPreferredStyles select _AOIndex` só contém os tipos que cabem naquele AO; se o AO só comporta 1 dos tipos escolhidos, todo objetivo lá vira aquele tipo (HVT é o mais universal → domina).
+3. Fallback determinístico (`objSelect:223-227` pegava o **primeiro** AO com preferido, não aleatório) + objetivo #1 sempre no AO 0.
+
+**Fix (opção "prefer-unused com memória", escolhida pelo Gonza):**
+- **`start.sqf`** (antes do loop de objetivos, após `reconPatrolUnused`): `DRO_objTypesUsed = [];` — reset do estado por geração.
+- **`objSelect.sqf`** (antes do bloco de seleção existente): novo *variety guard*. Monta lista de candidatos preferidos `[tipo, aoIndex, baseStyle]` varrendo **todos os AOs**; filtra os tipos ainda não usados (`DRO_objTypesUsed`); se sobra ≥1, escolhe (favorecendo o AO pedido, senão qualquer), grava o tipo em `DRO_objTypesUsed`. Vira amostragem **sem reposição** sobre os tipos escolhidos pelo jogador.
+- O bloco de seleção original foi **envolvido em `if (count _select == 0)`** → só roda como fallback (quando o guard não achou tipo não-usado, i.e. todos já usados uma vez → repetição liberada). Comportamento vanilla preservado quando `preferredObjectives` vazio ou `_ignorePrefs`.
+- **DESTROY sub-tipo:** WRECK/CACHE/MORTAR colapsam em "DESTROY" no pool. O guard rastreia o sub-tipo real e força `_destroySelect = _forcedDestroy` no case DESTROY, pra WRECK e CACHE contarem como tipos distintos.
+
+**Garantia:** tipos distintos = `min(quantidade, tipos preferidos que o mapa realmente comporta)`. Se a geografia só suporta 2 dos 3 tipos, sai 2 distintos + 1 repetido (limite duro da geografia, não contornável).
+
+**Nota sobre retries:** `selectObjective` é rechamado por vários scripts de objetivo em falha de posicionamento (hvt/pow/vehicle/heli/etc.). O guard marca o tipo como usado no momento da SELEÇÃO. Trade-off aceito: um tipo que falha o posicionamento não é retentado (fica marcado usado) — na prática a falha significa que o tipo não cabe mesmo. Contagem de objetivos preservada (cada slot + retries produz exatamente 1 objetivo).
+
+**Verificação:** escrita atômica nos 2 arquivos; balanço `{}()[]` delta 0; sem CR; caudas intactas; regiões relidas. `objSelect.sqf` 396 linhas.
+
+**Diag temporário:** `diag_log "DRO: variety guard -> ..."` (1x por objetivo, baixa frequência) — útil pro Gonza confirmar no .rpt. Remover depois se quiser.
+
+**Pendente (Gonza, SP):** selecionar 3 tipos + qtd 3, confirmar variedade; olhar `.rpt` por "variety guard ->". Testar também qtd > nº de tipos (deve ciclar e repetir só após esgotar). `git add -f sunday_system/objectives/objSelect.sqf start.sqf _DRO_REFACTOR_PROGRESS.md`.

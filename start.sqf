@@ -585,6 +585,9 @@ powJoinTasks = [];
 // --- POW class selection ---
 call DRO_fnc_chooseObjectivesPOWClass;
 reconPatrolUnused = true;
+// Variety guard state: preferred objective types already placed this generation.
+// objSelect prefers not-yet-used types so a multi-type selection spreads out.
+DRO_objTypesUsed = [];
 for "_i" from 1 to (_numObjs) do {
 	[((findDisplay 888888) displayCtrl 8889), (format ["GENERATING OBJECTIVE %1", _i])] remoteExecCall ["ctrlSetText", 0];
 	if (_i == 1) then {		

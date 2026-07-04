@@ -215,6 +215,40 @@ diag_log format ["DRO: _AOStyles = %1", _AOStyles];
 diag_log format ["DRO: _AOPreferredStyles = %1", _AOPreferredStyles];
 
 _select = [];
+private _forcedDestroy = "";
+
+// --- Variety guard (prefer-unused) -------------------------------------------------
+// Turn the stateless per-objective selectRandom into sampling WITHOUT replacement over
+// the player's selected objective types. DRO_objTypesUsed is reset in start.sqf before
+// the objective loop; each pick records its preferred type so the next objective favours
+// a type not yet placed, scanning every AO for somewhere it fits. Once all placeable
+// preferred types are used once, we fall back to the original logic (repeats allowed).
+if (isNil "DRO_objTypesUsed") then { DRO_objTypesUsed = [] };
+if (!_ignorePrefs && {count preferredObjectives > 0}) then {
+	private _cands = [];
+	{
+		private _ao = _forEachIndex;
+		{
+			if (_x isEqualTo "DESTROY") then {
+				{ _cands pushBack [_x, _ao, "DESTROY"] } forEach (_AOPreferredDestroyStyles select _ao);
+			} else {
+				_cands pushBack [_x, _ao, _x];
+			};
+		} forEach (_AOPreferredStyles select _ao);
+	} forEach _AOPreferredStyles;
+
+	private _unused = _cands select { !((_x select 0) in DRO_objTypesUsed) };
+	if (count _unused > 0) then {
+		private _here = _unused select { (_x select 1) == _AOIndex };
+		private _pick = if (count _here > 0) then { selectRandom _here } else { selectRandom _unused };
+		_select = [(_pick select 1), (_pick select 2)];
+		if ((_pick select 2) isEqualTo "DESTROY") then { _forcedDestroy = (_pick select 0) };
+		DRO_objTypesUsed pushBackUnique (_pick select 0);
+		diag_log format ["DRO: variety guard -> %1 at AO %2 (used=%3)", (_pick select 0), (_pick select 1), DRO_objTypesUsed];
+	};
+};
+
+if (count _select == 0) then {
 // Check for preferred styles within the requested AO
 if (count (_AOPreferredStyles select _AOIndex) > 0) then {
 	_select = [_AOIndex, selectRandom (_AOPreferredStyles select _AOIndex)];
@@ -239,6 +273,7 @@ if (count (_AOPreferredStyles select _AOIndex) > 0) then {
 		};	
 	};
 };
+};
 
 // Failsafe
 if (count _select == 0) then {
@@ -261,10 +296,14 @@ switch (_select select 1) do {
 		};				
 	};
 	case "DESTROY": {
-		_destroySelect = if (count (_AOPreferredDestroyStyles select (_select select 0)) > 0) then {
-			selectRandom (_AOPreferredDestroyStyles select (_select select 0))
+		_destroySelect = if (_forcedDestroy != "") then {
+			_forcedDestroy
 		} else {
-			selectRandom (_AODestroyStyles select (_select select 0))
+			if (count (_AOPreferredDestroyStyles select (_select select 0)) > 0) then {
+				selectRandom (_AOPreferredDestroyStyles select (_select select 0))
+			} else {
+				selectRandom (_AODestroyStyles select (_select select 0))
+			};
 		};
 		switch (_destroySelect) do {
 			case "MORTAR": {
