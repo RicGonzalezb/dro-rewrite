@@ -20,7 +20,7 @@ Every playthrough generates a fresh Area of Operations, enemy layout, objectives
 - **ACE3** — when present, the mission integrates with ACE interaction and arsenal.
 - **LAMBS Danger** — improves enemy reactions, reinforcement, and radio behavior.
 
-The scenario is **map-agnostic**: it resolves locations and factions from the running game at runtime rather than hardcoding a specific terrain, so it can be ported to other maps by copying the mission folder onto a different world (see the architecture doc). Faction options that belong to content you don't have loaded simply fall back to Random.
+The scenario is **map-agnostic**: it resolves locations and factions from the running game at runtime rather than hardcoding a specific terrain, so it can be ported to other maps by copying the mission folder onto a different world (see the architecture doc) as also all objects present on Eden Editor. Faction options that belong to content you don't have loaded simply fall back to Random.
 
 ---
 
