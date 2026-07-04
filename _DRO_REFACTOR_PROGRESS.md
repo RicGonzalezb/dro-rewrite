@@ -2967,3 +2967,13 @@ Gonza pediu p/ varrer a mesma classe do off-map do HVT (ja corrigido em 05-31) e
 - `fn_resetAI.sqf`/`resetAIAction.sqf`: findSafePos perto do unit, default [[0,0,0],[0,0,0]], guard isEqualTo [0,0,0]. Baixo risco (raio 50m).
 
 `git add -f functions/fn_validPos.sqf description.ext sunday_system/objectives/selectReactiveTask.sqf sunday_system/reinforce.sqf _DRO_REFACTOR_PROGRESS.md`.
+### Off-map audit — hardening dos pendentes (guards frageis -> DRO_fnc_validPos) — 2026-07-04 (Master/Opus)
+Convertidos 23 guards frageis restantes (todos pareavam com default findSafePos [[0,0,0],[0,0,0]] = falha count-2, que o `isEqualTo [0,0,0]` nao pegava) para `DRO_fnc_validPos`, respeitando a direcao de cada condicao (invalido->fallback vs valido->usa):
+- `generate_ao/generateAOLocation.sqf` (4 — pools de posicao do AO), `generate_enemies/generateBunker.sqf` (1), `orders/insertGroup.sqf` (2), `player_setup/addSupports.sqf` (1), `functions/fn_resetAI.sqf` (2), `player_setup/resetAIAction.sqf` (2), `player_setup/generateFriendlies.sqf` (3 findSafePos; os randomPos/wp ficaram como estavam = count-3 correto), `player_setup/setupPlayersFaction.sqf` (6 — insercao/resupply do player).
+- Achados na varredura pos-fix e corrigidos tambem: `objectives/pow.sqf` L25 (spawn do REFEM, default count-2, guard quebrado) e `objectives_neutral/disarmIED.sqf` L78 (o `count _spawnPos > 0` tambem nao pega count-2).
+
+Total geral da auditoria off-map: **29 guards** em 12 arquivos agora usam `DRO_fnc_validPos` (ou equivalente robusto). Guards remanescentes de `isEqualTo [0,0,0]` sao legitimos (findEmptyPosition->[], findSafePos sem default->[0,0,0] count-3, randomPos->[0,0,0], ou comentados).
+
+Verificacao: escrita atomica; balanco {}()[] delta 0 em todos; sem CR; counts assertados por substituicao.
+
+`git add -f sunday_system/generate_ao/generateAOLocation.sqf sunday_system/generate_enemies/generateBunker.sqf sunday_system/orders/insertGroup.sqf sunday_system/player_setup/addSupports.sqf functions/fn_resetAI.sqf sunday_system/player_setup/resetAIAction.sqf sunday_system/player_setup/generateFriendlies.sqf sunday_system/player_setup/setupPlayersFaction.sqf sunday_system/objectives/pow.sqf sunday_system/objectives_neutral/disarmIED.sqf _DRO_REFACTOR_PROGRESS.md`

@@ -75,7 +75,7 @@ if (_resupplyValid) then {
 		[_center, 0, 500, 2, 0, 0.4, 0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos
 	};
 	if (!isNil "_resupplyPos") then {
-		if (_resupplyPos isEqualTo [0,0,0]) then {
+		if (!([_resupplyPos] call DRO_fnc_validPos)) then {
 			_resupplyValid = false;
 		};
 	} else {
@@ -252,7 +252,7 @@ switch (insertType) do {
 			if (count _randomStartingLocation == 0) then {
 				_randomStartingLocation = [_center, (aoSize+500), (aoSize+1500), 8, 0, 0.25, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
 			};
-			if (_randomStartingLocation isEqualTo [0,0,0]) then {
+			if (!([_randomStartingLocation] call DRO_fnc_validPos)) then {
 				_randomStartingLocation = [_center, (aoSize+500), (aoSize+3000), 2, 0, 0.6, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
 			};			
 			// Keep the whole FOB FOOTPRINT off roads — sample centre + rings out to ~45m (isOnRoad).
@@ -274,7 +274,7 @@ switch (insertType) do {
 			if (_forceSeaStart == 1) then {
 				_groundStylesAvailable = ["SEA"];
 			} else {
-				if (!(_randomStartingLocation isEqualTo [0,0,0])) then {
+				if ([_randomStartingLocation] call DRO_fnc_validPos) then {
 					_groundStylesAvailable pushBack "FOB";
 				};
 			};
@@ -525,7 +525,7 @@ switch (insertType) do {
 						
 						for "_i" from 0 to ([2, 4] call BIS_fnc_randomInt) do {
 							_thisPos = [_randomStartingLocation, 10, 18, 1, 0, 1, 0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-							if !(_thisPos isEqualTo [0,0,0]) then {
+							if ([_thisPos] call DRO_fnc_validPos) then {
 								//_ambGuard = _ambGrp createUnit [(selectRandom pInfClasses), _thisPos, [], 0, "NONE"];
 								_ambGuard = (units (([_thisPos, playersSide, pInfClassesForWeights, pInfClassWeights, [1, 1]] call dro_spawnGroupWeighted)) select 0);
 								[_ambGuard, (selectRandom ["GUARD", "STAND1", "STAND2", "STAND_U1", "STAND_U2", "STAND_U3"]), (selectRandom ["ASIS", "MEDIUM"])] remoteExec ["BIS_fnc_ambientAnim", 0, true];
@@ -719,7 +719,7 @@ switch (insertType) do {
 		// If no insert position selected then generate a random one
 		if (count _randomStartingLocation == 0) then {
 			_randomStartingLocation = [_center,(aoSize/1.8),(aoSize/1.6),0,1,1,0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-			if (_randomStartingLocation isEqualTo [0,0,0]) then {
+			if (!([_randomStartingLocation] call DRO_fnc_validPos)) then {
 				_randomStartingLocation = [_center,(aoSize/1.8),(aoSize/1.6),0,0,1,0] call BIS_fnc_findSafePos;
 			};
 		};
@@ -789,7 +789,7 @@ switch (insertType) do {
 		// If no insert position selected then generate a random one
 		if (count _randomStartingLocation == 0) then {
 			_randomStartingLocation = [_center,(aoSize-150),(aoSize+500),0,0,0.25,0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-			if (_randomStartingLocation isEqualTo [0,0,0]) then {
+			if (!([_randomStartingLocation] call DRO_fnc_validPos)) then {
 				_randomStartingLocation = [_center,aoSize,(aoSize+1500),0,0,1,0] call BIS_fnc_findSafePos;
 			};			
 		};				

@@ -61,7 +61,7 @@ _AO_groundPosClose = [];
 if ("GROUNDNEAR" in _types) then {		
 	for "_i" from 1 to round(_size*0.05) do {	
 		_thisPos = [_center, 0, (_size/4), 2, 0, 0.4, 0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-		if !(_thisPos isEqualTo [0,0,0]) then {
+		if ([_thisPos] call DRO_fnc_validPos) then {
 			_AO_groundPosClose pushBack _thisPos;	
 		};
 	};	
@@ -70,7 +70,7 @@ _AO_groundPosFar = [];
 if ("GROUNDFAR" in _types) then {		
 	for "_i" from 1 to round(_size*0.04) do {
 		_thisPos = [_center, (_size/2.8), (_size/2.1), 2, 0, 0.4, 0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;			
-		if !(_thisPos isEqualTo [0,0,0]) then {
+		if ([_thisPos] call DRO_fnc_validPos) then {
 			_AO_groundPosFar pushBack _thisPos;
 		};
 	};	
@@ -101,7 +101,7 @@ if ("FLATNEAR" in _types) then {
 	if (count _AO_flatPositions <= 5) then {		
 		for "_i" from 1 to round(_size*0.05) do {			
 			_flatPos = [_center, 0, (_size/4), 7, 0, 0.25, 0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-			if !(_flatPos isEqualTo [0,0,0]) then {
+			if ([_flatPos] call DRO_fnc_validPos) then {
 				if (count (_flatPos nearRoads 20) == 0) then {  
 					if (count _AO_flatPositions > 0) then {			
 						_save = true;
@@ -159,7 +159,7 @@ if ("FLATFAR" in _types) then {
 	if (count _AO_flatPositionsFar <= 5) then {		
 		for "_i" from 1 to round(_size*0.05) do {	
 			_flatPos = [_center, (_size/4), (_size/4), 8, 0, 0.25, 0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-			if !(_flatPos isEqualTo [0,0,0]) then {
+			if ([_flatPos] call DRO_fnc_validPos) then {
 				if (count (_flatPos nearRoads 20) == 0) then {  
 					if (count _AO_flatPositionsFar > 0) then {			
 						_save = true;

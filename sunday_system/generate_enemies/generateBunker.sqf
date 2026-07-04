@@ -4,7 +4,7 @@ if (count (((AOLocations select _AOIndex) select 2) select 5) > 0) then {
 	_thisPos = [(((AOLocations select _AOIndex) select 2) select 5)] call DRO_fnc_selectRemove;
 	_bunkerTypes = ["Land_BagBunker_Large_F", "Land_BagBunker_Tower_F"];
 	_bunkerPos = [_thisPos, 0, 100, 15, 0, 1, 0, [], [[0,0,0], [0,0,0]]] call BIS_fnc_findSafePos;
-	if !(_bunkerPos isEqualTo [0,0,0]) then {
+	if ([_bunkerPos] call DRO_fnc_validPos) then {
 		_startDir = random 360;
 		_bunkerType = selectRandom _bunkerTypes;
 		_bunker = [_bunkerType, _bunkerPos, _startDir] call DRO_fnc_createSimpleObject;

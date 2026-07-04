@@ -22,7 +22,7 @@ switch (_powStyle) do {
 				
 		_powSpawnPos = [];
 		_powSpawnPos = [_powPos, 0, 150, 1.5, 0, 50, 0, [], [[0,0,0], [0,0,0]]] call BIS_fnc_findSafePos;
-		if (_powSpawnPos isEqualTo [0,0,0]) exitWith {
+		if (!([_powSpawnPos] call DRO_fnc_validPos)) exitWith {
 			_break = true;
 		};
 		_powPos = _powSpawnPos;		

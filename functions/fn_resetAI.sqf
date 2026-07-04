@@ -11,10 +11,10 @@ params ["_unit"];
 	private _speaker = ((nameLookup select _id) select 2);
 	private _face = ((nameLookup select _id) select 3);
 	private _pos = [(getPos _unit), 0, 50, 1, 0, -1, 0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-	if (_pos isEqualTo [0,0,0]) then {
+	if (!([_pos] call DRO_fnc_validPos)) then {
 		_pos = [(getPos player), 0, 50, 1, 0, -1, 0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
 	};
-	if (_pos isEqualTo [0,0,0]) exitWith {
+	if (!([_pos] call DRO_fnc_validPos)) exitWith {
 		hint "No valid location found for unit reset!";
 	};
 	
