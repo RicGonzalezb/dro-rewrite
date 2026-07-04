@@ -1,0 +1,50 @@
+DYNAMIC RECON OPS — REWRITE
+License & Attribution Notice
+================================
+
+ATTRIBUTION
+-----------
+This project is a community modification ("Rewrite") of DYNAMIC RECON OPS,
+originally created by mbrdmn. All original mission design, concept, and code
+credit belongs to the original author. This rewrite adds ACE3 integration, a
+CBA-based scheduling rewrite, a lobby-parameter override system, additional
+insertion types, combined-arms balancing, LAMBS Danger soft-compatibility, and
+various fixes.
+
+IMPORTANT — READ BEFORE REDISTRIBUTING
+--------------------------------------
+This is a DERIVATIVE WORK. Before publishing it to Steam Workshop, GitHub, or
+anywhere else, you are responsible for confirming that the original author's
+terms permit modification and redistribution. Steam Workshop content is, by
+default, "All Rights Reserved" by its author unless the author states otherwise.
+
+The maintainer of this rewrite has NOT verified the original license terms as
+part of generating this file. Do not treat this notice as legal advice or as a
+grant of rights you do not actually hold. If in doubt, contact the original
+author or keep distribution private.
+
+RECOMMENDED PRACTICE (not a substitute for the above)
+-----------------------------------------------------
+If the original terms permit sharing, the community norm for Arma 3 mission
+derivatives is:
+
+  - Credit the original author (mbrdmn) prominently in every distribution
+    (Workshop description, README, and in-mission where practical).
+  - Do not sell or paywall the mission or any derivative.
+  - Preserve this attribution notice in redistributions.
+  - Allow further non-commercial modification with the same attribution.
+
+This mirrors the spirit of CC BY-NC-SA 4.0. If you choose to formally adopt a
+license, replace this section with the full license text and confirm it is
+compatible with the original author's terms.
+
+THIRD-PARTY DEPENDENCIES
+------------------------
+This mission requires CBA_A3, ACE3, and Arma 3 Contact, and optionally
+integrates with LAMBS Danger. Those projects retain their own licenses and are
+not covered by this notice.
+
+NO WARRANTY
+-----------
+This mission is provided "as is", without warranty of any kind, express or
+implied. The maintainers are not liable for any damages arising from its use.
