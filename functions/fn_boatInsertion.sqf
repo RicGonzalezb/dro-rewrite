@@ -169,8 +169,6 @@ if (isNil "DRO_seaInsertPFH") then {
 				private _arrived   = (_dist < 50) && (_depth > -1);
 				private _wadeable  = (_depth > -1) && (_dist < 160);   // primary disembark: in <=1m water
 				private _stuckNear = (_stall >= 4) && _pastSpawn;        // stuck (deep or shallow) -> forced, boat nosed onto drop below
-				// [DIAG - remove after tuning] per-boat eject state each tick.
-				diag_log format ["DRO SEA eject-check boat=%1 dist=%2 depth=%3 spd=%4 stall=%5 arr=%6 wade=%7 stuck=%8", _boat, round _dist, (round (_depth*10))/10, round _spd, _stall, _arrived, _wadeable, _stuckNear];
 				// Decelerate on approach so the boat noses into the shallows instead of ramming/grounding.
 				if (_dist < 60) then { _boat limitSpeed (7 max (_dist * 0.5)); };   // slow in the last 60m but keep momentum to reach the shallow drop (>3km/h so it isn't flagged as stalled)
 				if (_arrived || _wadeable || _stuckNear || {(time - _t0) > 180}) then {

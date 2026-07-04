@@ -224,6 +224,4 @@ private _winIdx = -1;
 	};
 } forEach _candidates;
 
-diag_log format ["DRO SEA corridor: avoidPerim=%1 aoLocs=%2 coastCands=%3 total=%4 winIdx=%5 source=%6 viable=%7 drop=%8", _avoidPerimeter, count _aoLocs, _stealthCount, count _candidates, _winIdx, (if (_winIdx < 0) then {"NONE"} else {if (_winIdx < _stealthCount) then {"STEALTH"} else {"FALLBACK"}}), _out select 0, _out select 2];
-
 _out

@@ -2799,3 +2799,17 @@ Sessão dedicada ao feature de inserção por barco (SEA). Resumo do que está V
 2. **Botões de tuning:** `_occCap=550` (fn_findSeaCorridor, quão longe do inimigo); decel `limitSpeed (7 max _dist*0.5)` e gates de ejeção `_arrived/_wadeable/_stuckNear` (fn_boatInsertion).
 3. Precisão de inimigo: o stealth usa AOLocations (footprint), não posições reais dos inimigos (que spawnam depois). Suficiente na prática; precisão real exigiria mover o cálculo pra depois da geração de inimigos.
 4. `initPlayerLocal.sqf` aparece modificado no git status mas NÃO foi tocado nesta sessão — alteração pré-existente não commitada; investigar antes de incluir em commit.
+
+---
+
+## Sea insert — remoção dos diag_logs de tuning + verificação do handoff — 2026-07-04 (Master/Opus)
+
+Sessão de onboarding do novo Master. Gonza confirmou tuning do Sea insert validado; retirados os DIAGs temporários.
+
+- **`functions/fn_boatInsertion.sqf`:** removido o bloco `[DIAG - remove after tuning]` + `diag_log "DRO SEA eject-check ..."` (comentario+linha). Mantido o `diag_log "DRO: boatInsertion aborted ..."` (erro legítimo, não spam).
+- **`functions/fn_findSeaCorridor.sqf`:** removido o `diag_log "DRO SEA corridor: ..."`.
+- **Verificação:** escrita atômica; balanço `{}()[]`=0 nos dois; 0 bytes CR; caudas intactas (`true` / `_out`); grep confirma 0 tuning-diags restantes. `git diff` = 4 deleções, sem outras mudanças.
+- **`initPlayerLocal.sqf` (pendência #4 do handoff):** RESOLVIDA. O working tree está limpo; o arquivo == HEAD (diff vazio). A mudança "sem dono" era o commit `6be51b9` (FOB static objects invulneráveis), já commitado. Integridade OK (546 linhas, balanceado, sem CR).
+- **AVISO git:** um comando de leitura do Master (`git status --porcelain <path>`) criou um `.git/index.lock` órfão (08:51) que o sandbox NÃO consegue remover (`Operation not permitted`). **Gonza: apagar `.git/index.lock` na máquina antes do próximo commit.** Lição p/ Masters: usar sempre `git --no-optional-locks` e evitar comandos git que atualizam o index.
+
+`git add -f functions/fn_boatInsertion.sqf functions/fn_findSeaCorridor.sqf _DRO_REFACTOR_PROGRESS.md` (após remover o index.lock).
