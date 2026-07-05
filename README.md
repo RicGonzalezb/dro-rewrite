@@ -31,12 +31,14 @@ Every op is procedurally generated: a fresh Area of Operations, enemy layout, ob
 **More ways to insert**
 
 - Added **Sea (Boat)** insertion — a piloted boat runs you to shore, respecting your chosen insertion point.
-- Added **None** (start on-site) alongside the classic Ground, HALO, and Helicopter.
+- Added **None** (start on-site) so you continue the mission directly from the staging area, specially immersive for customized DRO scenarios.
 
-**Combined-arms overhaul**
+**Mechanized vehicles overhaul**
 
+- Now available for every mission type (Sniper Ops / Recon Ops / Combined Arms) with proper density cap for each.
 - Enemy mechanized forces (APCs and tanks) via a mission budget instead of endless linear growth.
-- Per-mode armor profiles plus a **Mechanized level** parameter (None / Low / Standard / High).
+- Mechanized **density level** parameter (None / Low / Standard / High) now available.
+
 
 **Optional soft-compat**
 
@@ -46,7 +48,7 @@ Every op is procedurally generated: a fresh Area of Operations, enemy layout, ob
 **Refined & fixed**
 
 - The classic DRO game modes (Recon / Sniper / Combined Arms) reviewed and fixed.
-- Civilian system fixes and improvements, including a performance-friendly agent mode and an optional hostile-civilian setting.
+- Civilian system fixes and improvements, including a performance-friendly **agent mode** and an fixed the optional hostile-civilian setting.
 - Leader-centric Team Planning lobby with a disconnect-handover safeguard.
 - Numerous bug fixes across revive, objectives, and spawn logic.
 
@@ -69,8 +71,6 @@ The scenario is **map-agnostic**: it resolves locations and factions from the ru
 ---
 
 ## Game modes
-
-The classic DRO modes, refined in this Rewrite:
 
 - **Recon Ops** — the baseline experience: full enemy strength, stealth possible, any objective.
 - **Sniper Ops** — lean and stealthy: half the enemies, a 2-man marksman team, focus on hunting an HVT.
