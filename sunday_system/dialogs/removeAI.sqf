@@ -1,26 +1,18 @@
+// sunday_system/dialogs/removeAI.sqf
+// M12: rewritten for the "AI squad rework" — the checkbox created only on AI
+// rows (functions/fn_rebuildRoster.sqf) is now a one-shot "remove" action, not
+// a hide/restore toggle: AI are no longer auto-filled and hidden, they are
+// created on demand by the leader (functions/fn_addAIToSquad.sqf) and removed
+// on demand here — actually deleted server-side, never just hidden.
 if (!isNull (_this select 0)) then {
-	_ai = (_this select 0);
-	_selection = ((_this select 1) select 2);
+	private _ai = (_this select 0);
+	private _selection = ((_this select 1) select 2);
 
 	if (_selection == 1) then {
-		[_ai, true] remoteExec ["hideObject", 0, true];
-		//[_ai] joinSilent grpNull;
-		
-		ctrlEnable [(_ai getVariable "unitLoadoutIDC"), false];
-		ctrlEnable [(_ai getVariable "unitArsenalIDC"), false];
-		ctrlEnable [(_ai getVariable "unitReadyIDC"), false];	
-		
-		//diag_log format ["DRO: Removed unit %1", _ai];
+		[_ai] remoteExec ["DRO_fnc_removeAIFromSquad", 2];
+		[{ [] call DRO_fnc_rebuildRoster }, [], 0.35] call CBA_fnc_waitAndExecute;
 	};
-	if (_selection == 0) then {
-		[_ai, false] remoteExec ["hideObject", 0, true];
-		//[_ai] joinSilent (grpNetId call BIS_fnc_groupFromNetId);
-		
-		ctrlEnable [(_ai getVariable "unitLoadoutIDC"), true];
-		ctrlEnable [(_ai getVariable "unitArsenalIDC"), true];
-		ctrlEnable [(_ai getVariable "unitReadyIDC"), true];	
-		
-		//diag_log format ["DRO: Added unit %1 to group %2", _ai, (grpNetId call BIS_fnc_groupFromNetId)];
-	};
+	// _selection == 0 (unchecked): no-op — once removed the row and its
+	// checkbox no longer exist after the rebuild broadcast, so this branch
+	// is effectively unreachable in normal use.
 };
-

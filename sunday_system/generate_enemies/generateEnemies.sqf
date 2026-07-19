@@ -59,12 +59,15 @@ diag_log format ["DRO: AO %1, Generate enemies - infantry patrols = %2", _AOInde
 if (missionPreset == 3) then {_numInf = _numInf min 1};
 if (_numInf > 0) then {
 	for "_infIndex" from 1 to _numInf step 1 do {
+		// selectRandom on an empty pool returns nil, which UNDEFINES _infPosition and makes
+		// the count below throw. Guard: only sample when the pool has positions, else keep [].
 		_infPosition = [];
-		if (_infIndex <= 1) then {
-			_infPosition = selectRandom (((AOLocations select _AOIndex) select 2) select 2)
+		private _infPool = if (_infIndex <= 1) then {
+			((AOLocations select _AOIndex) select 2) select 2
 		} else {
-			_infPosition = selectRandom (((AOLocations select _AOIndex) select 2) select 3)
+			((AOLocations select _AOIndex) select 2) select 3
 		};
+		if (count _infPool > 0) then { _infPosition = selectRandom _infPool };
 		if (count _infPosition > 0) then {
 			_spawnedSquad = nil;	
 			_minAI = (round ((4 * aiMultiplier) / (0.4 * _numInf)) min 6);
@@ -259,6 +262,10 @@ if (count _patrolGroups > 0) then {
 		};
 	} forEach AOLocations;
 	_availableTravelPositions = _availableTravelPositions + travelPosPOIMil;
+	// Skip groups that lost every unit between spawn and here. isNull is NOT enough:
+	// an emptied group is not grpNull, and driving waypoints on it makes the engine
+	// replicate a ghost ("Object X:Y not found" spam) and keeps LAMBS ticking it.
+	_patrolGroups = [_patrolGroups] call DRO_fnc_livingEntities;
 	{
 		_thisGroup = _x;
 		// LAMBS soft-compat: mark mobile patrols as reinforcement responders.

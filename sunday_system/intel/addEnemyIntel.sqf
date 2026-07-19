@@ -24,7 +24,9 @@ _leaders = [];
 				_object = [
 					(selectRandom ["Land_Document_01_F", "Land_File1_F", "Land_FilePhotos_F", "Land_File2_F", "Land_File_research_F", "Land_Notepad_F", "Item_ItemGPS", "Land_MobilePhone_old_F", "Land_PortableLongRangeRadio_F"]),
 					([(getPos (_this select 0)), 0.7, (random 360)] call DRO_fnc_extendPos),
-					(random 360)
+					(random 360),
+					"",
+					true
 				] call DRO_fnc_createSimpleObject;
 				(_this select 0) setVariable ["intelObjects", (((_this select 0) getVariable ["intelObjects", []]) + [_object])];
 			};

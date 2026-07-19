@@ -1,3 +1,21 @@
+// Guard: block Start until the faction lists are populated. Clicking Start before the
+// async faction extraction filled the bars (empty dropdowns) reads "" -> playersFaction
+// empty -> cascade of config errors in start.sqf (undefined side, genericNames array).
+// Abort and keep the dialog open so the player can wait and retry. Only the normal UI
+// flow reads the bars; the params flow sets factions directly and is exempt.
+if (
+	!(missionNamespace getVariable ["DRO_factionsFromParams", false]) &&
+	{
+		(lbSize 1301 <= 0) || {lbSize 1311 <= 0}
+		|| {(lbData [1301, lbCurSel 1301]) isEqualTo ""}
+		|| {(lbData [1311, lbCurSel 1311]) isEqualTo ""}
+	}
+) exitWith {
+	systemChat "DRO: Factions are still loading - wait a moment and press Start again.";
+	hint "Factions are still loading.\n\nWait a moment, then press Start again.";
+	diag_log "DRO: okAO Start blocked - faction lists not populated yet.";
+};
+
 // Skip faction reading when factions come from params (loadParams already set them).
 if (!(missionNamespace getVariable ["DRO_factionsFromParams", false])) then {
 _playersIndex = lbCurSel 1301;

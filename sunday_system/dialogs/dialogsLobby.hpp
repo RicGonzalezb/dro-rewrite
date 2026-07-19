@@ -73,9 +73,25 @@ class DRO_lobbyDialog {
 		class loadoutGroup: RscControlsGroup {
 			idc = 6060;			
 			x = safezoneX;
-			y = "safezoneY + (20 * pixelGridNoUIScale * pixelH)";
+			y = "safezoneY + (21 * pixelGridNoUIScale * pixelH)";
 			w = "40 * pixelGridNoUIScale * pixelW";			
-			h = "46 * pixelGridNoUIScale * pixelH";					
+			h = "45 * pixelGridNoUIScale * pixelH";					
+		};
+		class addAIButton: DROBasicButton
+		{
+			// M12: Team Planning "+1 AI" — leader-only, adds one AI to the squad
+			// group (server-side, see functions/fn_addAIToSquad.sqf). Text/enable/
+			// show state refreshed every rebuild by functions/fn_rebuildRoster.sqf.
+			// Sits in the gap between the tab title (y=15.5,h=3) and loadoutGroup
+			// (y=20) so it is visible across all 3 sliding tabs without overlap.
+			idc = 1602;
+			text = "+1 AI";
+			x = "safezoneX + (8 * pixelGridNoUIScale * pixelW)";
+			y = "safezoneY + (18.4 * pixelGridNoUIScale * pixelH)";
+			w = "24 * pixelGridNoUIScale * pixelW";
+			h = "2.4 * pixelGridNoUIScale * pixelH";
+			sizeEx = "((pixelH * (pixelGridNoUIScale) * 2) * 1.1) * 0.5";
+			action = "[] remoteExec ['DRO_fnc_addAIToSquad', 2]; [{ [] call DRO_fnc_rebuildRoster }, [], 0.35] call CBA_fnc_waitAndExecute;";
 		};
 		class unitTextBG: sundayText {
 			idc = 1159;

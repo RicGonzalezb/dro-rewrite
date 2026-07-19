@@ -171,7 +171,18 @@ if (count powJoinTasks > 0) then {
 			[{
 				params ["_args", "_pfhId"];
 				_args params ["_powUnits", "_extractGroup", "_extractPos"];
-				if (({group _x == _extractGroup} count _powUnits) != count _powUnits) exitWith {};
+				if (isNull _extractGroup) exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler };
+				// Compare against the POWs that still EXIST, not the original roster.
+				// A POW removed by Zeus/cleanup leaves `group objNull`, which can never
+				// equal _extractGroup, so the original test could never pass again: the
+				// PFH ticked forever and the POW extraction task never completed. That
+				// is a mission-blocking deadlock, not just log noise.
+				private _livePOWs = [_powUnits] call DRO_fnc_livingEntities;
+				if (count _livePOWs == 0) exitWith {
+					[_pfhId] call CBA_fnc_removePerFrameHandler;
+					diag_log "DRO: POW extract watcher stopped - no POW units left alive";
+				};
+				if (({group _x == _extractGroup} count _livePOWs) != count _livePOWs) exitWith {};
 				[_pfhId] call CBA_fnc_removePerFrameHandler;
 				{ _x setUnitPos "UP" } forEach units _extractGroup;
 				private _leaveDir = [((AOLocations select 0) select 0), _extractPos] call BIS_fnc_dirTo;

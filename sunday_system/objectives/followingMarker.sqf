@@ -30,6 +30,12 @@ if (!isNil "enemyIntelMarkers") then {
 
 while {((getMarkerSize _followMarker) select 0) > 0} do {
 	sleep 10;
+	// Bail before touching the object. Without this, a deleted target runs one more
+	// full cycle with getPos objNull = [0,0,0], which moves the marker and the task
+	// destination to the map origin before the exit test at the bottom is reached.
+	if (isNull _object) exitWith {
+		_followMarker setMarkerAlpha 0;
+	};
 	if (((getMarkerSize _followMarker) select 0) > 0) then {
 		if (!(_object inArea _followMarker)) then {
 			_alpha = markerAlpha _followMarker;

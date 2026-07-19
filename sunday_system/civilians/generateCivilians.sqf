@@ -384,7 +384,7 @@ _modCivs setVariable ["#onCreated", {
 	removeHeadgear _this;
 	removeUniform _this;
 	_module = (_this getVariable "#core");
-	[_this, (selectRandom (_module getVariable "DRO_firstNames")), (selectRandom (_module getVariable "DRO_lastNames")), (selectRandom (_module getVariable "DRO_speakers")), (selectRandom (_module getVariable "DRO_faces"))] remoteExec ["DRO_fnc_setNameMP", 0, true];		
+	[_this, (selectRandom (_module getVariable "DRO_firstNames")), (selectRandom (_module getVariable "DRO_lastNames")), (selectRandom (_module getVariable "DRO_speakers")), (selectRandom (_module getVariable "DRO_faces"))] remoteExec ["DRO_fnc_setNameMP", 0];		
 	_this addUniform (selectRandom (_module getVariable "DRO_uniformList"));
 	if (random 1 > 0.6) then {_this addHeadgear (selectRandom (_module getVariable "DRO_headgearList"))};
 	if (random 1 > 0.3) then {_this addVest (selectRandom (_module getVariable "DRO_vestList"))};
@@ -418,6 +418,10 @@ _modCivs setVariable ["#onCreated", {
 ["init", [_modCivs]] call bis_fnc_moduleCivilianPresence;
 
 // Initialise waypoints
+// Drop groups emptied between spawn and here (see fn_untrackEntity.sqf): an empty
+// group is not grpNull, and `getPos (leader _thisGroup)` on one yields [0,0,0],
+// planting waypoints at map origin and leaving a replicating ghost group.
+patrolGroups = [patrolGroups] call DRO_fnc_livingEntities;
 if (count patrolGroups > 0) then {
 	private _travelPositions = (((AOLocations select _AOIndex) select 2) select 0) + (((AOLocations select _AOIndex) select 2) select 2) + (((AOLocations select _AOIndex) select 2) select 4);		
 	if (count _travelPositions > 0) then {		

@@ -33,6 +33,29 @@ addMissionEventHandler ["HandleDisconnect", {
     false // must return false (HandleDisconnect contract)
 }];
 
+// Orphan-entity cleanup. Deleting a unit leaves its GROUP behind; the empty group
+// keeps replicating (waypoint cycle, LAMBS registration) and the engine then logs
+// "Server: Object X:Y not found (message Type_N)" thousands of times for the
+// unit+group pair. Confirmed reproduction: a Zeus deleting a server-spawned unit
+// that still has background scripts driving it.
+addMissionEventHandler ["CuratorObjectDeleted", {
+    params ["_curator", "_entity"];
+    [_entity] call DRO_fnc_untrackEntity;
+    // The group may still hold the unit at this instant; re-check shortly after.
+    [{ _this call DRO_fnc_untrackEntity; }, [_entity], 1] call CBA_fnc_waitAndExecute;
+}];
+
+addMissionEventHandler ["EntityKilled", {
+    params ["_unit"];
+    [{ _this call DRO_fnc_untrackEntity; }, [_unit], 5] call CBA_fnc_waitAndExecute;
+}];
+
+// Death-cause agnostic janitor. Starts only after mission generation has finished,
+// so it never collects groups that are legitimately empty mid-spawn.
+[{ (missionNamespace getVariable ["objectivesSpawned", 0]) == 1 }, {
+    DRO_orphanSweepPFH = [DRO_fnc_orphanSweep, 30, []] call CBA_fnc_addPerFrameHandler;
+}] call CBA_fnc_waitUntilAndExecute;
+
 _vn_allowed_radio_backpacks = (missionConfigFile >> "vn_artillery_settings" >> "radio_backpacks") call BIS_fnc_getCfgDataArray;
 missionNameSpace setVariable ["vn_allowed_radio_backpacks", _vn_allowed_radio_backpacks, true];
 _vn_allowed_radio_vehicles = (missionConfigFile >> "vn_artillery_settings" >> "radio_vehicles") call BIS_fnc_getCfgDataArray;

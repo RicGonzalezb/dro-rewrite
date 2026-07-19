@@ -33,6 +33,11 @@ respawnDialog = 0;
 respawnOnStart = 0;
 respawnTemplates[] = {"MenuPosition", "Tickets", "Spectator", "EndMission"};
 
+// M12: AI squad rework — no auto-filled AI on unfilled playable slots; the
+// leader adds AI via "+1 AI" in Team Planning (functions/fn_addAIToSquad.sqf)
+// and they persist in the group. See fn_rebuildRoster.sqf / fn_jipAIBump.sqf.
+disabledAI = 1;
+
 //cba_settings_hasSettingsFile = 1;
 
 class Params
@@ -1301,6 +1306,10 @@ class CfgFunctions
             class initLobbyCam {};
             class inputDaysData {};
             class jipNewUnit {};
+            class rebuildRoster {}; // M12: rebuilds Team Planning roster rows from grpNetId
+            class addAIToSquad {}; // M12: server-only, +1 AI button
+            class removeAIFromSquad {}; // M12: server-only, per-row AI remove
+            class jipAIBump {}; // M12: server-only, JIP backfill bump
             class loadoutCompat {};
             class lobbyCamTarget {};
             class lobbyChangeLabel {};
@@ -1346,6 +1355,9 @@ class CfgFunctions
             class switchButtonSet {};
             class switchMechLevel {};
             class validPos {};
+            class livingEntities {};  // orphan cleanup: live-object/live-group filter (isNull is not enough for groups)
+            class untrackEntity {}; // orphan cleanup: drop entity from tracking lists + dispose empty group
+            class orphanSweep {};   // orphan cleanup: periodic empty-group janitor (server-side)
             class switchButtonWeather {};
             class switchLookup {};
             class triggerAmbushSpawn {};

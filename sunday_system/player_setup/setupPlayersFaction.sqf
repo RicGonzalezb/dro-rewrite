@@ -23,12 +23,18 @@ diag_log format ["Zeus = %1", _zeus];
 } forEach ([leader (grpNetId call BIS_fnc_groupFromNetId)] call BIS_fnc_tasksUnit);
 */
 
-{	
-	if (isObjectHidden _x) then {
-		deleteVehicle _x;
-		diag_log format ["DRO: Deleting unit %1", _x];
-	};
-} forEach (units (grpNetId call BIS_fnc_groupFromNetId));
+// M12: AI squad rework — under the old model, unfilled playable slots were
+// auto-filled with AI and hidden (hideObject) if the leader unchecked them in
+// Team Planning; this loop then deleted the hidden ones here. Under the new
+// model disabledAI=1 means unfilled slots never spawn AI at all, and AI added
+// via "+1 AI" are deleted immediately by fn_removeAIFromSquad.sqf (server-side,
+// at the moment of removal) rather than hidden-then-swept here. This loop is
+// now vestigial and — worse — dangerous, since no unit in the group is ever
+// isObjectHidden anymore, but leaving a deleteVehicle-on-hidden loop in place
+// is a latent hazard if hideObject is ever reintroduced elsewhere. Removed.
+//
+// diag_log kept for parity with the original trace point.
+diag_log "DRO: M12 - AI hide/delete sweep removed (disabledAI=1, no auto-filled AI to sweep)";
 diag_log (units (grpNetId call BIS_fnc_groupFromNetId));
 
 // Effective insert type (random pool incl. SEA when viable + heli mod-downgrade).

@@ -231,4 +231,5 @@ Combined Arms additionally gives the leader a **Friendly Engage** command to dir
 
 - The **leader** is the first player slot. Only the leader sees the pre-generation UI and presses **START MISSION**; other players customize their gear via the "Open Arsenal" scroll action and wait.
 - Any player can reopen **Team Planning** via the scroll action, but only the leader can start.
-- If the leader disc
+- If the leader disconnects before the mission starts, leadership transfers to another player, who receives the UI and the start button (multiplayer only).
+- Press **ESC** to leave the planning interface; a hint reminds you how to reopen it.

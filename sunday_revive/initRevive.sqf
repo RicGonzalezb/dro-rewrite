@@ -59,8 +59,12 @@ publicVariable "reviveGroup";
 			publicVariable 'reviveUnits';
 			private _allPlayers = allPlayers;
 			_allPlayers = _allPlayers - [(_this select 0)];	
-			[(_this select 0)] remoteExec ["DRO_fnc_reviveActionAdd", _allPlayers, true];
-			[(_this select 0)] remoteExec ["DRO_fnc_dragActionAdd", _allPlayers, true];
+			// Empty target array -> "RemoteExec with 0 targets" in the .rpt. Happens when the
+			// respawning unit is the only player on the server.
+			if (count _allPlayers > 0) then {
+				[(_this select 0)] remoteExec ["DRO_fnc_reviveActionAdd", _allPlayers, true];
+				[(_this select 0)] remoteExec ["DRO_fnc_dragActionAdd", _allPlayers, true];
+			};
 			(_this select 0) removeAllEventHandlers "HandleRating"; // audit fix: evita acúmulo de HandleRating a cada respawn
 			[(_this select 0), ["HandleRating", {if ((_this select 1) < 0) then {0}}]] remoteExec ["addEventHandler", (_this select 0), true];
 			[(format ["Revive actions added for unit %1 called for %2", (_this select 0), _allPlayers])] remoteExec ["diag_log", 2];	
@@ -75,8 +79,11 @@ publicVariable "reviveGroup";
 		
 	private _allPlayers = allPlayers;
 	_allPlayers = _allPlayers - [_x];	
-	[_x] remoteExec ["DRO_fnc_reviveActionAdd", _allPlayers, true];
-	[_x] remoteExec ["DRO_fnc_dragActionAdd", _allPlayers, true];
+	// Empty target array -> "RemoteExec with 0 targets" in the .rpt (single-player server).
+	if (count _allPlayers > 0) then {
+		[_x] remoteExec ["DRO_fnc_reviveActionAdd", _allPlayers, true];
+		[_x] remoteExec ["DRO_fnc_dragActionAdd", _allPlayers, true];
+	};
 	[(format ["Revive actions add for unit %1 called for %2", _x, _allPlayers])] remoteExec ["diag_log", 2];	
 	// Handle ratings to stop units getting stuck in heal/kill loops
 	[_x, ["HandleRating", {if ((_this select 1) < 0) then {0}}]] remoteExec ["addEventHandler", _x, true];
@@ -98,7 +105,10 @@ if (count _aiUnits > 0) then {
 			} forEach reviveUnits;
 			if (count _aiUnits > 0) then {
 				private _leader = leader (_aiUnits select 0);
-				[_aiUnits] remoteExec ["DRO_fnc_AIListen", _leader];
+				// objNull leader resolves to no machine -> "RemoteExec with 0 targets".
+				if (!isNull _leader) then {
+					[_aiUnits] remoteExec ["DRO_fnc_AIListen", _leader];
+				};
 			};
 		}, 5, []] call CBA_fnc_addPerFrameHandler;
 	};

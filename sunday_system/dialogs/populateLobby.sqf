@@ -14,53 +14,17 @@ disableSerialization;
 _lobbyCamHandle = [] execVM "sunday_system\dialogs\initLobbyCam.sqf";
 diag_log format ["DRO: Lobby cam script executed: %1", _lobbyCamHandle];
 
-_lineSpacing = 2.5 * pixelGridNoUIScale * pixelH;
-_lineHeight = 2.25 * pixelGridNoUIScale * pixelH;
-{	
-	_x setDir (_x getVariable ["startDir", 0]);	
-
-	// Create delete checkbox
-	_deleteControl = (findDisplay 626262) ctrlCreate ["DROCheckBoxRemove", (_x getVariable "unitDeleteIDC"), ((findDisplay 626262) displayCtrl 6060)];		
-	_deleteControl ctrlSetPosition [2.5 * pixelGridNoUIScale * pixelW, ((_forEachIndex) * _lineSpacing), 2.25 * pixelGridNoUIScale * pixelW, _lineHeight];	
-	_deleteControl ctrlSetEventHandler ["CheckBoxesSelChanged", (format ["_nil=[%1, _this]ExecVM 'sunday_system\dialogs\removeAI.sqf'", _x])];	
-	_deleteControl ctrlCommit 0;		
-	
-	// Create nametag
-	_nameControl = (findDisplay 626262) ctrlCreate ["DRONameButton", (_x getVariable "unitNameTagIDC"), ((findDisplay 626262) displayCtrl 6060)];	
-	_nameControl ctrlSetPosition [4.75 * pixelGridNoUIScale * pixelW, ((_forEachIndex) * _lineSpacing), 15.25 * pixelGridNoUIScale * pixelW, _lineHeight];		
-	if (isPlayer _x) then {		
-		_nameControl ctrlSetText (format ["%1:", (name _x)]);
-	} else {
-		_nameControl ctrlSetText (format ["%1 (AI):", (name _x)]);
-	};	
-	_nameControl ctrlSetEventHandler ["ButtonClick", (format ["[%1] call DRO_fnc_lobbyCamTarget", _x])];	
-	_nameControl ctrlCommit 0;	
-	
-	// Create loadout switcher
-	if ((player == _x) OR ((player == _dialogPlayer) && (!isPlayer _x))) then {
-		_loadoutControl = (findDisplay 626262) ctrlCreate ["DROLoadoutSwitch", (_x getVariable "unitLoadoutIDC"), ((findDisplay 626262) displayCtrl 6060)];		
-		_loadoutControl ctrlSetPosition [20 * pixelGridNoUIScale * pixelW, ((_forEachIndex) * _lineSpacing), 15.25 * pixelGridNoUIScale * pixelW, _lineHeight];	
-		_loadoutControl ctrlSetEventHandler ["LBSelChanged", (format ["_nil=[%1, _this]ExecVM 'sunday_system\player_setup\switchUnitLoadout.sqf'", _x])];	
-		_loadoutControl ctrlCommit 0;		
-	} else {		
-		_loadoutControl = (findDisplay 626262) ctrlCreate ["sundayText", (_x getVariable "unitLoadoutIDC"), ((findDisplay 626262) displayCtrl 6060)];	
-		_loadoutControl ctrlSetPosition [20 * pixelGridNoUIScale * pixelW, ((_forEachIndex) * _lineSpacing), 15.25 * pixelGridNoUIScale * pixelW, _lineHeight];		
-		_loadoutControl ctrlSetBackgroundColor [0.1,0.1,0.1,1];		
-		_loadoutControl ctrlSetTextColor [1,1,1,0.5];		
-		_factionClass = ((configfile >> "CfgVehicles" >> (_x getVariable "unitClass") >> "faction") call BIS_fnc_getCfgData);
-		_class = format ["%1 - %2", ((configfile >> "CfgVehicles" >> (_x getVariable "unitClass") >> "displayName") call BIS_fnc_getCfgData), ((configfile >> "CfgFactionClasses" >> _factionClass >> "displayName") call BIS_fnc_getCfgData)];		
-		_loadoutControl ctrlSetText _class;	
-		_loadoutControl ctrlCommit 0;		
-	};
-	
-	// Create VA button (skip entirely when the Arsenal toggle is disabled)
-	if ((missionNamespace getVariable ["arsenalEnabled", 0]) != 1) then {
-		_VAControl = (findDisplay 626262) ctrlCreate ["DROVAButton", (_x getVariable "unitArsenalIDC"), ((findDisplay 626262) displayCtrl 6060)];		
-		_VAControl ctrlSetPosition [35.25 * pixelGridNoUIScale * pixelW, ((_forEachIndex) * _lineSpacing), 2.25 * pixelGridNoUIScale * pixelW, _lineHeight];	
-		_VAControl ctrlSetEventHandler ["ButtonClick", (format ["if (!isNil '%1') then {_nil=[%1]ExecVM 'sunday_system\dialogs\openArsenal.sqf'}", _x])];	
-		_VAControl ctrlCommit 0;		
-	};
+// M12: AI squad rework — per-unit row creation (nametag/loadout/arsenal/
+// remove-AI controls) moved to functions/fn_rebuildRoster.sqf, a reusable
+// function also called by Add AI / Remove AI / JIP backfill so the roster
+// stays in sync without duplicating this whole script (which also does
+// one-time work below — menuSliderArray, insertion/support combos — that
+// must NOT run again on every roster change).
+{
+	_x setDir (_x getVariable ["startDir", 0]);
 } forEach _allHPs;
+
+call DRO_fnc_rebuildRoster;
 
 menuSliderArray = [	
 	["SQUAD LOADOUT", 6060],
@@ -80,41 +44,10 @@ if (player != topUnit) then {
 	((findDisplay 626262) displayCtrl 1601) ctrlEnable false;
 };
 
-{
-	_thisUnit = _x;
-	if ((player == _thisUnit) OR ((player == _dialogPlayer) && (!isPlayer _thisUnit))) then {
-		// Populate unit classes
-		
-		// Get listbox for this unit, make sure it's clear and add all class options to it
-		_thisLB = (_thisUnit getVariable "unitLoadoutIDC");		
-		lbClear _thisLB;
-		{		
-			_index = lbAdd [_thisLB, format ["%1 - %2", (_x select 1), (_x select 2)]];			
-			lbSetData [_thisLB, _index, (_x select 0)];
-		} forEach unitList;	
-			
-		if ((_thisUnit getVariable "unitChoice") isEqualType "") then {		
-			if ((_thisUnit getVariable "unitChoice") == "CUSTOM") then {
-				_index = lbAdd [_thisLB, "Custom Loadout"];
-				lbSetData [_thisLB, _index, "CUSTOM"];
-				lbSetCurSel [_thisLB, _index];
-			} else {		
-				for "_i" from 1 to (lbSize _thisLB) do {
-					_className = lbData [_thisLB, (_i - 1)];
-					if ((_thisUnit getVariable "unitChoice") == _className) then {
-						lbSetCurSel [_thisLB, (_i - 1)];						
-					};
-				};
-			};		
-		};
-	};
-	
-	// Disable delete button for players
-	if (isPlayer _thisUnit) then {
-		ctrlEnable [(_thisUnit getVariable "unitDeleteIDC"), false];
-	};
-	
-} forEach playerGroup;
+// M12: per-unit loadout-listbox population (and the "disable delete for
+// players" no-op, since players never get that control now) moved into
+// functions/fn_rebuildRoster.sqf, which is called above and again on every
+// roster change — this duplicate stale-'playerGroup' pass is removed.
 
 lbAdd [6009, "Random"];
 lbAdd [6009, "Ground"];
@@ -192,14 +125,13 @@ if (player == _dialogPlayer) then {
 	};	
 };
 
-// If player is not _dialogPlayer then disable all other controls
+// If player is not _dialogPlayer then disable the shared (non-per-unit)
+// controls below. Per-unit disabling (arsenal/remove-AI buttons on rows that
+// aren't this client's own) is handled per-rebuild by
+// functions/fn_rebuildRoster.sqf using the LIVE group, since 'playerGroup'
+// here is a stale snapshot from mission boot that never reflects lobby-added
+// AI (M12).
 if (player != _dialogPlayer) then {
-	{
-		if (_x != player) then {			
-			ctrlEnable [(_x getVariable "unitArsenalIDC"), false];			
-			ctrlEnable [(_x getVariable "unitDeleteIDC"), false];
-		}
-	} forEach playerGroup;
 	ctrlEnable [6004, false];
 	ctrlEnable [6005, false];
 	ctrlEnable [6009, false];
@@ -213,35 +145,12 @@ if (player != _dialogPlayer) then {
 	ctrlEnable [6022, false];
 };
 
-// Remove controls for AI no longer in group
-{
-	if (isObjectHidden _x) then {		
-		ctrlEnable [(_x getVariable "unitLoadoutIDC"), false];
-		ctrlEnable [(_x getVariable "unitArsenalIDC"), false];		
-		ctrlEnable [(_x getVariable "unitDeleteIDC"), true];
-		((findDisplay 626262) displayCtrl (_x getVariable "unitDeleteIDC")) ctrlSetChecked true;		
-	};	
-} forEach playerGroup;
-
-if (!isNil "firstLobbyOpen") then {
-	if (firstLobbyOpen && (player == _dialogPlayer)) then {
-		{
-			_maxIndex = if (missionPreset == 2) then {1} else {3};
-			if (_forEachIndex > _maxIndex) then {
-				if (!isPlayer _x) then {
-					[_x, true] remoteExec ["hideObject", 0, true];				
-					//[_x] joinSilent grpNull;				
-					ctrlEnable [(_x getVariable "unitLoadoutIDC"), false];
-					ctrlEnable [(_x getVariable "unitArsenalIDC"), false];
-					ctrlEnable [(_x getVariable "unitReadyIDC"), false];					
-					diag_log format ["DRO: Removed unit %1", _x];
-					((findDisplay 626262) displayCtrl (_x getVariable "unitDeleteIDC")) ctrlSetChecked true;
-				};			
-			};
-		} forEach _allHPs;
-	};
-	firstLobbyOpen = false;
-};
+// M12: the old "hide AI beyond preset default squad size" first-open trim
+// (firstLobbyOpen) and the "un-hide controls for AI no longer in group" sweep
+// belonged to the auto-fill-then-trim model this refactor replaces (REQ1: no
+// AI exist by default, so there is nothing to trim). Removed. firstLobbyOpen
+// itself is left alone (declared/publicVariable'd in start.sqf) in case other
+// scripts still read it; it is simply no longer consumed here.
 
 // Destroy camera and allow player control if lobby isn't complete and dialog is exited
 waitUntil {!dialog};

@@ -22,6 +22,12 @@ Every op is procedurally generated: a fresh Area of Operations, enemy layout, ob
 - Optionally skip the in-game setup UI entirely — hosts can pre-bake a mission so players drop straight in.
 - Three independent override spheres, so you can mix (e.g. factions via parameters, everything else via the in-game UI).
 
+**Squad AI on your terms**
+
+- No AI teammates by default — your squad starts with just you and any human players.
+- The leader adds AI one at a time with a **+1 AI** button in Team Planning; the roster updates live and any AI can be removed individually.
+- AI added this way carries a proper identity (name, face, voice) and persists through insertion into the mission.
+
 **Smarter battlefield population**
 
 - Reworked enemy population across the AO — patrol corridors and seeded adjacent areas make the battlespace feel connected instead of clumped.
@@ -31,14 +37,13 @@ Every op is procedurally generated: a fresh Area of Operations, enemy layout, ob
 **More ways to insert**
 
 - Added **Sea (Boat)** insertion — a piloted boat runs you to shore, respecting your chosen insertion point.
-- Added **None** (start on-site) so you continue the mission directly from the staging area, specially immersive for customized DRO scenarios.
+- Added **None** (start on-site) so you continue the mission directly from the staging area — especially immersive for customized DRO scenarios.
 
 **Mechanized vehicles overhaul**
 
-- Now available for every mission type (Sniper Ops / Recon Ops / Combined Arms) with proper density cap for each.
+- Now available for every game mode (Recon Ops / Sniper Ops / Combined Arms), each with its own density cap.
 - Enemy mechanized forces (APCs and tanks) via a mission budget instead of endless linear growth.
-- Mechanized **density level** parameter (None / Low / Standard / High) now available.
-
+- New mechanized **density level** parameter (None / Low / Standard / High).
 
 **Optional soft-compat**
 
@@ -48,9 +53,9 @@ Every op is procedurally generated: a fresh Area of Operations, enemy layout, ob
 **Refined & fixed**
 
 - The classic DRO game modes (Recon / Sniper / Combined Arms) reviewed and fixed.
-- Civilian system fixes and improvements, including a performance-friendly **agent mode** and an fixed the optional hostile-civilian setting.
+- Civilian system fixes and improvements, including a performance-friendly **agent mode** and a fix for the optional hostile-civilian setting.
 - Leader-centric Team Planning lobby with a disconnect-handover safeguard.
-- Numerous bug fixes across revive, objectives, and spawn logic.
+- Numerous bug fixes across revive, objectives, and spawn logic — including a hostage-extraction task that could deadlock and never complete, and intel pickups that could damage nearby buildings.
 
 ---
 
@@ -94,6 +99,8 @@ The scenario is **map-agnostic**: it resolves locations and factions from the ru
 | **[Player Guide](docs/PLAYER_GUIDE.md)** | Players | Game modes, every lobby parameter, insertion types, objective types, factions, revive, supports, and the parameter-override system. |
 | **[Architecture](docs/ARCHITECTURE.md)** | Developers / maintainers | Folder layout, init order, CBA & CfgFunctions conventions, the 3-sphere override system, preset internals, ACE/LAMBS soft-compat, and file-write hazards. |
 | **[Publishing to Steam Workshop](docs/PUBLISHING_STEAM.md)** | Maintainer | Pre-flight checklist and step-by-step packing/upload via the Arma 3 Publisher. |
+
+Release history is in the [Changelog](CHANGELOG.md).
 
 ---
 

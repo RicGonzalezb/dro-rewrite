@@ -13,6 +13,9 @@ params ["_checkGroups"];
 			_removeGroups pushBack _forEachIndex;
 		};
 	} forEach _checkGroups;
+	// Delete high-to-low: deleteAt shifts every later index down by one, so removing
+	// ascending indices drops the WRONG groups whenever two die in the same tick.
+	reverse _removeGroups;
 	{_checkGroups deleteAt _x} forEach _removeGroups;
 	if (count _checkGroups == 0) then {_return = true};
 	_return

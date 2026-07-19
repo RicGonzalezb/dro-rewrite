@@ -69,7 +69,7 @@ _switchToHostile = {
 							_group = createGroup enemySide;					
 							(units group _x) joinSilent _group;							
 							{
-								_x remoteExec ["removeAllActions", 0, true];
+								_x remoteExec ["removeAllActions", 0];
 								_x removeItemFromUniform "hgun_Pistol_01_F";
 								if (random 1 > 0.65) then {
 									if (random 1 > 0.65) then {
@@ -110,7 +110,7 @@ _switchToHostile = {
 				_group = createGroup enemySide;					
 				(units group _unit) joinSilent _group;				
 				{
-					_x remoteExec ["removeAllActions", 0, true];
+					_x remoteExec ["removeAllActions", 0];
 					_x removeItemFromUniform "hgun_Pistol_01_F";
 					if (random 1 > 0.65) then {
 						if (random 1 > 0.65) then {
@@ -203,7 +203,7 @@ _switchToAmbush = {
 							_group = createGroup enemySide;					
 							(units group _x) joinSilent _group;
 							{
-								_x remoteExec ["removeAllActions", 0, true];
+								_x remoteExec ["removeAllActions", 0];
 								_x removeItemFromUniform "hgun_Pistol_01_F";
 								if (random 1 > 0.65) then {
 									if (random 1 > 0.65) then {
@@ -250,7 +250,7 @@ _switchToAmbush = {
 				_group = createGroup enemySide;					
 				(units group _unit) joinSilent _group;
 				{
-					_x remoteExec ["removeAllActions", 0, true];
+					_x remoteExec ["removeAllActions", 0];
 					_x removeItemFromUniform "hgun_Pistol_01_F";
 					if (random 1 > 0.65) then {
 						if (random 1 > 0.65) then {

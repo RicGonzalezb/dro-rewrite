@@ -36,7 +36,12 @@ params ["_unit", "_unitOld"];
 				[_newUnit, _DRO_oldHoldId] call BIS_fnc_holdActionRemove;
 			};
 			// Remove old drag addAction on every client before re-adding (no JIP — cleanup only).
-			[_newUnit] remoteExec ["DRO_fnc_removeDragAction", _allPlayers, false];
+			// remoteExec with an EMPTY target array logs
+			// "Trying to call RemoteExec(Call) with 0 targets" and is discarded. allPlayers minus
+			// the unit itself IS empty whenever that unit is the only player on the server.
+			if (count _allPlayers > 0) then {
+				[_newUnit] remoteExec ["DRO_fnc_removeDragAction", _allPlayers, false];
+			};
 
 			// --- Re-add Event Handlers ---
 			_newUnit addEventHandler ["HandleDamage", DRO_fnc_handleDamage];
@@ -47,8 +52,10 @@ params ["_unit", "_unitOld"];
 			reviveUnits = reviveUnits - [_oldUnit];
 			reviveUnits pushBack _newUnit;
 			publicVariable 'reviveUnits';
-			[_newUnit] remoteExec ["DRO_fnc_reviveActionAdd", _allPlayers, true];
-			[_newUnit] remoteExec ["DRO_fnc_dragActionAdd", _allPlayers, true];
+			if (count _allPlayers > 0) then {
+				[_newUnit] remoteExec ["DRO_fnc_reviveActionAdd", _allPlayers, true];
+				[_newUnit] remoteExec ["DRO_fnc_dragActionAdd", _allPlayers, true];
+			};
 			[(format ["Revive actions added for unit %1 called for %2", _newUnit, _allPlayers])] remoteExec ["diag_log", 2];
 		}]] remoteExec ["addEventHandler", _unit, true];			
 	} else {
@@ -65,8 +72,13 @@ params ["_unit", "_unitOld"];
 	
 	private _allPlayers = allPlayers;
 	_allPlayers = _allPlayers - [_unit];	
-	[_unit] remoteExec ["DRO_fnc_reviveActionAdd", _allPlayers, true];
-	[_unit] remoteExec ["DRO_fnc_dragActionAdd", _allPlayers, true];	
+	// remoteExec with an EMPTY target array logs
+	// "Trying to call RemoteExec(Call) with 0 targets" and is discarded. allPlayers minus
+	// the unit itself IS empty whenever that unit is the only player on the server.
+	if (count _allPlayers > 0) then {
+		[_unit] remoteExec ["DRO_fnc_reviveActionAdd", _allPlayers, true];
+		[_unit] remoteExec ["DRO_fnc_dragActionAdd", _allPlayers, true];
+	};	
 	if (player == _unit) then {
 		{
 			if (_x != _unit) then {

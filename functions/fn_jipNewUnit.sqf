@@ -35,6 +35,9 @@ params ["_oldUnit", "_newPos"];
 	//deleteVehicle _oldUnit;
 	*/
 	
+	// M12: free a slot from lobby-created AI if the squad is already full
+	// before this player joins (server-authoritative; see fn_jipAIBump.sqf).
+	[player] remoteExec ["DRO_fnc_jipAIBump", 2];
 	[player] joinSilent (grpNetId call BIS_fnc_groupFromNetId);
 	player setPos _newPos;
 	player setVariable ["respawnLoadout", (getUnitLoadout player), true];

@@ -66,4 +66,4 @@ The Publisher can also upload an unpacked mission folder. Same steps as A but sk
 
 ## What I can and can't do
 
-I can prepare the mission for packing (add the `Header`/overview snippets above, clean up files, write the Workshop description text). I **cannot** run Addon Builder or the Publisher, or upload to Steam — those need the deskt
+I can prepare the mission for packing (add the `Header`/overview snippets above, clean up files, write the Workshop description text). I **cannot** run Addon Builder or the Publisher, or upload to Steam — those need the desktop tools and your Steam login. Ask me if you want me to apply the `Header`/overview edits to `description.ext` and draft the Workshop description copy.

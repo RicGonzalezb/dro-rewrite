@@ -246,6 +246,16 @@ grpNetId = group _topUnit call BIS_fnc_netId;
 publicVariable "grpNetId";
 diag_log grpNetId;
 
+// M12: AI squad rework — total squad size (players + lobby-added AI) is
+// capped at the mission's editor-defined playable roster size, i.e. the
+// Header maxPlayers value in description.ext (currently 16, one source of
+// truth). If the editor roster is ever resized, update Header.maxPlayers —
+// DRO_maxSquad tracks it automatically. See fn_addAIToSquad.sqf / fn_rebuildRoster.sqf.
+DRO_maxSquad = getNumber (missionConfigFile >> "Header" >> "maxPlayers");
+publicVariable "DRO_maxSquad";
+DRO_createdAI = []; // server-authoritative creation-order list, see fn_addAIToSquad.sqf / fn_jipAIBump.sqf
+publicVariable "DRO_createdAI";
+
 publicVariable "playerGroup";
 publicVariable "DROgroupPlayers";
 publicVariable "groupLeader";
