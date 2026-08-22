@@ -1,9 +1,4 @@
-# Personal / internal planning docs — never published
+# Planning/reference docs (not mission code — protected from git revert)
 ARMA3_SQF_BEST_PRACTICES.md
-LAMBS_COMPAT_REFERENCE.md
-_DRO_PRESETS_MAP.md
-_DRO_REFACTOR_PLAN.md
 _DRO_REFACTOR_PROGRESS.md
-
-# Workshop copy helper (local use only)
-WORKSHOP_DESCRIPTION.md
+_DRO_REFACTOR_PLAN.md

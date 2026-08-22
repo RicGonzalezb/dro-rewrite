@@ -71,12 +71,12 @@ if (count _heliTransports > 0) then {
 		[_pfhId] call CBA_fnc_removePerFrameHandler;
 		if ((!alive _heli) || {!([_heli] call sun_helicopterCanFly)}) then {
 			private _text = format ["We've just lost contact with %1, you'll need to extract on your own.", _heli];
-			dro_messageStack pushBack [[["Command", _text, 0]], true];
+			[[["Command", _text, 0]], true] call DRO_fnc_queueMessage;
 		};
 	}, 5, [_heli]] call CBA_fnc_addPerFrameHandler;
 	
 	_text = format ["This is %1, request received. Proceeding to grid %2.", _heli, mapGridPosition _lzPos];
-	dro_messageStack pushBack [[[(str (driver _heli)), _text, 0]], true];
+	[[[(str (driver _heli)), _text, 0]], true] call DRO_fnc_queueMessage;
 	//[(str (driver _heli)), _text] spawn BIS_fnc_showSubtitle;
 	//[] remoteExec ["sun_playSubtitleRadio", 0];
 		
@@ -127,13 +127,13 @@ if (count _heliTransports > 0) then {
 			"Enemy spotted during landing, suggest immediate exfil.",
 			"We took some small arms coming in, they know we're here!"
 		];
-		dro_messageStack pushBack [[[str (driver _heli), _textArrived, 0]], true];
+		[[[str (driver _heli), _textArrived, 0]], true] call DRO_fnc_queueMessage;
 
 		if ([_heli] call sun_helicopterCanFly) then {
 			[(leader (grpNetId call BIS_fnc_groupFromNetId)), "extractLeave"] remoteExec ["BIS_fnc_addCommMenuItem", (leader (grpNetId call BIS_fnc_groupFromNetId)), true];
 		} else {
 			if (alive (leader _heliGroup)) then {
-				dro_messageStack pushBack [[[str (driver _heli), "We've taken too much damage to fly, we're grounded for now.", 0]], true];
+				[[[str (driver _heli), "We've taken too much damage to fly, we're grounded for now.", 0]], true] call DRO_fnc_queueMessage;
 			};
 		};
 
@@ -151,7 +151,7 @@ if (count _heliTransports > 0) then {
 			if (!isNil "extractLeave" && {extractLeave}) then {
 				[_pfhId] call CBA_fnc_removePerFrameHandler;
 				_heli enableAI "MOVE";
-				dro_messageStack pushBack [[[str (driver _heli), "Copy that, we're outbound.", 0]], true];
+				[[[str (driver _heli), "Copy that, we're outbound.", 0]], true] call DRO_fnc_queueMessage;
 				private _outPos = if (!isNil "extractPos") then { extractPos } else { _spawnPos };
 				private _wpExtract = _heliGroup addWaypoint [_outPos, 0];
 				_wpExtract setWaypointBehaviour "CARELESS";

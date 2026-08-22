@@ -134,12 +134,12 @@ DRO_artyCommit = {
 	
 	_isInRange = _supportCoords inRangeOfArtillery [[_provider], _selectedAmmo];
 	if (!_isInRange) exitWith {
-		dro_messageStack pushBack [
+		[
 			[
 				[str group ((crew _provider) select 0), "No range on that target.", 0]
 			],
 			true
-		];
+		] call DRO_fnc_queueMessage;
 	};
 	
 	DRO_SUPP_tempEH = vehicle _provider addEventHandler ["Fired", {
@@ -152,12 +152,12 @@ DRO_artyCommit = {
 	
 	{_x commandArtilleryFire [_supportCoords, _ammo, _x getVariable "BIS_SUPP_rounds"]} forEach _gunners;
 	diag_log (driver _provider);
-	dro_messageStack pushBack [
+	[
 		[
 			[str group ((crew _provider) select 0), "Rounds complete.", 0]
 		],
 		true
-	];	
+	] call DRO_fnc_queueMessage;	
 		
 	_i = 1;
 	_mrkrName = format ["BIS_SUPP_mrkr_%1", _i];
@@ -184,12 +184,12 @@ DRO_artyCommit = {
 		//waitUntil {!(_provider getVariable "DRO_SUPP_supporting") || !alive _provider}; //#LordShadeAceVeh
 		waitUntil {(!(_provider getVariable "DRO_SUPP_supporting")) || (!(aliveVeh(_provider)))}; //#LordShadeAceVeh
 		deleteMarker _mrkrName;
-		dro_messageStack pushBack [
+		[
 			[
 				[str group ((crew _provider) select 0), "Splash.", 0]
 			],
 			true
-		];
+		] call DRO_fnc_queueMessage;
 	};
 	//(_this select 0) kbTell [_this select 2, ""BIS_SUPP_protocol"", ""Artillery_Accomplished"", BIS_SUPP_channels select ([WEST, EAST, RESISTANCE] find side group (_this select 0))];
 };

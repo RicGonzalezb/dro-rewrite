@@ -218,28 +218,21 @@ if (!isNull _caller) then {
 			selectRandom ["I've got some intel here.", "Heads up, found some intel.", "This might be useful."]
 		};
 		_radioDesc = format ["%1%2%3", _radioDescZone, _radioDescIcon, _radioDescTroops];
-		[_caller, _firstSentence, _radioDesc, _radioTaskIntel] spawn {
-			params ["_caller", "_firstSentence", "_radioDesc", "_radioTaskIntel"];
-			dro_messageStack pushBack [
-				[
-					[name _caller, _firstSentence, 0]	
-				],
-				false
-			];
-			["REVEAL_INTEL", name _caller, [_radioDesc, _radioTaskIntel], false] spawn DRO_fnc_sendProgressMessage;
-		};
+		// dro_messageStack + its broadcaster (messageListener.sqf) are SERVER-side (both init
+		// in start.sqf, server-only). This hold-action runs on the player's CLIENT, where the
+		// stack is undefined on a dedicated server ("Undefined variable dro_messageStack") and
+		// the message never reaches the broadcaster to be shown to the squad. Route to server (2).
+		// The caller's first line is passed as _data#2 so both lines land on the server stack in order.
+		["REVEAL_INTEL", name _caller, [_radioDesc, _radioTaskIntel, _firstSentence], false] remoteExec ["DRO_fnc_sendProgressMessage", 2];
 	} else {
 		_phrase = selectRandom [
 			"Nothing important here.",
 			"I can't find anything interesting here.",
 			"Nothing here we don't already know."				
 		];
-		dro_messageStack pushBack [
-			[
-				[name _caller, _phrase, 0]
-			],
-			false
-		];		
+		// Same locality fix as above: route the "nothing here" line to the server stack.
+		// REACTIVE_TASK pushes exactly [[[_sender, _phrase, 0]], _playAudio].
+		["REACTIVE_TASK", name _caller, [_phrase], false] remoteExec ["DRO_fnc_sendProgressMessage", 2];
 	};	
 };
 publicVariable "enemyIntelMarkers";	

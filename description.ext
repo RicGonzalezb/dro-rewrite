@@ -1356,6 +1356,7 @@ class CfgFunctions
             class switchMechLevel {};
             class validPos {};
             class livingEntities {};  // orphan cleanup: live-object/live-group filter (isNull is not enough for groups)
+            class queueMessage {};    // route dro_messageStack pushes to the server (client-run comm-menu scripts)
             class untrackEntity {}; // orphan cleanup: drop entity from tracking lists + dispose empty group
             class orphanSweep {};   // orphan cleanup: periodic empty-group janitor (server-side)
             class switchButtonWeather {};

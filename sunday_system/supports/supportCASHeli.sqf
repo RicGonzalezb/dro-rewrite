@@ -138,9 +138,9 @@ DRO_CASCommit = {
 		//if (alive _provider) then { //#LordShadeAceVeh
 		if (aliveVeh(_provider)) then { //#LordShadeAceVeh
 			if ((player getVariable "DRO_SUPP_ammoType") == 0) then {
-				dro_messageStack pushBack [[[str group ((crew _provider) select 0), "Splash.", 0]], true];				
+				[[[str group ((crew _provider) select 0), "Splash.", 0]], true] call DRO_fnc_queueMessage;				
 			} else {
-				dro_messageStack pushBack [[[str group ((crew _provider) select 0), "Targets engaged.", 0]], true];				
+				[[[str group ((crew _provider) select 0), "Targets engaged.", 0]], true] call DRO_fnc_queueMessage;				
 			};
 		};
 	};

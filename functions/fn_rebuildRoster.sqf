@@ -91,8 +91,16 @@ private _lineHeight = 2.25 * pixelGridNoUIScale * pixelH;
 		_loadoutControl ctrlSetPosition [20 * pixelGridNoUIScale * pixelW, ((_forEachIndex) * _lineSpacing), 15.25 * pixelGridNoUIScale * pixelW, _lineHeight];
 		_loadoutControl ctrlSetBackgroundColor [0.1,0.1,0.1,1];
 		_loadoutControl ctrlSetTextColor [1,1,1,0.5];
-		private _factionClass = ((configfile >> "CfgVehicles" >> (_x2 getVariable "unitClass") >> "faction") call BIS_fnc_getCfgData);
-		private _class = format ["%1 - %2", ((configfile >> "CfgVehicles" >> (_x2 getVariable "unitClass") >> "displayName") call BIS_fnc_getCfgData), ((configfile >> "CfgFactionClasses" >> _factionClass >> "displayName") call BIS_fnc_getCfgData)];
+		// unitClass is only set on loadout switch / AI create / JIP — a human who never
+		// customised has none. On a dedicated server, OTHER players' rows hit this else
+		// branch; reading "unitClass" with no default returned nil and the config lookup
+		// errored (_factionClass then undefined -> reported crash on multi-player Team
+		// Planning). Fall back to the unit's real typeOf, which is always set and synced.
+		private _unitClass = _x2 getVariable ["unitClass", ""];
+		if (_unitClass isEqualTo "") then { _unitClass = typeOf _x2 };
+		private _factionClass = ((configfile >> "CfgVehicles" >> _unitClass >> "faction") call BIS_fnc_getCfgData);
+		if (isNil "_factionClass") then { _factionClass = "" };
+		private _class = format ["%1 - %2", ((configfile >> "CfgVehicles" >> _unitClass >> "displayName") call BIS_fnc_getCfgData), ((configfile >> "CfgFactionClasses" >> _factionClass >> "displayName") call BIS_fnc_getCfgData)];
 		_loadoutControl ctrlSetText _class;
 		_loadoutControl ctrlCommit 0;
 	};

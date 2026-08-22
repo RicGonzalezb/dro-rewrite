@@ -53,7 +53,7 @@ addMissionEventHandler ["EntityKilled", {
 // Death-cause agnostic janitor. Starts only after mission generation has finished,
 // so it never collects groups that are legitimately empty mid-spawn.
 [{ (missionNamespace getVariable ["objectivesSpawned", 0]) == 1 }, {
-    DRO_orphanSweepPFH = [DRO_fnc_orphanSweep, 30, []] call CBA_fnc_addPerFrameHandler;
+    DRO_orphanSweepPFH = [DRO_fnc_orphanSweep, 300, []] call CBA_fnc_addPerFrameHandler;
 }] call CBA_fnc_waitUntilAndExecute;
 
 _vn_allowed_radio_backpacks = (missionConfigFile >> "vn_artillery_settings" >> "radio_backpacks") call BIS_fnc_getCfgDataArray;

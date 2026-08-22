@@ -19,12 +19,12 @@ createVehicleCrew _heli;
 _heli flyInHeight 150;
 _heli setCaptive true;
 
-dro_messageStack pushBack [
+[
 	[
 		[str group ((crew _heli) select 0), "Supply drop en route.", 0]		
 	],
 	true
-];	
+] call DRO_fnc_queueMessage;	
 
 //sleep 30;
 
@@ -55,12 +55,12 @@ while {_heli distance _posAir > 110} do {
 };
 
 if (_fail) exitWith {
-	dro_messageStack pushBack [
+	[
 		[
 			["Command", format ["We've lost contact with %1, supply drop canceled.", driver _heli], 0]		
 		],
 		true
-	];	
+	] call DRO_fnc_queueMessage;	
 };
 
 waitUntil {_heli distance _posAir < 110};

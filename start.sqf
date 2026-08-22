@@ -813,12 +813,17 @@ switch (missionPreset) do {
 DRO_mechMult = switch (_mechLvl) do { case "NONE": {0}; case "LOW": {0.6}; case "HIGH": {1.5}; default {1} };
 diag_log format ["DRO: mech profile = %1 (mult %2), preset %3", _mechLvl, DRO_mechMult, missionPreset];
 
-// --- Mechanized quota (Combined Arms) -----------------------------------------------
-// Enemy APC/tank allocation as a mission-wide budget instead of an independent per-AO
-// roll, so the total no longer scales linearly with AO count. Standard base 2.5 APC /
-// 1.5 tank, growth 0.3 per extra hostile AO. Primary (first hostile AO) takes ~50%; the
-// remainder is scattered randomly across the other hostile AOs, capped below the primary
-// so it stays the armoured strongpoint. DRO_mechMult is the Low/Standard/High hook.
+// --- Mechanized quota ---------------------------------------------------------------
+// Mission-wide armour budget (not a per-AO roll). Recalibrated 2026-07-26:
+//   total armour = round(base + slope*H) per level, split ~3/8 tank, 5/8 APC.
+//     Low      base 0.6 slope 0.4  -> 1,1,2,2,3,3   (H = hostile-AO count, 1..6)
+//     Standard base 1.6 slope 0.4  -> 2,2,3,3,4,4
+//     High     base 2.0 slope 0.8  -> 3,4,4,5,6,7
+//   Slope rises with level on purpose: at High, extra AOs add real armour; at Low they
+//   barely do. Replaces the old 2.5-APC/1.5-tank * 0.3-growth budget which scaled too
+//   hard (High/6AO was 14, now 7; Standard/6AO 9 -> 4).
+// Primary (first hostile AO) takes ~50%; the remainder is scattered across the other
+// hostile AOs, capped below the primary so it stays the armoured strongpoint.
 DRO_mechQuota = [];
 { DRO_mechQuota pushBack [0,0] } forEach AOLocations;
 if (DRO_mechMult > 0) then {
@@ -826,9 +831,15 @@ if (DRO_mechMult > 0) then {
 	{ if (((AOLocations select _forEachIndex) select 4) == 0) then { _hostiles pushBack _forEachIndex } } forEach AOLocations;
 	private _H = count _hostiles;
 	if (_H > 0) then {
-		private _mult = missionNamespace getVariable ["DRO_mechMult", 1];
-		private _apcBudget  = round ((2.5 * _mult) * (1 + (_H - 1) * 0.3));
-		private _tankBudget = floor ((1.5 * _mult) * (1 + (_H - 1) * 0.3));
+		private _base = 1.6; private _slope = 0.4;   // default = Standard (safety)
+		switch (_mechLvl) do {
+			case "LOW":      { _base = 0.6; _slope = 0.4; };
+			case "STANDARD": { _base = 1.6; _slope = 0.4; };
+			case "HIGH":     { _base = 2.0; _slope = 0.8; };
+		};
+		private _total      = round (_base + _slope * _H);
+		private _tankBudget = round (_total * 0.375);
+		private _apcBudget  = _total - _tankBudget;
 		private _fnc_alloc = {
 			params ["_budget", "_hostileCount"];
 			private _out = [];
@@ -857,7 +868,7 @@ if (DRO_mechMult > 0) then {
 		{
 			DRO_mechQuota set [_x, [(_apcAlloc select _forEachIndex), (_tankAlloc select _forEachIndex)]];
 		} forEach _hostiles;
-		diag_log format ["DRO: mech quota H=%1 apcB=%2 tankB=%3 -> %4", _H, _apcBudget, _tankBudget, DRO_mechQuota];
+		diag_log format ["DRO: mech quota level=%1 H=%2 total=%3 apcB=%4 tankB=%5 -> %6", _mechLvl, _H, _total, _apcBudget, _tankBudget, DRO_mechQuota];
 	};
 };
 

@@ -20,9 +20,26 @@ private _perp = _fwd + 90;
 // Spawn the player group at the offshore start. sun_setPlayerGroup joins the squad into a NEW
 // group and reassigns grpNetId, so the group/units MUST be resolved AFTER it runs — a handle
 // captured before points at the now-empty old group (that was the "1 boat, nobody aboard" bug).
+//
+// Capture the human players BEFORE the regroup so we can wait for the NEW group to actually
+// contain them all on the server. The joinSilent + grpNetId publicVariable has a sync window
+// that the old fixed `sleep 2` only guessed at: with a solo remote player and no AI to pad the
+// roster, that guess lost — _players came back empty, nobody was assigned, and the boat left
+// with only its pilot while the player was dumped swimming at spawn.
+private _expectedPlayers = (units (grpNetId call BIS_fnc_groupFromNetId)) select {isPlayer _x};
 [_spawnPos] remoteExec ["sun_setPlayerGroup"];
 waitUntil {newUnitsReady};
-sleep 2;
+
+// Membership gate: block until every expected player is in the new group (or a 10s safety
+// timeout). Stays a blocking, CONDITION-based waitUntil on purpose — DRO_fnc_boatInsertion is
+// `call`ed synchronously and the caller reads DRO_seaLandPos on return, so the body cannot hand
+// control back early via a non-blocking CBA continuation without also refactoring the caller.
+private _tGate = time + 10;
+waitUntil {
+	sleep 0.1;
+	private _g = grpNetId call BIS_fnc_groupFromNetId;
+	(!isNull _g && {(_expectedPlayers - (units _g)) isEqualTo []}) || (time > _tGate)
+};
 
 private _grp     = grpNetId call BIS_fnc_groupFromNetId;
 private _players = (units _grp) - [objNull];
@@ -77,6 +94,26 @@ private _pi = 0;
 // boats drive away in CARELESS/FULL and leave the players swimming at the spawn.
 private _tBoard = time + 20;
 waitUntil { sleep 0.5; (({!isNull objectParent _x} count _players) >= (count _players)) || (time > _tBoard) };
+
+// Reconcile: force-board anyone the async groupToVehicle failed to seat. groupToVehicle
+// remoteExec's moveInCargo to each unit's OWNER (the client); the boat, however, is
+// server-local, and moveInCargo is most reliable run where the VEHICLE is local. Doing it
+// here on the server closes the case where a player never actually got in and would otherwise
+// be left swimming at the offshore spawn.
+{
+	private _u = _x;
+	if (isNull (objectParent _u)) then {
+		private _bi = _boats findIf { !isNull _x && {alive _x} && {(_x emptyPositions "Cargo") > 0} };
+		if (_bi > -1) then {
+			private _b = _boats select _bi;
+			_u assignAsCargo _b;
+			_u moveInCargo _b;
+			diag_log format ["DRO: boatInsertion reconcile — force-boarded %1 into %2", _u, _b];
+		} else {
+			diag_log format ["DRO: boatInsertion reconcile — NO free boat seat for %1", _u];
+		};
+	};
+} forEach _players;
 
 // Rail each boat down its own parallel lane of the corridor to an offset drop.
 {

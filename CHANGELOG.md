@@ -3,6 +3,28 @@
 All notable changes to the Rewrite are documented here. Dates are the completion
 date of the work, not a Workshop release date.
 
+## [1.1.1] — 2026-07-26 — Dedicated-server & balance fixes
+
+### Fixed
+- **Team Planning could crash on dedicated servers** with multiple players
+  (undefined faction class when a player hadn't changed loadout).
+- **Radio messages (intel, fire support, extraction) only showed locally on
+  dedicated servers** and could throw an undefined-variable error — they now
+  route to the server and reach the whole team.
+- **Boat insertion could drop a solo player in the water** while the boat left
+  with only the pilot; players are now reliably boarded before departure.
+- **Enemy armor turned into "Eliminate vehicle" tasks in Recon/Sniper Ops** — a
+  regression from the mechanized redesign. Armor is ambient again outside
+  Combined Arms.
+- **Budgeted armor could silently fail to spawn** for factions that don't tag
+  their vehicles the vanilla way; the vehicle pool now falls back by priority so
+  the intended count still appears.
+
+### Changed
+- **Rebalanced mechanized armor.** New per-level totals that scale more gently
+  with the number of AOs (no more ~14 vehicles on High/6-AO), and the enemy car
+  patrol now follows the Mechanized level ("None" means no armor at all).
+
 ## [1.1.0] — 2026-07-19 — AI Squad Roster & stability
 
 ### Added

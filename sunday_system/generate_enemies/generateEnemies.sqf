@@ -89,13 +89,29 @@ private _tankQuota = if (!isNil "DRO_mechQuota" && {_AOIndex < count DRO_mechQuo
 // [DIAG - remove after tuning] mechanized quota + faction armour pools for this AO.
 diag_log format ["DRO: AO %1 mech quota apc=%2 tank=%3 | pools eAPC=%4 eTank=%5 eCarTurret=%6 eCar=%7", _AOIndex, _apcQuota, _tankQuota, count eAPCClasses, count eTankClasses, count eCarTurretClasses, count eCarClasses];
 if (_apcQuota > 0 || {_tankQuota > 0}) then {
-	if (count eAPCClasses > 0 && {_apcQuota > 0}) then {
+	// Pool fallback: the budgeted armour must actually spawn even when the enemy faction
+	// tagged nothing in a given bucket (common with mod factions that skip the vanilla
+	// EdSubcat_APCs / kindOf conventions — e.g. eAPC=0 was observed live). Each budget keeps
+	// its own apc/tank split but substitutes the CLASS from a priority list of related pools,
+	// so the total count is preserved instead of silently vanishing.
+	//   APC  slot: APC -> armed car (turret) -> tank
+	//   Tank slot: tank -> APC -> armed car (turret)
+	private _apcPool = eAPCClasses;
+	if (count _apcPool == 0) then { _apcPool = eCarTurretClasses };
+	if (count _apcPool == 0) then { _apcPool = eTankClasses };
+	private _tankPool = eTankClasses;
+	if (count _tankPool == 0) then { _tankPool = eAPCClasses };
+	if (count _tankPool == 0) then { _tankPool = eCarTurretClasses };
+	if ((_apcQuota > 0 && {count _apcPool == 0}) || {_tankQuota > 0 && {count _tankPool == 0}}) then {
+		diag_log format ["DRO: AO %1 mech pool fallback exhausted - apcPool=%2 tankPool=%3 (some budgeted armour will not spawn)", _AOIndex, count _apcPool, count _tankPool];
+	};
+	if (count _apcPool > 0 && {_apcQuota > 0}) then {
 		_numVeh = _apcQuota;
 		for "_x" from 1 to _numVeh do {
 			_indexes = [[0, 1]] call DRO_fnc_checkAOIndexes;
 			if (count _indexes > 0) then {			
 				_vehPos = [(((AOLocations select _AOIndex) select 2) select (selectRandom _indexes))] call DRO_fnc_selectRemove;			
-				_vehType = selectRandom eAPCClasses;
+				_vehType = selectRandom _apcPool;
 				_veh = createVehicle [_vehType, _vehPos, [], 0, "NONE"];		
 				[_veh] call DRO_fnc_createVehicleCrew;
 				//createVehicleCrew _veh;
@@ -113,13 +129,13 @@ if (_apcQuota > 0 || {_tankQuota > 0}) then {
 			};			
 		};
 	};
-	if (count eTankClasses > 0 && {_tankQuota > 0}) then {
+	if (count _tankPool > 0 && {_tankQuota > 0}) then {
 		_numVeh = _tankQuota;
 		for "_x" from 1 to _numVeh do {
 			_indexes = [[0, 1]] call DRO_fnc_checkAOIndexes;
 			if (count _indexes > 0) then {			
 				_vehPos = [(((AOLocations select _AOIndex) select 2) select (selectRandom _indexes))] call DRO_fnc_selectRemove;			
-				_vehType = selectRandom eTankClasses;
+				_vehType = selectRandom _tankPool;
 				_veh = createVehicle [_vehType, _vehPos, [], 0, "NONE"];		
 				[_veh] call DRO_fnc_createVehicleCrew;
 				//createVehicleCrew _veh;
@@ -134,7 +150,15 @@ if (_apcQuota > 0 || {_tankQuota > 0}) then {
 				_patrolGroups pushBack (group (driver _veh));
 				//[(group(driver _veh)), _vehPos, 800] call BIS_fnc_taskPatrol;		
 				_vehPos = selectRandom (((AOLocations select _AOIndex) select 2) select 0);
-				[[(group (driver _veh)), "TANK"]] call DRO_fnc_unitTaskObjective;
+				// Combined Arms ONLY: turn each mech tank into an "Optional: Eliminate vehicle"
+				// task. This is the original Combined-Arms design (tanks are the point there).
+				// The mech redesign lifted the missionPreset==3 gate off the SPAWN so armour
+				// exists in every preset, but the tasking must stay Combined-Arms-only — in
+				// Recon/Sniper the armour is an ambient threat, not an auto-objective (that was
+				// the reported 'every tank that appears becomes a neutralize-vehicle task').
+				if (missionPreset == 3) then {
+					[[(group (driver _veh)), "TANK"]] call DRO_fnc_unitTaskObjective;
+				};
 			};			
 		};
 	};	
@@ -142,8 +166,13 @@ if (_apcQuota > 0 || {_tankQuota > 0}) then {
 
 // Vehicle patrol
 if (count eCarClasses > 0) then {
-	if (random 1 > 0.4) then {
-		_numVeh = round (([1,2] call BIS_fnc_randomInt) * _sizeMod);
+	// Vehicle patrol now follows the enemy-armour level (DRO_mechMult): None (0) = no
+	// patrol, Low (0.6) fewer, Standard (1.0) baseline, High (1.5) more. It used to ignore
+	// the level entirely, which made it the biggest hidden source of "too much armour"
+	// (eCarClasses includes turret cars). Still a separate roll from the mech quota.
+	private _mechMult = missionNamespace getVariable ["DRO_mechMult", 1];
+	if (_mechMult > 0 && {random 1 > 0.4}) then {
+		_numVeh = round (([1,2] call BIS_fnc_randomInt) * _sizeMod * _mechMult);
 		for "_x" from 1 to _numVeh do {
 			_indexes = [[0, 1]] call DRO_fnc_checkAOIndexes;
 			if (count _indexes > 0) then {			

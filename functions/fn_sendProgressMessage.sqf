@@ -134,6 +134,12 @@ params ["_message", ["_sender", "Command"], ["_data", []], ["_playAudio", true]]
 			];
 		};
 		case "REVEAL_INTEL": {			
+			// Optional caller acknowledgement line (was a separate client-side push in
+			// revealIntel.sqf, now folded in so it lands on the SERVER stack first, in order).
+			private _firstLine = _data param [2, ""];
+			if (_firstLine != "") then {
+				dro_messageStack pushBack [ [[_sender, _firstLine, 0]], _playAudio ];
+			};
 			if (count (_data select 1) > 0) then {
 				dro_messageStack pushBack [
 					[
