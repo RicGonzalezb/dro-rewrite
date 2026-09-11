@@ -144,9 +144,18 @@ private _AOPos = ((AOLocations select _AOIndex) select 0);
 private _AOSize = ((AOLocations select _AOIndex) select 1);
 centerSide = createCenter sideLogic;
 private _totalSpawnPoints = 0;
+// Every position that feeds a civilian spawn, collected as it is created. In AGENTS
+// mode we spawn from this list directly instead of going through the BIS module -
+// see the branch at the bottom of this file for why.
+private _civSpawnPositions = [];
 
-(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _AOPos, [], 0, "FORM"];
+// Spawn-point and safe-spot entities feed ModuleCivilianPresence_F only. Agents mode
+// bypasses that module entirely, so creating them there is pure sideLogic bloat.
+if (!_useAgents) then {
+	(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _AOPos, [], 0, "FORM"];
+};
 _totalSpawnPoints = _totalSpawnPoints + 1;
+_civSpawnPositions pushBack _AOPos;
 
 private _customClasses = civClasses;
 if (civFaction == "CIV_F") then {
@@ -179,22 +188,48 @@ _C_speakers = (_identities select 2);
 _C_faces = (_identities select 3);
 
 // Uniform
+// A class with no uniformClass entry makes getCfgData return nil, and pushBackUnique nil
+// throws. Every stock civilian class has one, so this never fired in practice, but a
+// modded class pool is exactly where it would.
 _C_uniformList = [];
 {
-	_C_uniformList pushBackUnique ([(configFile >> "CfgVehicles" >> _x >> "uniformClass")] call BIS_fnc_getCfgData);
+	private _uniformClass = ([(configFile >> "CfgVehicles" >> _x >> "uniformClass")] call BIS_fnc_getCfgData);
+	if (!isNil "_uniformClass" && {_uniformClass isEqualType ""} && {_uniformClass != ""}) then {
+		_C_uniformList pushBackUnique _uniformClass;
+	};
 } forEach _customClasses;
 
 // Headgear
-_C_headgearList = ([(configFile >> "CfgVehicles" >> _keyClass >> "headgearList")] call BIS_fnc_getCfgData);
-_C_headgearList = if (isNil "_headgearList") then {[]} else {DRO_C_headgearList};
+// Fix: the guard used to test `isNil "_headgearList"` - a variable that exists nowhere in
+// this file - so it was always true and _C_headgearList was always [] (no civilian ever
+// got headgear). Its else branch read DRO_C_headgearList, another never-declared global.
+// Second fix: CfgVehicles >> headgearList is a WEIGHTED array, e.g.
+//   headgearList[] = {"H_Cap_press", 0.4, "", 0.6};
+// class names and their probabilities interleaved, with "" meaning "bare head". Feeding
+// that straight to selectRandom would hand addHeadgear a number or an empty string, so
+// keep only the non-empty string entries. The 0.6 chance roll at the spawn site already
+// covers the "no headgear" case the "" entries encode.
+private _headgearRaw = ([(configFile >> "CfgVehicles" >> _keyClass >> "headgearList")] call BIS_fnc_getCfgData);
+_C_headgearList = [];
+if (!isNil "_headgearRaw" && {_headgearRaw isEqualType []}) then {
+	{
+		if (_x isEqualType "" && {_x != ""}) then { _C_headgearList pushBackUnique _x };
+	} forEach _headgearRaw;
+};
 
 // Vest
 _C_vestList = [];
 private _thisLinked = ([(configFile >> "CfgVehicles" >> _keyClass >> "linkedItems")] call BIS_fnc_getCfgData); //{"H_Cap_press","V_Press_F","ItemMap","ItemCompass","ItemWatch"};
-if (!isNil "_thisLinked") then {
-	{			
-		if (_x isKindOf ["Vest_Camo_Base", configFile >> "CfgWeapons"]) then {DRO_C_vestList pushBack _x};
-		if (_x isKindOf ["Vest_NoCamo_Base", configFile >> "CfgWeapons"]) then {DRO_C_vestList pushBack _x};
+// Fix: this loop used to push into DRO_C_vestList - a global that is never declared
+// anywhere in the project - while the list actually consumed below is _C_vestList.
+// Net effect: _C_vestList stayed empty forever (no civilian ever got a vest) and the
+// pushBack on the undeclared global threw on every linked vest. Writes to _C_vestList
+// now. Also type-guards _thisLinked: getCfgData returns whatever the config holds, and
+// forEach over a non-array errors.
+if (!isNil "_thisLinked" && {_thisLinked isEqualType []}) then {
+	{
+		if (_x isKindOf ["Vest_Camo_Base", configFile >> "CfgWeapons"]) then {_C_vestList pushBackUnique _x};
+		if (_x isKindOf ["Vest_NoCamo_Base", configFile >> "CfgWeapons"]) then {_C_vestList pushBackUnique _x};
 	} forEach _thisLinked;
 };
 
@@ -285,9 +320,12 @@ diag_log format ["DRO: Civilian spawn — type=%1, minAI=%2, maxAI=%3, numCivs=%
 _spawnCount = _numCivs min _posCount;
 for "_x" from 0 to (_spawnCount - 1) do {
 	private _civPosition = _filteredCivPositions select _x;
-	(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
+	if (!_useAgents) then {
+		(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _civPosition, [], 0, "FORM"];
+		[_civPosition, true, 2] call _createSafeSpot;
+	};
 	_totalSpawnPoints = _totalSpawnPoints + 1;
-	[_civPosition, true, 2] call _createSafeSpot;
+	_civSpawnPositions pushBack _civPosition;
 };
 
 // Spawn hostile civs if enabled
@@ -319,9 +357,12 @@ if (_continue && !isNil "marketPositions") then {
 					};
 				};
 				if (_forEachIndex % 2 == 0) then {
-					(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _x, [], 0, "FORM"];
+					if (!_useAgents) then {
+						(createGroup centerSide) createUnit ["ModuleCivilianPresenceUnit_F", _x, [], 0, "FORM"];
+						[_x, true, 2] call _createSafeSpot;
+					};
 					_totalSpawnPoints = _totalSpawnPoints + 1;
-					[_x, true, 2] call _createSafeSpot;
+					_civSpawnPositions pushBack (if (_x isEqualType objNull) then { getPos _x } else { _x });
 				};		
 			} forEach _thisMarketPositions;
 		} forEach marketPositions;
@@ -363,59 +404,114 @@ if (count civCarClasses > 0) then {
 	};
 };
 
-private _modCivs = (createGroup centerSide) createUnit ["ModuleCivilianPresence_F", _AOPos, [], 0, "FORM"];
-// M8 fix: unitCount = total spawn points criados — 1 civ por ponto, sem clustering
-_modCivs setVariable ["#unitCount", (_totalSpawnPoints max 1), true];
-// M7 fix: área aumentada de AOSize/2 para AOSize*0.75 — civis se espalham mais
-_modCivs setVariable ["objectarea", [(_AOSize * 0.75), (_AOSize * 0.75), 0, false, -1], true];
-diag_log format ["DRO: ModuleCivilianPresence_F init — useAgents=%1, unitCount=%2, totalSpawnPoints=%3", _useAgents, _totalSpawnPoints, _totalSpawnPoints];
-_modCivs setVariable ["#useAgents", _useAgents, true];
-_modCivs setVariable ["#usePanicMode", true, true];
-_modCivs setVariable ["DRO_uniformList", _C_uniformList];
-_modCivs setVariable ["DRO_firstNames", _C_firstNames];
-_modCivs setVariable ["DRO_lastNames", _C_lastNames];
-_modCivs setVariable ["DRO_speakers", _C_speakers];
-_modCivs setVariable ["DRO_faces", _C_faces];
-_modCivs setVariable ["DRO_headgearList", _C_headgearList];
-_modCivs setVariable ["DRO_vestList", _C_vestList];
-_modCivs setVariable ["#onCreated", {
-	removeAllItems _this;	
-	removeVest _this;
-	removeHeadgear _this;
-	removeUniform _this;
-	_module = (_this getVariable "#core");
-	[_this, (selectRandom (_module getVariable "DRO_firstNames")), (selectRandom (_module getVariable "DRO_lastNames")), (selectRandom (_module getVariable "DRO_speakers")), (selectRandom (_module getVariable "DRO_faces"))] remoteExec ["DRO_fnc_setNameMP", 0];		
-	_this addUniform (selectRandom (_module getVariable "DRO_uniformList"));
-	if (random 1 > 0.6) then {_this addHeadgear (selectRandom (_module getVariable "DRO_headgearList"))};
-	if (random 1 > 0.3) then {_this addVest (selectRandom (_module getVariable "DRO_vestList"))};
-	[_this] call DRO_fnc_civDeathHandler;
-	// M8: civs ALWAYS get dynamic simulation (performance savings regardless of user toggle)
-	_this enableDynamicSimulation true;
-	// M8 fix: BIS module sometimes ignores #useAgents — force convert unit to agent
-	private _module = (_this getVariable "#core");
-	private _wantAgents = _module getVariable ["#useAgents", false];
-	if (_wantAgents && {!(isNull (group _this))}) then {
-		private _pos = getPos _this;
-		private _type = typeOf _this;
-		private _dir = getDir _this;
-		private _uniform = uniform _this;
-		private _headgear = headgear _this;
-		private _vest = vest _this;
-		deleteVehicle _this;
-		private _agent = createAgent [_type, _pos, [], 0, "NONE"];
-		_agent setDir _dir;
-		_agent setBehaviour "CARELESS";
-		_agent enableDynamicSimulation true;
-		if (_uniform != "") then { removeUniform _agent; _agent addUniform _uniform };
-		if (_headgear != "") then { _agent addHeadgear _headgear };
-		if (_vest != "") then { _agent addVest _vest };
-		[_agent] call DRO_fnc_civDeathHandler;
-		diag_log format ["DRO: Civilian CONVERTED unit→agent — typeOf=%1", _type];
-	} else {
-		diag_log format ["DRO: Civilian spawned — isAgent=%1, typeOf=%2", (isNull (group _this)), typeOf _this];
-	};
-}, true];
-["init", [_modCivs]] call bis_fnc_moduleCivilianPresence;
+// ---------------------------------------------------------------------------------
+// Civilian spawning splits on _useAgents.
+//
+// UNITS MODE  -> ModuleCivilianPresence_F, exactly as before. The module works fine
+//                here: it owns the units it creates, so panic mode (#usePanicMode),
+//                the safe spots and the end-of-AO cleanup all reach them.
+//
+// AGENTS MODE -> the module is bypassed entirely and agents are created directly from
+//                _civSpawnPositions, the same way generateCorridorCivilians.sqf already
+//                does it. This replaces the old "#onCreated deletes the unit and makes
+//                an agent in its place" hack, which was broken in four ways:
+//                  1. the identity (name/face/speaker) was applied to the unit that was
+//                     deleted one line later, so every converted agent was nameless;
+//                  2. deleteVehicle fired inside the module's own creation routine while
+//                     the module still held the reference, leaving null entries in its
+//                     registry and making it top the unit count back up;
+//                  3. the replacement agent was never registered, so panic mode, the
+//                     safe spots and the end-of-AO cleanup never saw it;
+//                  4. deleting the last unit of a group left an empty group behind -
+//                     one of the reasons fn_orphanSweep.sqf exists.
+//                Nothing is lost by bypassing: a converted agent already sat outside the
+//                module, so panic mode and safe spots were already dead in this mode.
+// ---------------------------------------------------------------------------------
+if (_useAgents) then {
+
+	private _agentsSpawned = 0;
+	{
+		private _spawnPos = _x;
+		// Guard the pool: selectRandom on an empty array returns nil and undefines the
+		// variable, which is how this codebase has been bitten before.
+		if (count _customClasses > 0) then {
+			private _civType = selectRandom _customClasses;
+			private _agent = createAgent [_civType, _spawnPos, [], 5, "NONE"];
+			_agent setBehaviour "CARELESS";
+			// Civs ALWAYS get dynamic simulation, regardless of the user toggle.
+			_agent enableDynamicSimulation true;
+
+			removeAllItems _agent;
+			removeVest _agent;
+			removeHeadgear _agent;
+			removeUniform _agent;
+
+			if (!isNil "_C_uniformList" && {count _C_uniformList > 0}) then {
+				private _uniform = selectRandom _C_uniformList;
+				if (_uniform isEqualType "" && {_uniform != ""}) then { _agent addUniform _uniform };
+			};
+			if (!isNil "_C_headgearList" && {count _C_headgearList > 0} && {random 1 > 0.6}) then {
+				private _headgear = selectRandom _C_headgearList;
+				if (_headgear isEqualType "" && {_headgear != ""}) then { _agent addHeadgear _headgear };
+			};
+			if (!isNil "_C_vestList" && {count _C_vestList > 0} && {random 1 > 0.3}) then {
+				private _vest = selectRandom _C_vestList;
+				if (_vest isEqualType "" && {_vest != ""}) then { _agent addVest _vest };
+			};
+
+			// Identity goes on the AGENT - this is the bug the old conversion had, where the
+			// name was set on the unit that was about to be deleted.
+			if (count _C_firstNames > 0
+				&& {count _C_lastNames > 0}
+				&& {count _C_speakers > 0}
+				&& {count _C_faces > 0}) then {
+				[_agent, selectRandom _C_firstNames, selectRandom _C_lastNames, selectRandom _C_speakers, selectRandom _C_faces] remoteExec ["DRO_fnc_setNameMP", 0];
+			};
+
+			[_agent] call DRO_fnc_civDeathHandler;
+			_agentsSpawned = _agentsSpawned + 1;
+		};
+	} forEach _civSpawnPositions;
+
+	diag_log format ["DRO: Civilians spawned as agents (module bypassed) - %1 agent(s) from %2 spawn point(s)", _agentsSpawned, count _civSpawnPositions];
+
+} else {
+
+	private _modCivs = (createGroup centerSide) createUnit ["ModuleCivilianPresence_F", _AOPos, [], 0, "FORM"];
+	// M8 fix: unitCount = total spawn points criados - 1 civ por ponto, sem clustering
+	_modCivs setVariable ["#unitCount", (_totalSpawnPoints max 1), true];
+	// M7 fix: area aumentada de AOSize/2 para AOSize*0.75 - civis se espalham mais
+	_modCivs setVariable ["objectarea", [(_AOSize * 0.75), (_AOSize * 0.75), 0, false, -1], true];
+	diag_log format ["DRO: ModuleCivilianPresence_F init - useAgents=%1, unitCount=%2, totalSpawnPoints=%3", _useAgents, _totalSpawnPoints, _totalSpawnPoints];
+	_modCivs setVariable ["#useAgents", false, true];
+	_modCivs setVariable ["#usePanicMode", true, true];
+	_modCivs setVariable ["DRO_uniformList", _C_uniformList];
+	_modCivs setVariable ["DRO_firstNames", _C_firstNames];
+	_modCivs setVariable ["DRO_lastNames", _C_lastNames];
+	_modCivs setVariable ["DRO_speakers", _C_speakers];
+	_modCivs setVariable ["DRO_faces", _C_faces];
+	_modCivs setVariable ["DRO_headgearList", _C_headgearList];
+	_modCivs setVariable ["DRO_vestList", _C_vestList];
+	_modCivs setVariable ["#onCreated", {
+		removeAllItems _this;
+		removeVest _this;
+		removeHeadgear _this;
+		removeUniform _this;
+		private _module = (_this getVariable "#core");
+		[_this, (selectRandom (_module getVariable "DRO_firstNames")), (selectRandom (_module getVariable "DRO_lastNames")), (selectRandom (_module getVariable "DRO_speakers")), (selectRandom (_module getVariable "DRO_faces"))] remoteExec ["DRO_fnc_setNameMP", 0];
+		private _uniformList = _module getVariable ["DRO_uniformList", []];
+		if (count _uniformList > 0) then { _this addUniform (selectRandom _uniformList) };
+		private _headgearList = _module getVariable ["DRO_headgearList", []];
+		if (count _headgearList > 0 && {random 1 > 0.6}) then { _this addHeadgear (selectRandom _headgearList) };
+		private _vestList = _module getVariable ["DRO_vestList", []];
+		if (count _vestList > 0 && {random 1 > 0.3}) then { _this addVest (selectRandom _vestList) };
+		[_this] call DRO_fnc_civDeathHandler;
+		// M8: civs ALWAYS get dynamic simulation (performance savings regardless of user toggle)
+		_this enableDynamicSimulation true;
+	}, true];
+	["init", [_modCivs]] call bis_fnc_moduleCivilianPresence;
+
+};
 
 // Initialise waypoints
 // Drop groups emptied between spawn and here (see fn_untrackEntity.sqf): an empty

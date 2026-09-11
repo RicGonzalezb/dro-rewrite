@@ -3,6 +3,30 @@
 All notable changes to the Rewrite are documented here. Dates are the completion
 date of the work, not a Workshop release date.
 
+## [1.1.2] — 2026-09-10 — Insertion, sides & compatibility fixes
+
+### Fixed
+- **Insertion could place the squad at map origin `[0,0,0]`.** Ground/FOB, HALO,
+  and helicopter insertions now use a robust position search with progressive
+  fallbacks; when no valid point exists they fall back to the staging area (or a
+  real on-map position) instead of the map corner. The HALO search also no longer
+  blacklists the very AO it is trying to drop into.
+- **Enemies could be non-hostile to the player** when their faction resolved to a
+  side friendly to yours by default (e.g. BLUFOR player vs INDEPENDENT enemy).
+  Enemy hostility is now forced explicitly, server-side and broadcast.
+- **A joining player could miss their initial loadout** on dedicated servers and
+  show the wrong class; the roster now self-heals the local player's loadout.
+- **Civilians never received vests or headgear** (pre-existing bugs) and could
+  lose their identity or leak as orphaned entities in agent mode.
+- **DRO remote calls could be silently blocked** when another mod set a strict
+  remote-exec whitelist; DRO functions are now self-whitelisted without touching
+  the shared policy.
+
+### Changed
+- Civilian **agent mode** now bypasses the BIS Civilian Presence Module cleanly
+  (no forced unit→agent conversion), removing a source of orphaned entities and
+  giving agents proper identities.
+
 ## [1.1.1] — 2026-07-26 — Dedicated-server & balance fixes
 
 ### Fixed

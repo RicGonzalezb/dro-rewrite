@@ -254,41 +254,67 @@ switch (insertType) do {
 				diag_log format ["DRO: Potential sea positions: %1", _seaPositions];
 			};
 
-			// Generate random ground start position for player group
-			if (count _randomStartingLocation == 0) then {
-				_randomStartingLocation = [_center, (aoSize+500), (aoSize+1500), 8, 0, 0.25, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-			};
-			if (!([_randomStartingLocation, "player-insert"] call DRO_fnc_validPos)) then {
-				_randomStartingLocation = [_center, (aoSize+500), (aoSize+3000), 2, 0, 0.6, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-			};			
-			// Keep the whole FOB FOOTPRINT off roads — sample centre + rings out to ~45m (isOnRoad).
-			// The FOB is large, so a centre-only / 10m check let the perimeter clip roads. Re-roll if any hit.
-			private _roadNear = {
+			// Keep the whole FOB FOOTPRINT off roads - sample centre + rings out to ~45m
+			// (isOnRoad). The FOB is large, so a centre-only / 10m check let the perimeter clip
+			// roads. Self-contained on purpose: it is handed to DRO_fnc_findInsertPos, which
+			// runs it in its own scope and must not depend on any local of this script.
+			private _fobFootprintClear = {
 				params ["_p"];
 				private _pts = [_p];
 				{
 					private _rr = _x;
 					{ _pts pushBack (_p getPos [_rr, _x]); } forEach [0,45,90,135,180,225,270,315];
 				} forEach [15, 30, 45];
-				({ isOnRoad _x } count _pts) > 0
+				({ isOnRoad _x } count _pts) == 0
 			};
-			private _roadTries = 0;
-			while { (_roadTries < 20) && (([_randomStartingLocation] call _roadNear) || {((_randomStartingLocation select 0) < 80) || ((_randomStartingLocation select 0) > (worldSize - 80)) || ((_randomStartingLocation select 1) < 80) || ((_randomStartingLocation select 1) > (worldSize - 80))}) } do {
-				_randomStartingLocation = [_center, (aoSize+500), (aoSize+1500), 8, 0, 0.25, 0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-				_roadTries = _roadTries + 1;
-			};
-			if (_forceSeaStart == 1) then {
-				_groundStylesAvailable = ["SEA"];
+
+			// Ground start position.
+			// A custom point picked in Team Planning is kept when it is usable, and only
+			// replaced when it fails validation or would drop the FOB footprint on a road -
+			// same behaviour as before, but now it says so in the log instead of silently
+			// relocating the leader's chosen spot.
+			if (count _randomStartingLocation > 0
+				&& {[_randomStartingLocation] call DRO_fnc_validPos}
+				&& {[_randomStartingLocation] call _fobFootprintClear}) then {
+				diag_log format ["DRO: ground insert - keeping supplied position %1", _randomStartingLocation];
 			} else {
-				if ([_randomStartingLocation, "player-insert"] call DRO_fnc_validPos) then {
-					_groundStylesAvailable pushBack "FOB";
+				if (count _randomStartingLocation > 0) then {
+					diag_log format ["DRO: ground insert - supplied position %1 rejected (invalid, or FOB footprint on a road); searching for another", _randomStartingLocation];
 				};
+				// One search, one contract: a valid position, or []. The old code called
+				// BIS_fnc_findSafePos here with a [[0,0,0],[0,0,0]] default and then re-rolled the
+				// SAME call up to 20 times, which cannot rescue an annulus that is off-map / all
+				// water / all road - see the header of fn_findInsertPos.sqf.
+				_randomStartingLocation = [
+					_center,
+					(aoSize + 500),
+					(aoSize + 1500),
+					[trgAOC],
+					_fobFootprintClear,
+					"ground-insert"
+				] call DRO_fnc_findInsertPos;
 			};
-			
-			// SEA removed from the random GROUND draw — sea insertion is now its own lobby option.
-			if (count _groundStylesAvailable == 0) then {
+
+			// _forceSeaStart == 1 is already handled by the branch this else belongs to, so it
+			// cannot be 1 here; the duplicate check that used to sit at this spot was dead.
+			if ([_randomStartingLocation, "player-insert"] call DRO_fnc_validPos) then {
 				_groundStylesAvailable pushBack "FOB";
 			};
+			// SEA removed from the random GROUND draw - sea insertion is now its own lobby option.
+			// NOTE: there is deliberately no "push FOB anyway" fallback here. That line is how
+			// the base ended up on the map origin: validPos had just rejected the position, and
+			// the next line threw that verdict away and built the FOB there regardless. An empty
+			// list now falls through to the STAGING terminal fallback below.
+		};
+
+		if (count _groundStylesAvailable == 0) then {
+			// Terminal fallback: the search ladder exhausted every rung, so there is genuinely
+			// nowhere on this map to put a FOB for this AO. Leave the squad in the staging area
+			// rather than spawn a base at [0,0,0]. Mirrors the SEA-not-viable fallback below.
+			private _ldr = leader (grpNetId call BIS_fnc_groupFromNetId);
+			_randomStartingLocation = getPosATL _ldr;
+			diag_log format ["DRO: ground insert FAILED - no viable FOB position after the full search ladder. Staging fallback at %1, no FOB built.", _randomStartingLocation];
+			_groundStylesAvailable pushBack "STAGING";
 		};
 		_groundStyleSelect = selectRandom _groundStylesAvailable;
 		diag_log format ["DRO: Ground insert style will be %1", _groundStyleSelect];
@@ -679,6 +705,16 @@ switch (insertType) do {
 					respawnFOB = [missionNamespace, _fobRespawnPos, _campName] call BIS_fnc_addRespawnPosition;
 				};
 			};
+			case "STAGING": {
+				// No viable FOB position anywhere (see the terminal fallback above). Players stay
+				// where they are: no base, no camp marker, no respawn point moved. insertType stays
+				// GROUND so the extraction task and the rest of the pipeline behave normally.
+				insertType = "GROUND";
+				_playersPos = _randomStartingLocation;
+				[_randomStartingLocation] remoteExec ["sun_setPlayerGroup"];
+				waitUntil {newUnitsReady};
+				missionNameSpace setVariable ["startPos", _randomStartingLocation, true];
+			};
 			case "SEA": {
 				insertType = "SEA";
 				// Custom insertion point (Team Planning): re-seed the sea corridor from it (reverse path).
@@ -722,12 +758,50 @@ switch (insertType) do {
 		// HALO INSERTION
 		// Generate drop position
 		insertType = "HALO";
-		// If no insert position selected then generate a random one
-		if (count _randomStartingLocation == 0) then {
-			_randomStartingLocation = [_center,(aoSize/1.8),(aoSize/1.6),0,1,1,0, [trgAOC], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-			if (!([_randomStartingLocation, "player-insert"] call DRO_fnc_validPos)) then {
-				_randomStartingLocation = [_center,(aoSize/1.8),(aoSize/1.6),0,0,1,0] call BIS_fnc_findSafePos;
+		// Drop position.
+		// The old guard wrapped BOTH searches in `if (count _randomStartingLocation == 0)`, so a
+		// custom point picked in Team Planning was NEVER validated - it went straight into the
+		// `set [2,0]` and plane-spawn maths below. Validate it too.
+		//
+		// The old primary search also passed [trgAOC] as the blacklist while searching a ring
+		// aoSize/1.8..aoSize/1.6 (667..750m) from the AO centre - i.e. INSIDE the AO. trgAOC's
+		// area is [_xDist/1.5, _yDist/1.5] half-axes around that same centre (generateAO.sqf),
+		// so on any AO whose locations spread more than ~1km the blacklist swallowed the entire
+		// search ring and the primary search could never succeed. Every round then fell to the
+		// second call, which passes NO defaultPos and so returns a bare [0,0,0] on failure -
+		// count 3, nothing checked it, and `set [2,0]` left it as [0,0,0]. That is the plane
+		// spawning over the map origin. Blacklisting the AO while deliberately dropping into it
+		// was the contradiction; the blacklist is gone.
+		if (!([_randomStartingLocation] call DRO_fnc_validPos)) then {
+			if (count _randomStartingLocation > 0) then {
+				diag_log format ["DRO: HALO insert - supplied position %1 rejected; searching for a drop point", _randomStartingLocation];
 			};
+			// maxRadius = aoSize: a HALO drop has to stay over the AO, so the ladder may loosen
+			// gradient and object clearance but must not relax its way across the map.
+			_randomStartingLocation = [
+				_center,
+				(aoSize / 1.8),
+				(aoSize / 1.6),
+				[],
+				{true},
+				"halo-insert",
+				aoSize
+			] call DRO_fnc_findInsertPos;
+		};
+		if (count _randomStartingLocation == 0) then {
+			// Last resort. Every rung failed on a ring that sits inside an AO the mission has
+			// already populated with objectives, so this should be unreachable - but it must not
+			// fall through to the old behaviour. `set [2, 0]` on the two-element [[0,0,0],[0,0,0]]
+			// failure shape APPENDS a third element instead of overwriting one, producing
+			// [[0,0,0],[0,0,0],0]: count 3, so every later count check passes and the plane spawns
+			// over the origin. Anything genuinely on the map beats that.
+			private _lr = _center getPos [(aoSize * 0.6), random 360];
+			_randomStartingLocation = [
+				(((_lr select 0) max 200) min (worldSize - 200)),
+				(((_lr select 1) max 200) min (worldSize - 200)),
+				0
+			];
+			diag_log format ["DRO: HALO insert - search ladder found nothing; falling back to an offset from the AO centre: %1", _randomStartingLocation];
 		};
 		
 		_randomStartingLocation set [2, 0];
@@ -791,14 +865,37 @@ switch (insertType) do {
 	case 3: {
 		// HELI INSERTION
 		insertType = "HELI";
-		// Generate drop position
-		// If no insert position selected then generate a random one
+		// Drop position. Same latent failure as the HALO case above: the custom point was never
+		// validated, and the fallback search passed NO defaultPos, so its failure returned a bare
+		// [0,0,0] that nothing checked - the heli would then be placed 2000m from the map origin.
+		// No blacklist here, unlike HALO: this ring is already outside the AO by construction.
+		if (!([_randomStartingLocation] call DRO_fnc_validPos)) then {
+			if (count _randomStartingLocation > 0) then {
+				diag_log format ["DRO: HELI insert - supplied position %1 rejected; searching for an LZ", _randomStartingLocation];
+			};
+			// maxRadius matches the old fallback's outer bound: the LZ may drift further out than
+			// the preferred ring, but the heli still has to arrive somewhere near the AO.
+			_randomStartingLocation = [
+				_center,
+				(aoSize - 150),
+				(aoSize + 500),
+				[],
+				{true},
+				"heli-insert",
+				(aoSize + 1500)
+			] call DRO_fnc_findInsertPos;
+		};
 		if (count _randomStartingLocation == 0) then {
-			_randomStartingLocation = [_center,(aoSize-150),(aoSize+500),0,0,0.25,0, [], [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
-			if (!([_randomStartingLocation, "player-insert"] call DRO_fnc_validPos)) then {
-				_randomStartingLocation = [_center,aoSize,(aoSize+1500),0,0,1,0] call BIS_fnc_findSafePos;
-			};			
-		};				
+			// Last resort - see the HALO case for why proceeding with the failure value is not an
+			// option. Offset from the AO centre at the preferred ring distance, clamped on-map.
+			private _lr = _center getPos [(aoSize + 200), random 360];
+			_randomStartingLocation = [
+				(((_lr select 0) max 200) min (worldSize - 200)),
+				(((_lr select 1) max 200) min (worldSize - 200)),
+				0
+			];
+			diag_log format ["DRO: HELI insert - search ladder found nothing; falling back to an offset from the AO centre: %1", _randomStartingLocation];
+		};
 		_randomStartingLocation set [2, 0];
 		
 		_dir = [_center, _randomStartingLocation] call BIS_fnc_dirTo;

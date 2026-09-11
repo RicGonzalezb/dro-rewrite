@@ -37,7 +37,3 @@ private _killed = 0;
 if (!isNil "DRO_createdAI") then { DRO_createdAI = DRO_createdAI select { !isNull _x }; };
 if (!isNil "DRO_simpleObjects") then { DRO_simpleObjects = DRO_simpleObjects select { !isNull _x }; };
 if (!isNil "patrolGroups") then { patrolGroups = [patrolGroups] call DRO_fnc_livingEntities; };
-
-if (_killed > 0) then {
-    diag_log format ["DRO: orphanSweep collected %1 empty group(s); allGroups now %2", _killed, count allGroups];
-};

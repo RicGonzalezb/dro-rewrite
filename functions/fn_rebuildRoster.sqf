@@ -30,7 +30,30 @@ if (isNull _group) exitWith {};
 
 private _units = units _group;
 private _maxSquad = missionNamespace getVariable ["DRO_maxSquad", 16];
-diag_log format ["DRO: rebuildRoster run - units=%1 dialogOpen=%2 maxSquad=%3", count _units, !isNull (findDisplay 626262), _maxSquad];
+// --- Self-heal a player that missed the initial loadout push ----------------------
+// start.sqf:460 sends switchUnitLoadout.sqf via remoteExec with JIP = false. A client
+// still connecting at that exact moment never receives the message, so its player ends
+// up with neither "unitClass" nor the faction loadout: the row builder below then falls
+// back to typeOf (the raw mission.sqm slot class) and the CfgVehicles lookup used to
+// error out (the reported multi-player Team Planning crash).
+// Repair it here, locally, for the LOCAL player only - that unit is local to this client,
+// so setUnitLoadout is legal. Same unitList pool start.sqf picks from. Deliberately does
+// NOT go through switchUnitLoadout.sqf: that broadcasts a label update keyed on an IDC
+// this rebuild is about to reassign. The row loop below reads the repaired value on this
+// very pass, so the label comes out right without any broadcast.
+if (!isNull player
+	&& {(player getVariable ["unitClass", ""]) isEqualTo ""}
+	&& {player in _units}
+	&& {!isNil "unitList"}
+	&& {count unitList > 0}) then {
+	private _healClass = (selectRandom unitList) select 0;
+	player setVariable ["unitClass", _healClass, true];
+	player setVariable ["unitChoice", _healClass, true];
+	player setUnitLoadout (getUnitLoadout _healClass);
+	player call DRO_fnc_loadoutCompat;
+	// Kept on purpose: this line only ever fires when the non-JIP push was actually lost.
+	diag_log format ["DRO: rebuildRoster self-heal - player had no unitClass (missed non-JIP loadout push); applied %1", _healClass];
+};
 
 // --- Destroy previously-created row controls: delete every control that is a child of
 // the loadoutGroup (6060), found via allControls + ctrlParentControlsGroup (reliable for
@@ -91,11 +114,14 @@ private _lineHeight = 2.25 * pixelGridNoUIScale * pixelH;
 		_loadoutControl ctrlSetPosition [20 * pixelGridNoUIScale * pixelW, ((_forEachIndex) * _lineSpacing), 15.25 * pixelGridNoUIScale * pixelW, _lineHeight];
 		_loadoutControl ctrlSetBackgroundColor [0.1,0.1,0.1,1];
 		_loadoutControl ctrlSetTextColor [1,1,1,0.5];
-		// unitClass is only set on loadout switch / AI create / JIP — a human who never
-		// customised has none. On a dedicated server, OTHER players' rows hit this else
-		// branch; reading "unitClass" with no default returned nil and the config lookup
-		// errored (_factionClass then undefined -> reported crash on multi-player Team
-		// Planning). Fall back to the unit's real typeOf, which is always set and synced.
+		// unitClass IS set for every unit at initial setup: start.sqf:460 remoteExecs
+		// switchUnitLoadout.sqf, which writes it public (switchUnitLoadout.sqf:33). It is
+		// missing only when that push was lost - the remoteExec is JIP = false, so a client
+		// still connecting at that moment never gets it. The local player is repaired at the
+		// top of this file; OTHER players' rows cannot be repaired from here (their unit is
+		// not local), so keep the typeOf fallback: reading "unitClass" with no default
+		// returned nil and the config lookup errored (_factionClass then undefined -> the
+		// reported crash on multi-player Team Planning). typeOf is always set and synced.
 		private _unitClass = _x2 getVariable ["unitClass", ""];
 		if (_unitClass isEqualTo "") then { _unitClass = typeOf _x2 };
 		private _factionClass = ((configfile >> "CfgVehicles" >> _unitClass >> "faction") call BIS_fnc_getCfgData);

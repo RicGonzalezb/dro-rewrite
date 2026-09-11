@@ -47,5 +47,29 @@ _enemySides = [];
 	};
 } forEach _enemySides;
 
+// Force every enemy side HOSTILE to the player side. Arma's default side relations are NOT
+// all mutually hostile — WEST and INDEPENDENT are FRIENDLY by default, so a BLUFOR player vs
+// an INDEPENDENT enemy faction would never engage. Never trust the defaults: set the enemy
+// relation explicitly (setFriend 0), both directions, for the resolved enemySide and every
+// advanced enemy faction side. Includes the switched enemySide (playersSide==enemySide case)
+// which is not in _enemySides.
+//
+// Two layers on purpose:
+//  1. DIRECT on the server (this script is server-side). Not a remoteExec, so it is immune to
+//     any CfgRemoteExec >> Commands lockdown — this guarantees the server-local enemy AI
+//     always treats the player as hostile and engages, whatever a third-party mod does.
+//  2. BROADCAST to clients only (-2, JIP true): each player's own client-local squad AI needs
+//     the relation to return fire, and the map needs it to paint the enemy correctly. If a
+//     strict Commands whitelist blocks this remoteExec, layer 1 still keeps enemies attacking.
+{
+	private _es = _x;
+	if (_es != playersSide) then {
+		_es setFriend [playersSide, 0];
+		playersSide setFriend [_es, 0];
+		[_es, [playersSide, 0]] remoteExec ["setFriend", -2, true];
+		[playersSide, [_es, 0]] remoteExec ["setFriend", -2, true];
+	};
+} forEach (_enemySides + [enemySide]);
+
 publicVariable "enemySide";
 diag_log format ["DRO: Enemy side detected as %1", enemySide];

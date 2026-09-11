@@ -1241,6 +1241,61 @@ class vn_artillery_settings
 // M3 — CfgFunctions migration (replaces #include lib pattern)
 // All functions available as DRO_fnc_<name> before mission init
 // ============================================================
+// ---- RemoteExec whitelist ----
+// CfgRemoteExec >> Functions >> mode is GLOBAL and shared across every loaded mod. Any addon
+// on the server can set mode = 1 (strict whitelist), which then blocks EVERY function not
+// explicitly listed somewhere — including ours, even if that addon is unrelated to us. So we
+// self-whitelist every project function (and the BIS functions we remoteExec) here, and NEVER
+// declare `mode` — declaring it would override/depend on another mod's security policy.
+// allowedTargets: 0 = any, 1 = clients only, 2 = server only. We use 0 (we are not the policy
+// owner; this block only guarantees our calls survive whatever mode another mod imposes).
+class CfgRemoteExec
+{
+    class Functions
+    {
+        // --- Project functions (CfgFunctions class DRO -> DRO_fnc_*) ---
+            class DRO_fnc_AIHeal { allowedTargets = 0; };
+            class DRO_fnc_AIListen { allowedTargets = 0; };
+            class DRO_fnc_addAIToSquad { allowedTargets = 0; };
+            class DRO_fnc_addIntel { allowedTargets = 0; };
+            class DRO_fnc_becomeLeader { allowedTargets = 0; };
+            class DRO_fnc_briefingJIP { allowedTargets = 0; };
+            class DRO_fnc_detectPosMP { allowedTargets = 0; };
+            class DRO_fnc_dragActionAdd { allowedTargets = 0; };
+            class DRO_fnc_findFAK { allowedTargets = 0; };
+            class DRO_fnc_jipAIBump { allowedTargets = 0; };
+            class DRO_fnc_lobbyChangeLabel { allowedTargets = 0; };
+            class DRO_fnc_newUnit { allowedTargets = 0; };
+            class DRO_fnc_playSubtitleRadio { allowedTargets = 0; };
+            class DRO_fnc_queueMessage { allowedTargets = 0; };
+            class DRO_fnc_randomTime { allowedTargets = 0; };
+            class DRO_fnc_rebuildRoster { allowedTargets = 0; };
+            class DRO_fnc_removeAIFromSquad { allowedTargets = 0; };
+            class DRO_fnc_removeDragAction { allowedTargets = 0; };
+            class DRO_fnc_resetCamera { allowedTargets = 0; };
+            class DRO_fnc_reviveActionAdd { allowedTargets = 0; };
+            class DRO_fnc_reviveUnit { allowedTargets = 0; };
+            class DRO_fnc_sendProgressMessage { allowedTargets = 0; };
+            class DRO_fnc_setNameMP { allowedTargets = 0; };
+        // --- Global-variable aliases passed as the remoteExec name string (init.sqf) ---
+            class rev_AIHeal { allowedTargets = 0; };
+            class rev_dragActionAdd { allowedTargets = 0; };
+            class rev_findFAK { allowedTargets = 0; };
+            class rev_removeDragAction { allowedTargets = 0; };
+            class rev_resetCamera { allowedTargets = 0; };
+            class rev_reviveActionAdd { allowedTargets = 0; };
+            class rev_reviveUnit { allowedTargets = 0; };
+            class sun_backpackFix { allowedTargets = 0; };
+            class sun_lobbyChangeLabel { allowedTargets = 0; };
+            class sun_newUnit { allowedTargets = 0; };
+            class sun_newUnits { allowedTargets = 0; };
+            class sun_playSubtitleRadio { allowedTargets = 0; };
+            class sun_randomTime { allowedTargets = 0; };
+            class sun_setNameMP { allowedTargets = 0; };
+            class sun_setPlayerGroup { allowedTargets = 0; };
+    };
+};
+
 class CfgFunctions
 {
     class DRO
@@ -1286,6 +1341,7 @@ class CfgFunctions
             class extendPos {};
             class extractIdentities {};
             class findFAK {};
+            class findInsertPos {};
             class findRoadRoute {};
             class findWallPositions {};
             class getArtilleryRanges {};
