@@ -38,12 +38,25 @@ addMissionEventHandler ["HandleDisconnect", {
 // "Server: Object X:Y not found (message Type_N)" thousands of times for the
 // unit+group pair. Confirmed reproduction: a Zeus deleting a server-spawned unit
 // that still has background scripts driving it.
-addMissionEventHandler ["CuratorObjectDeleted", {
-    params ["_curator", "_entity"];
-    [_entity] call DRO_fnc_untrackEntity;
-    // The group may still hold the unit at this instant; re-check shortly after.
-    [{ _this call DRO_fnc_untrackEntity; }, [_entity], 1] call CBA_fnc_waitAndExecute;
-}];
+//
+// There used to be an addMissionEventHandler ["CuratorObjectDeleted", ...] here. DO NOT
+// PUT IT BACK in that form. Three separate reasons:
+//   1. "CuratorObjectDeleted" is a CURATOR event handler, not a mission one. The engine
+//      rejected it outright every single round with
+//        Foreign error: Unknown enum value: "CuratorObjectDeleted"
+//      so the handler was never registered and never fired - it was log noise attached to
+//      nothing. Curator EHs go on a curator logic via `addEventHandler`, not here.
+//   2. Even written correctly, a curator EH fires where the CURATOR IS LOCAL - the Zeus
+//      player's client - while DRO_fnc_untrackEntity is server-only by design (it edits
+//      server-side tracking lists and calls deleteGroup on server-local groups). It would
+//      need an explicit remoteExec hop to the server, which nothing here ever had.
+//   3. mission.sqm ships NO curator module (the only assignCurator in the project, in
+//      setupPlayersFaction.sqf, is inside a commented-out block), so on a vanilla run
+//      there is no curator logic to attach to in the first place.
+// Coverage is unaffected: DRO_fnc_orphanSweep below is death-cause agnostic and collects
+// exactly the same orphans, whatever deleted the unit. If a Zeus mod is ever in play and
+// the 300s sweep interval turns out to be too slow, the correct shape is a client-side
+// hook on `getAssignedCuratorLogic player` that remoteExecs the cleanup to the server.
 
 addMissionEventHandler ["EntityKilled", {
     params ["_unit"];

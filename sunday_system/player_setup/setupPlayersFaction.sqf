@@ -706,13 +706,25 @@ switch (insertType) do {
 				};
 			};
 			case "STAGING": {
-				// No viable FOB position anywhere (see the terminal fallback above). Players stay
-				// where they are: no base, no camp marker, no respawn point moved. insertType stays
-				// GROUND so the extraction task and the rest of the pipeline behave normally.
-				insertType = "GROUND";
+				// No viable FOB position anywhere (see the terminal fallback above). This is the
+				// M11 "NONE" situation reached by accident instead of by choice, so it must behave
+				// exactly like case 4 further down - and above all it must set insertType to
+				// "NONE", NOT "GROUND".
+				//
+				// Why that one string matters: the "Remove arsenal backdrop objects" block near the
+				// end of this file deletes EVERY object within 20m of logicStartPos unless
+				// insertType is "NONE". With the squad parked at the staging area, saying "GROUND"
+				// makes that block erase the staging base around the players a few seconds after
+				// they spawn - reported as "a FOB apareceu em volta de mim e sumiu".
+				insertType = "NONE";
+				publicVariable "insertType";
 				_playersPos = _randomStartingLocation;
-				[_randomStartingLocation] remoteExec ["sun_setPlayerGroup"];
-				waitUntil {newUnitsReady};
+				// No sun_setPlayerGroup: nobody moves, they are already standing here.
+				if (getMarkerColor "campMkr" != "" && (["Respawn", 0] call BIS_fnc_getParamValue) != 7 && (["RespawnPositions", 0] call BIS_fnc_getParamValue) < 2) then {
+					respawnNone = [missionNamespace, "campMkr", "Staging"] call BIS_fnc_addRespawnPosition;
+				};
+				// Arsenal crate at the staging area, so JIP players can still adjust loadouts.
+				[_randomStartingLocation] call DRO_fnc_spawnInsertArsenal;
 				missionNameSpace setVariable ["startPos", _randomStartingLocation, true];
 			};
 			case "SEA": {
@@ -737,8 +749,13 @@ switch (insertType) do {
 					_randomStartingLocation = DRO_seaLandPos;
 				} else {
 					// Corridor not viable at runtime — staging fallback (lobby/skip should prevent this).
+					// "NONE", not "GROUND": the arsenal-backdrop cleanup at the end of this file wipes
+					// everything within 20m of logicStartPos for any insertType other than "NONE", and
+					// this branch leaves the squad standing in the staging area. The twin fallback in
+					// case 5 already had it right; this one did not.
 					diag_log "DRO: SEA not viable at runtime — staging fallback.";
-					insertType = "GROUND";
+					insertType = "NONE";
+					publicVariable "insertType";
 					_randomStartingLocation = getPosATL (leader (grpNetId call BIS_fnc_groupFromNetId));
 					[_randomStartingLocation] remoteExec ["sun_setPlayerGroup"];
 					waitUntil {newUnitsReady};
@@ -785,7 +802,12 @@ switch (insertType) do {
 				[],
 				{true},
 				"halo-insert",
-				aoSize
+				aoSize,
+				// Floor at the preferred ring's inner edge. A HALO drop is MEANT to be over the AO,
+				// so the cap above is what keeps it there - but the relaxed rungs shrink minDist to
+				// x0.6 then x0.4, which would have allowed a drop at ~267m from the AO centre, i.e.
+				// straight onto the objective. The old code never went below aoSize/1.8.
+				(aoSize / 1.8)
 			] call DRO_fnc_findInsertPos;
 		};
 		if (count _randomStartingLocation == 0) then {
@@ -882,7 +904,12 @@ switch (insertType) do {
 				[],
 				{true},
 				"heli-insert",
-				(aoSize + 1500)
+				(aoSize + 1500),
+				// Floor at the preferred ring's inner edge, for the same reason as HALO but with
+				// teeth: the relaxed rungs allowed 630m and then 420m from the AO centre, and the
+				// heli was observed in-game setting the squad down inside the AO, next to enemy
+				// positions. The old code never went below aoSize-150.
+				(aoSize - 150)
 			] call DRO_fnc_findInsertPos;
 		};
 		if (count _randomStartingLocation == 0) then {

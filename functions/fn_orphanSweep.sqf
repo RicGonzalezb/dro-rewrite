@@ -1,9 +1,10 @@
 // functions/fn_orphanSweep.sqf
 // DRO_fnc_orphanSweep — periodic janitor for orphaned groups and stale object lists.
 //
-// The Curator event handler in initServer.sqf covers the confirmed reproduction
-// (Zeus deletes a server-spawned unit that still has background scripts driving it),
-// but it only covers that one path. This sweep is death-cause agnostic: whatever
+// This is the ONLY cleanup path for deletions. The Curator hook that initServer.sqf used
+// to advertise never worked - "CuratorObjectDeleted" is not a mission event handler, so
+// the engine refused it every round (see the note in initServer.sqf). The sweep was
+// already carrying the confirmed reproduction on its own: whatever
 // emptied the group — Zeus, a raw deleteVehicle, the Civilian Presence Module's
 // forced unit->agent conversion, or an ACE/mod cleanup — the empty shell is
 // collected here.

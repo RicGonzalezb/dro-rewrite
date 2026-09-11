@@ -3,6 +3,23 @@
 All notable changes to the Rewrite are documented here. Dates are the completion
 date of the work, not a Workshop release date.
 
+## [1.1.3] — 2026-09-10 — Position-validation & insertion follow-ups
+
+### Fixed
+- **Valid spawn positions were being wrongly rejected**, silently skipping
+  bunkers, resupply crates, hostages, reinforcements and other spawns across many
+  call sites. The position validator now accepts the successful result the engine
+  actually returns.
+- **The Ground "staging" fallback deleted its own base** — when insertion fell
+  back to the staging area, the arsenal-cleanup step wiped the objects around the
+  players. Fixed, along with the same latent bug in the sea fallback.
+- **Helicopter insertion could drop the squad too close to the AO** — a
+  regression from the insertion rework; a minimum-radius floor keeps air
+  insertions at their intended distance.
+- Removed a dead startup hook that logged an error at mission start (it was
+  registered with the wrong engine API and never ran; orphan cleanup is handled
+  by the periodic sweep regardless).
+
 ## [1.1.2] — 2026-09-10 — Insertion, sides & compatibility fixes
 
 ### Fixed

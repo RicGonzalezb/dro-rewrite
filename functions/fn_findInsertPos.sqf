@@ -37,6 +37,15 @@
 //                                   right for a ground insert (anywhere off-map-edge will do)
 //                                   and wrong for an air insert, where the drop point has to
 //                                   stay over the AO. Ground callers leave the default.
+//   7 _minRadius (Number)           hard FLOOR on how close to _center the ladder may drift.
+//                                   The looser rungs also shrink minDist (x0.6, then x0.4).
+//                                   For a ground insert that is harmless. For an air insert it
+//                                   is not: it lets a relaxed rung put the drop point or the
+//                                   heli LZ far closer to the objective than the caller's
+//                                   preferred ring ever allowed - observed in-game as the heli
+//                                   landing the squad inside the AO next to enemy positions.
+//                                   Air callers pass their preferred ring's inner edge here.
+//                                   Ground callers leave the default (0, no floor).
 //
 // RETURNS
 //   Array - a validated position, or [] when every rung failed. Callers MUST handle the
@@ -49,7 +58,8 @@ params [
 	["_blacklist", []],
 	["_extraTest", {true}],
 	["_tag", "insert"],
-	["_maxRadius", (worldSize * 0.45)]
+	["_maxRadius", (worldSize * 0.45)],
+	["_minRadius", 0]
 ];
 
 // Keep clear of the world border: the engine will happily hand back a position a few
@@ -72,11 +82,15 @@ private _result = [];
 	private _rungIndex = _forEachIndex;
 	private _bl = if (_rUseBL) then { _blacklist } else { [] };
 
-	// Clamp the rung's reach to the caller's cap. _rMin is then held strictly below the
-	// clamped max: an inverted annulus (min > max) makes findSafePos return nothing at all,
-	// which would silently turn every capped rung into a guaranteed miss.
+	// Clamp the rung's reach to the caller's cap, and hold it above the caller's floor.
+	// The FLOOR is a hard requirement (an air insert must never drift on top of the
+	// objective); the cap is only a preference. So if a loosened rung would invert the
+	// annulus, widen the max rather than breach the floor - an inverted annulus (min > max)
+	// makes findSafePos return nothing, which would silently turn the rung into a
+	// guaranteed miss.
 	private _rMaxC = _rMax min _maxRadius;
-	private _rMinC = _rMin min (_rMaxC * 0.9);
+	private _rMinC = _rMin max _minRadius;
+	if (_rMinC >= _rMaxC) then { _rMaxC = _rMinC * 1.25; };
 
 	for "_i" from 1 to _rTries do {
 		private _candidate = [_center, _rMinC, _rMaxC, _rObj, _rWater, _rGrad, _rShore, _bl, [[0,0,0],[0,0,0]]] call BIS_fnc_findSafePos;
